@@ -8,7 +8,7 @@ export const ContentPackReferenceSchema = z.object({
 
 export const ContentManifestSchema = z.object({
   schemaVersion: z.literal(1),
-  milestone: z.literal('M0'),
+  milestone: z.literal('M1'),
   packs: z.object({
     campaign: ContentPackReferenceSchema,
     characters: ContentPackReferenceSchema,
@@ -20,19 +20,26 @@ export const ContentManifestSchema = z.object({
   }),
 });
 
-const emptyPack = (id: string) => ({ id, version: 1, moduleIds: [] });
+const pack = (id: string, moduleIds: string[] = []) => ({ id, version: 1, moduleIds });
 
 export const contentManifest = ContentManifestSchema.parse({
   schemaVersion: 1,
-  milestone: 'M0',
+  milestone: 'M1',
   packs: {
-    campaign: emptyPack('campaign-foundation'),
-    characters: emptyPack('characters-foundation'),
-    scenarios: emptyPack('scenarios-foundation'),
-    enemies: emptyPack('enemies-foundation'),
-    techniques: emptyPack('techniques-foundation'),
-    equipment: emptyPack('equipment-foundation'),
-    combatLanguage: emptyPack('combat-language-foundation'),
+    campaign: pack('campaign-foundation', ['foundation-city']),
+    characters: pack('characters-m1', ['mira-vale', 'dax-ren', 'sorrel-voss']),
+    scenarios: pack('scenarios-m1', ['m1-glassline-breach']),
+    enemies: pack('enemies-m1', ['rift-hound', 'glass-weaver']),
+    techniques: pack('techniques-m1', [
+      'aegis-break',
+      'hold-the-line',
+      'arc-finish',
+      'cross-step',
+      'restorative-sigil',
+      'binding-shot',
+    ]),
+    equipment: pack('equipment-foundation'),
+    combatLanguage: pack('combat-language-m1', ['attack', 'heal', 'defeat', 'status']),
   },
 });
 

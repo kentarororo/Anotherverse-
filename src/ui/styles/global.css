@@ -44,12 +44,14 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -443,7 +445,99 @@ h2 {
 
 .hero-list {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.42rem;
+  min-height: 0;
+}
+
+.hero-card {
+  padding: 0.52rem 0.62rem;
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid #778399;
+  border-radius: 8px;
+  background: var(--panel-raised);
+}
+
+.hero-card.role-vanguard {
+  border-left-color: #65a9ff;
+}
+.hero-card.role-striker {
+  border-left-color: #ff7d86;
+}
+.hero-card.role-support {
+  border-left-color: #64dfad;
+}
+
+.hero-card-heading,
+.hero-card-heading > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hero-card-heading > div {
+  min-width: 0;
+  flex-direction: column;
+  justify-content: initial;
+  gap: 0.12rem;
+}
+
+.hero-card-heading strong {
+  font-size: 0.76rem;
+}
+.hero-card-heading span,
+.hero-card > p {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.hero-card-heading b {
+  font-size: 0.68rem;
+}
+
+.meter {
+  height: 5px;
+  margin: 0.32rem 0 0.38rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #282f3a;
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.hero-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.hero-controls label,
+.priority-control {
+  display: grid;
+  gap: 0.18rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+select {
+  min-width: 0;
+  padding: 0.28rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #0d1118;
+  color: var(--text);
+  font-size: 0.65rem;
+}
+
+.hero-card > p {
+  margin: 0.3rem 0 0;
 }
 
 .hero-placeholder {
@@ -487,7 +581,7 @@ h2 {
   justify-content: space-between;
   gap: 1rem;
   margin-top: auto;
-  padding-top: 0.8rem;
+  padding-top: 0.55rem;
   border-top: 1px solid var(--line-soft);
   color: var(--muted);
   font-size: 0.7rem;
@@ -553,6 +647,87 @@ h2 {
     repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(255, 255, 255, 0.015) 50px);
 }
 
+.battle-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 0.7rem;
+  flex: 1;
+  min-height: 180px;
+  margin-top: 0.8rem;
+  padding: 1rem;
+  border: 1px solid #2b3442;
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(87, 229, 195, 0.025), rgba(87, 229, 195, 0.005)),
+    repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(255, 255, 255, 0.015) 50px);
+}
+
+.enemy-card {
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(12, 15, 21, 0.92);
+}
+
+.enemy-card > span {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--danger);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.enemy-card > strong {
+  font-size: 0.82rem;
+}
+.enemy-card > b {
+  color: #c9d1dc;
+  font-size: 0.64rem;
+}
+.enemy-card > p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+.enemy-meter > span {
+  background: var(--danger);
+}
+
+.outcome-stamp {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  min-width: 130px;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  background: rgba(7, 12, 15, 0.94);
+  text-align: center;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%) rotate(-2deg);
+}
+
+.outcome-stamp span {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+.outcome-stamp strong {
+  margin-top: 0.15rem;
+  font-size: 0.58rem;
+}
+.outcome-defeat {
+  border-color: var(--danger);
+}
+.outcome-defeat span {
+  color: var(--danger);
+}
+
 .radar-ring {
   display: grid;
   width: 62px;
@@ -580,6 +755,49 @@ h2 {
 
 .forecast-list {
   display: grid;
+}
+
+.priority-control {
+  margin-bottom: 0.7rem;
+}
+.priority-control select {
+  min-height: 34px;
+}
+
+.forecast-notes {
+  margin-top: 0.7rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.forecast-notes p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.forecast-notes p + p {
+  margin-top: 0.4rem;
+}
+
+.aftermath-list {
+  display: grid;
+}
+.aftermath-list > div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--line-soft);
+}
+.aftermath-list span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.aftermath-list strong {
+  font-size: 0.72rem;
 }
 
 .forecast-list > div {
@@ -648,6 +866,19 @@ h2 {
   color: #aab3c1;
   font-size: 0.72rem;
   line-height: 1.45;
+}
+
+.event-feed details {
+  min-width: 0;
+}
+.event-feed summary {
+  cursor: pointer;
+}
+.mechanics-line {
+  margin-top: 0.18rem;
+  color: #697588;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.62rem;
 }
 
 .event-feed time {

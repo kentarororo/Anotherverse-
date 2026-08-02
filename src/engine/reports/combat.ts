@@ -7,6 +7,7 @@ export const StatusDeltaSchema = z.object({
   durationBefore: z.number().int().nonnegative(),
   durationAfter: z.number().int().nonnegative(),
 });
+export type StatusDelta = z.infer<typeof StatusDeltaSchema>;
 
 export const CombatEventSchema = z.object({
   index: z.number().int().nonnegative(),
@@ -22,6 +23,8 @@ export const CombatEventSchema = z.object({
   finalAmount: z.number().optional(),
   hpBefore: z.number().nonnegative().optional(),
   hpAfter: z.number().nonnegative().optional(),
+  resourceBefore: z.number().nonnegative().optional(),
+  resourceAfter: z.number().nonnegative().optional(),
   statusChanges: z.array(StatusDeltaSchema).optional(),
   ruleTriggers: z.array(z.string()).optional(),
   tags: z.array(z.string()),
@@ -37,6 +40,9 @@ export const BattleReportSchema = z.object({
   events: z.array(CombatEventSchema),
   rngStartPosition: z.number().int().nonnegative(),
   rngEndPosition: z.number().int().nonnegative(),
+  combatantNames: z.record(z.string(), z.string().min(1)),
+  hpAtStart: z.record(z.string(), z.number().int().nonnegative()),
+  hpAtEnd: z.record(z.string(), z.number().int().nonnegative()),
 });
 
 export type BattleReport = z.infer<typeof BattleReportSchema>;
@@ -49,6 +55,10 @@ export const AftermathReportSchema = z.object({
   itemIdsGranted: z.array(z.string().min(1)),
   factIdsWritten: z.array(z.string().min(1)),
   threadIdsChanged: z.array(z.string().min(1)),
+  hpByCharacter: z.record(z.string(), z.number().int().nonnegative()),
+  readinessByCharacter: z.record(z.string(), z.number().int().min(0).max(100)),
+  suppliesDelta: z.number().int(),
+  summary: z.string().min(1),
 });
 
 export type AftermathReport = z.infer<typeof AftermathReportSchema>;

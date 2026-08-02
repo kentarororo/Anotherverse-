@@ -4,8 +4,11 @@ import { GameCommandSchema, PositionSchema } from './commands';
 import { RngStreamsStateSchema } from '../rng/streams';
 import { AftermathReportSchema, BattleReportSchema } from '../reports/combat';
 import { CampaignBibleSchema, StoryThreadSchema, WorldFactSchema } from './world';
+import { CombatantDefinitionSchema, EncounterStateSchema, PartyMemberStateSchema } from './combat';
 
-export const GAME_SCHEMA_VERSION = 1 as const;
+// Milestone 1 adds authoritative party and encounter state. Milestone 0 autosaves
+// are intentionally reported as incompatible instead of being misread as corrupt.
+export const GAME_SCHEMA_VERSION = 2 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),
@@ -21,7 +24,8 @@ export const PendingPlanSchema = z.object({
 
 export const GeneratedDefinitionsSchema = z.object({
   characters: z.array(CharacterBlueprintSchema),
-  enemies: z.record(z.string(), z.unknown()),
+  combatants: z.record(z.string(), CombatantDefinitionSchema),
+  enemies: z.record(z.string(), CombatantDefinitionSchema),
   items: z.record(z.string(), z.unknown()),
   techniques: z.record(z.string(), z.unknown()),
 });
@@ -37,6 +41,8 @@ export const CanonicalGameStateSchema = z.object({
   supplies: z.number().int().nonnegative(),
   campaignBible: CampaignBibleSchema.nullable(),
   generatedDefinitions: GeneratedDefinitionsSchema,
+  partyState: z.record(z.string(), PartyMemberStateSchema),
+  currentEncounter: EncounterStateSchema.nullable(),
   worldFacts: z.array(WorldFactSchema),
   storyThreads: z.array(StoryThreadSchema),
   rngStreams: RngStreamsStateSchema.nullable(),
@@ -62,10 +68,13 @@ export function createEmptyGameState(contentManifestHash: string): CanonicalGame
     campaignBible: null,
     generatedDefinitions: {
       characters: [],
+      combatants: {},
       enemies: {},
       items: {},
       techniques: {},
     },
+    partyState: {},
+    currentEncounter: null,
     worldFacts: [],
     storyThreads: [],
     rngStreams: null,

@@ -88,7 +88,7 @@ export function TitleScreen() {
           </div>
         )}
 
-        <footer className="version">Prototype v0.0.1 · Milestone 0</footer>
+        <footer className="version">Prototype v0.1.0 · Milestone 1</footer>
       </section>
 
       <aside className="title-aside" aria-label="Prototype status">

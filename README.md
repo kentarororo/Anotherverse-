@@ -1,16 +1,22 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **Milestone 0: Repository and
-Contracts** only.
+The project is a clean-room implementation and currently contains **Milestone 1: Combat Vertical
+Slice**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
 ## What runs now
 
 - A title screen with New Campaign, Continue, Settings, version, and an advanced seed input.
-- A compact Command screen shell showing the intended trio, operation, decision/forecast, and event
-  feed hierarchy.
+- A fixed temporary trio and two-enemy Glassline Breach encounter played through the real Command
+  screen.
+- Formation, stance, and team-priority controls that measurably change target selection, action
+  policy, mitigation, and deterministic outcomes.
+- A discrete-round auto-battle with explicit HP, resource, hit, mitigation, status, signature,
+  defeat, and twelve-round-cap events.
+- A plan-sensitive forecast that never consumes the authoritative combat RNG stream.
+- A readable battle chronology with expandable exact mechanics and a persistent Aftermath report.
 - A pure TypeScript command reducer with the complete serialisable `GameCommand` contract.
 - Seven independently derived named RNG streams: world, characters, scenarios, enemies, rewards,
   combat, and narration.
@@ -23,10 +29,9 @@ Contracts** only.
 
 ## Deliberately stubbed
 
-Hero generation, scenario selection, planning controls, combat, forecasts, progression, rewards,
-and corpus expansion belong to later milestones. Their contracts or screen regions exist, but the
-Milestone 0 UI does not pretend they are playable. Only `START_CAMPAIGN` mutates simulation state;
-later commands fail with an explicit `MilestoneNotReadyError`.
+Campaign and trio generation, scenario direction, corpus expansion, equipment, technique growth,
+and broader progression belong to later milestones. Milestone 1 deliberately repeats one temporary
+encounter so its combat rules can be tested before procedural content replaces it.
 
 ## Setup and verification
 
@@ -49,7 +54,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Run the non-browser Milestone 0 gate in one command:
+Run the non-browser Milestone 1 gate in one command:
 
 ```bash
 npm run check

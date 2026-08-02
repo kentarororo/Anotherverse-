@@ -7,9 +7,15 @@ describe('production content manifest', () => {
     expect(CONTENT_MANIFEST_HASH).toMatch(/^fnv1a-[0-9a-f]{8}$/);
   });
 
-  it('declares later content packs without inventing Milestone 0 content', () => {
+  it('enumerates the temporary Milestone 1 content through the production manifest', () => {
     const packs = Object.values(contentManifest.packs);
     expect(packs).toHaveLength(7);
-    expect(packs.every((pack) => pack.moduleIds.length === 0)).toBe(true);
+    expect(contentManifest.milestone).toBe('M1');
+    expect(contentManifest.packs.characters.moduleIds).toEqual([
+      'mira-vale',
+      'dax-ren',
+      'sorrel-voss',
+    ]);
+    expect(contentManifest.packs.scenarios.moduleIds).toContain('m1-glassline-breach');
   });
 });
