@@ -7,8 +7,6 @@ export function TitleScreen() {
   const startCampaign = useAppStore((state) => state.startCampaign);
   const continueCampaign = useAppStore((state) => state.continueCampaign);
   const clearInvalidSave = useAppStore((state) => state.clearInvalidSave);
-  const settingsOpen = useAppStore((state) => state.settingsOpen);
-  const setSettingsOpen = useAppStore((state) => state.setSettingsOpen);
   const [seed, setSeed] = useState(createCampaignSeed);
 
   const handleNewCampaign = () => {
@@ -31,11 +29,10 @@ export function TitleScreen() {
   return (
     <main className="title-screen">
       <section className="title-panel" aria-labelledby="game-title">
-        <div className="eyebrow">Three heroes. One command.</div>
         <h1 id="game-title">ANOTHERVERSE</h1>
         <p className="title-deck">
-          Build a licensed squad, prepare for unstable breaches, and let every decision become part
-          of the campaign record.
+          Prepare a licensed squad for unstable breaches. Commit the plan, watch the operation
+          resolve, and carry its consequences forward.
         </p>
 
         <div className="title-actions">
@@ -49,13 +46,6 @@ export function TitleScreen() {
             disabled={saveStatus.status !== 'ok'}
           >
             Continue
-          </button>
-          <button
-            className="button button-quiet"
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-          >
-            Settings
           </button>
         </div>
 
@@ -90,50 +80,6 @@ export function TitleScreen() {
 
         <footer className="version">Prototype v0.1.0 · Milestone 1</footer>
       </section>
-
-      <aside className="title-aside" aria-label="Prototype status">
-        <div className="signal-line">
-          <span /> BREACH NETWORK / STANDBY
-        </div>
-        <p>Command foundation online</p>
-        <dl>
-          <div>
-            <dt>Simulation</dt>
-            <dd>Deterministic</dd>
-          </div>
-          <div>
-            <dt>Squad limit</dt>
-            <dd>3</dd>
-          </div>
-          <div>
-            <dt>Save slot</dt>
-            <dd>Local</dd>
-          </div>
-        </dl>
-      </aside>
-
-      {settingsOpen && (
-        <div className="modal-backdrop" role="presentation">
-          <section
-            className="modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="settings-title"
-          >
-            <p className="eyebrow">Prototype settings</p>
-            <h2 id="settings-title">Settings</h2>
-            <p>Audio, text speed, and motion settings arrive with the playable combat slice.</p>
-            <button
-              className="button button-primary"
-              type="button"
-              onClick={() => setSettingsOpen(false)}
-              autoFocus
-            >
-              Close
-            </button>
-          </section>
-        </div>
-      )}
     </main>
   );
 }

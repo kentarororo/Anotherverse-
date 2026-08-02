@@ -13,12 +13,10 @@ interface AppStore {
   game: CanonicalGameState;
   saveStatus: SaveLoadResult;
   turnView: 'planning' | 'aftermath';
-  settingsOpen: boolean;
   startCampaign: (seed: string) => void;
   continueCampaign: () => void;
   returnToTitle: () => void;
   clearInvalidSave: () => void;
-  setSettingsOpen: (open: boolean) => void;
   setPosition: (characterId: string, position: Position) => void;
   setStance: (characterId: string, stanceId: string) => void;
   setTeamPriority: (priorityId: string) => void;
@@ -32,7 +30,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   game: createEmptyGameState(CONTENT_MANIFEST_HASH),
   saveStatus: initialSave,
   turnView: 'planning',
-  settingsOpen: false,
   startCampaign: (seed) => {
     const nextState = applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
       type: 'START_CAMPAIGN',
@@ -53,7 +50,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     saveRepository.clear();
     set({ saveStatus: { status: 'empty' } });
   },
-  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setPosition: (characterId, position) => {
     set({ game: applyGameCommand(get().game, { type: 'SET_POSITION', characterId, position }) });
   },
