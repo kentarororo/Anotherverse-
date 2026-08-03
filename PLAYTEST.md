@@ -4,8 +4,8 @@ Open the deployed [100-paragraph review harness](https://kentarororo.github.io/A
 for the separate corpus read-aloud gate. It tracks the required 95 grammatically natural and 85
 contextually coherent thresholds in local browser storage.
 
-Use a fresh seed on the deployed `v0.4.0` build and play through Turn 20. Record the seed and any
-turn where the cause, choice, or result is unclear.
+Reset any schema-7 autosave, then use a fresh seed on the deployed schema-8 build and play through
+Turn 20. Record the seed and any turn where the cause, choice, or result is unclear.
 
 ## Required observations
 

@@ -18,6 +18,8 @@ Slice**.
   conditions.
 - A deterministic scenario director covering operation, personal, discovery, rival, and social
   situations with choice-specific consequences.
+- Twenty typed scene modules that bind valid causal fact roles before rendering original,
+  four-sentence scene arcs with decisions authored for that exact dilemma.
 - Persistent WorldFacts, three-stage personal StoryThreads, semantic cooldowns, causal premise
   references, and visible director score reasons in canonical state.
 - Typed grammar helpers and complete authored scenario frames with unresolved-slot validation.
@@ -35,6 +37,8 @@ Slice**.
   development inspector.
 - A discrete-round auto-battle with explicit HP, resource, hit, mitigation, status, signature,
   defeat, and twelve-round-cap events.
+- A compact two-lane battle playback with canonical HP, actor/target highlights, composed
+  damage/status cues, pause/replay/skip controls, and visibility-gated mobile playback.
 - A plan-sensitive forecast that never consumes the authoritative combat RNG stream.
 - A readable battle chronology with expandable exact mechanics and a persistent Aftermath report.
 - Four complete deterministic narration frames for every structured combat event type; rendering
@@ -46,6 +50,8 @@ Slice**.
   combat/aftermath reports, content manifest, and save envelopes.
 - One LocalStorage autosave behind a replaceable `SaveRepository` interface, including explicit
   corrupt and incompatible-save results.
+- Save schema 8 deliberately rejects schema-7 campaigns because their relationship provenance was
+  recorded before genuine two-person relationship events were enforced.
 - A corpus renderer contract that can later be joined by an optional LLM renderer without changing
   authoritative mechanics.
 
@@ -89,6 +95,8 @@ The final human quality gate is documented in [`PLAYTEST.md`](./PLAYTEST.md).
 The fixed 100-paragraph read-aloud harness is available at `/?review=corpus` without adding
 anything to the normal title screen.
 The requirement-by-requirement evidence ledger is in [`ACCEPTANCE.md`](./ACCEPTANCE.md).
+The asset-ready pixel-art production contract, stable ID mapping, first generation batch, and
+clean-room prompt templates are in [`ART_PIPELINE.md`](./ART_PIPELINE.md).
 
 ## Web deployment
 

@@ -29,7 +29,7 @@ test('plays twenty consecutive turns with progression, equipment, and a mid-run 
       await page.getByRole('radio').first().click();
     }
 
-    await page.getByRole('button', { name: 'Commit Plan' }).click();
+    await page.getByRole('button', { name: 'Take Action' }).click();
     await expect(page.getByRole('heading', { name: 'Aftermath' })).toBeVisible();
     await expect(page.getByText('1 campaign fact recorded')).toBeVisible();
 

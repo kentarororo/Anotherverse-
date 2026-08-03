@@ -60,7 +60,7 @@ export function TitleScreen() {
     saveStatus.status === 'corrupt'
       ? saveStatus.reason
       : saveStatus.status === 'incompatible'
-        ? `Save schema ${saveStatus.foundVersion ?? 'unknown'} is not compatible with this build.`
+        ? `Save schema ${saveStatus.foundVersion ?? 'unknown'} cannot be safely migrated to this build. Reset the prototype autosave to continue.`
         : null;
 
   return (
@@ -179,7 +179,7 @@ export function TitleScreen() {
           </div>
         )}
 
-        <footer className="version">Prototype v0.4.0 · First Playable Slice</footer>
+        <footer className="version">Prototype v0.5.0 · First Playable Slice</footer>
       </section>
     </main>
   );

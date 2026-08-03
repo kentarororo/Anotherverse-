@@ -5,6 +5,7 @@ import { useAppStore } from '../../app/store';
 import { renderCombatEvent } from '../../narrative/realiser/combat';
 import { ManagementDrawer } from '../components/ManagementDrawer';
 import { renderWorldFact } from '../../narrative/realiser/facts';
+import { BattlePlaybackStage } from '../components/BattlePlaybackStage';
 
 const positions: Position[] = ['front', 'centre', 'rear'];
 const stances = ['aggressive', 'guarded', 'tactical', 'supportive'] as const;
@@ -37,6 +38,12 @@ export function CommandScreen() {
   const displayedTurn = showingAftermath ? aftermath.turn : game.turn;
   const scenario = game.currentScenario;
   const isOperation = scenario?.category === 'operation';
+  const battleEnemyIds =
+    report === undefined
+      ? []
+      : Object.keys(report.hpAtStart).filter(
+          (id) => game.generatedDefinitions.enemies[id] !== undefined,
+        );
   const causalFacts =
     scenario?.premiseFactIds.flatMap((factId) => {
       const fact = game.worldFacts.find((candidate) => candidate.id === factId && candidate.active);
@@ -199,9 +206,9 @@ export function CommandScreen() {
         <section className="panel operation-panel" aria-labelledby="operation-title">
           <nav className="phase-tabs" aria-label="Turn phases">
             <span className={!showingAftermath ? 'active' : ''}>Brief</span>
-            <span className={!showingAftermath ? 'active' : ''}>Plan</span>
-            <span className={showingAftermath ? 'active' : ''}>Battle</span>
-            <span className={showingAftermath ? 'active' : ''}>Aftermath</span>
+            <span className={!showingAftermath ? 'active' : ''}>Setup</span>
+            <span className={showingAftermath ? 'active' : ''}>Action</span>
+            <span className={showingAftermath ? 'active' : ''}>Result</span>
           </nav>
           <div className="operation-content">
             <p className="eyebrow">
@@ -220,56 +227,49 @@ export function CommandScreen() {
                 ))}
               </aside>
             )}
-            <div
-              className="battle-stage"
-              aria-label={showingAftermath ? 'Battle result' : 'Enemy forecast'}
-            >
-              {(showingAftermath && report !== undefined
-                ? Object.keys(report.hpAtEnd).filter(
-                    (id) => game.generatedDefinitions.enemies[id] !== undefined,
-                  )
-                : (game.currentEncounter?.enemyIds ?? [])
-              ).map((enemyId) => {
-                const enemy = game.generatedDefinitions.enemies[enemyId];
-                if (enemy === undefined) return null;
-                const maxHp = maximumHp(enemy.stats);
-                const hp =
-                  showingAftermath && report !== undefined ? (report.hpAtEnd[enemyId] ?? 0) : maxHp;
-                return (
-                  <article className="enemy-card" key={enemyId}>
-                    <span>{enemy.role.toUpperCase()}</span>
-                    <strong>{enemy.name}</strong>
-                    <div className="meter enemy-meter">
-                      <span style={{ width: `${(hp / maxHp) * 100}%` }} />
-                    </div>
-                    <b>
-                      {hp}/{maxHp} HP
-                    </b>
-                    <p>{enemy.signature}</p>
+            {showingAftermath && report !== undefined ? (
+              <BattlePlaybackStage
+                report={report}
+                combatants={game.generatedDefinitions.combatants}
+                heroIds={game.generatedDefinitions.characters.map((hero) => hero.id)}
+                enemyIds={battleEnemyIds}
+              />
+            ) : (
+              <div className="battle-stage" aria-label="Enemy forecast">
+                {(game.currentEncounter?.enemyIds ?? []).map((enemyId) => {
+                  const enemy = game.generatedDefinitions.enemies[enemyId];
+                  if (enemy === undefined) return null;
+                  const maxHp = maximumHp(enemy.stats);
+                  return (
+                    <article className="enemy-card" key={enemyId}>
+                      <span>{enemy.role.toUpperCase()}</span>
+                      <strong>{enemy.name}</strong>
+                      <div className="meter enemy-meter">
+                        <span style={{ width: '100%' }} />
+                      </div>
+                      <b>
+                        {maxHp}/{maxHp} HP
+                      </b>
+                      <p>{enemy.signature}</p>
+                    </article>
+                  );
+                })}
+                {!isOperation && scenario !== null && (
+                  <article className="situation-card">
+                    <span>{titleCase(scenario.category)}</span>
+                    <strong>{scenario.title}</strong>
+                    <p>{scenario.forecast.likelyBenefit}</p>
+                    <small>References {scenario.premiseFactIds.length} live campaign facts.</small>
                   </article>
-                );
-              })}
-              {!showingAftermath && !isOperation && scenario !== null && (
-                <article className="situation-card">
-                  <span>{titleCase(scenario.category)}</span>
-                  <strong>{scenario.title}</strong>
-                  <p>{scenario.forecast.likelyBenefit}</p>
-                  <small>References {scenario.premiseFactIds.length} live campaign facts.</small>
-                </article>
-              )}
-              {showingAftermath && report !== undefined && (
-                <div className={`outcome-stamp outcome-${report.outcome}`}>
-                  <span>{report.outcome}</span>
-                  <strong>{report.rounds} rounds</strong>
-                </div>
-              )}
-              {showingAftermath && report === undefined && (
-                <div className="resolution-stamp">
-                  <span>Resolved</span>
-                  <strong>Memory written</strong>
-                </div>
-              )}
-            </div>
+                )}
+                {showingAftermath && (
+                  <div className="resolution-stamp">
+                    <span>Resolved</span>
+                    <strong>Memory written</strong>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
@@ -283,7 +283,7 @@ export function CommandScreen() {
                     ? 'Resolved'
                     : titleCase(report.outcome)
                   : isOperation
-                    ? 'Lock the squad plan'
+                    ? 'Ready the squad'
                     : 'Choose a response'}
               </h2>
             </div>
@@ -393,62 +393,74 @@ export function CommandScreen() {
             onClick={showingAftermath ? continueToPlanning : commitTurn}
             disabled={!showingAftermath && game.pendingPlan.situationChoiceId === null}
           >
-            {showingAftermath ? `Continue to Turn ${game.turn}` : 'Commit Plan'}
+            {showingAftermath ? `Continue to Turn ${game.turn}` : 'Take Action'}
           </button>
         </section>
       </div>
 
       <section className="event-feed" aria-labelledby="event-feed-title">
-        <div>
-          <p className="eyebrow">Chronology</p>
-          <h2 id="event-feed-title">Event Feed</h2>
-        </div>
-        <ol>
-          {showingAftermath && report !== undefined ? (
-            report.events.map((event) => (
-              <li key={event.index}>
-                <time>R{String(event.round).padStart(2, '0')}</time>
-                <details>
-                  <summary>{renderCombatEvent(report, event)}</summary>
-                  <div className="mechanics-line">
-                    {event.hitChance !== undefined &&
-                      `Hit ${Math.round(event.hitChance * 100)}% · Roll ${event.roll?.toFixed(3)} · `}
-                    {event.rawAmount !== undefined &&
-                      `Raw ${event.rawAmount} · Mitigated ${event.mitigatedAmount ?? 0} · Final ${event.finalAmount ?? 0}`}
-                    {event.resourceBefore !== undefined &&
-                      ` · Resource ${event.resourceBefore}→${event.resourceAfter}`}
-                  </div>
-                </details>
-              </li>
-            ))
-          ) : showingAftermath ? (
-            <li>
-              <time>T{String(aftermath.turn).padStart(2, '0')}</time>
-              <span>{aftermath.summary}</span>
-            </li>
-          ) : (
-            <>
+        <details className="exact-battle-log">
+          <summary>
+            <strong id="event-feed-title">
+              {showingAftermath && report !== undefined ? 'Exact battle log' : 'Turn intel'}
+            </strong>
+            <span>
+              {showingAftermath && report !== undefined
+                ? `${report.events.length} structured events`
+                : 'Forecast and tactical notes'}
+            </span>
+          </summary>
+          <div className="event-feed-heading">
+            <p className="eyebrow">Chronology</p>
+            <h2>Event Feed</h2>
+          </div>
+          <ol>
+            {showingAftermath && report !== undefined ? (
+              report.events.map((event) => (
+                <li className="exact-event" key={event.index}>
+                  <time>R{String(event.round).padStart(2, '0')}</time>
+                  <details>
+                    <summary>{renderCombatEvent(report, event)}</summary>
+                    <div className="mechanics-line">
+                      {event.hitChance !== undefined &&
+                        `Hit ${Math.round(event.hitChance * 100)}% · Roll ${event.roll?.toFixed(3)} · `}
+                      {event.rawAmount !== undefined &&
+                        `Raw ${event.rawAmount} · Mitigated ${event.mitigatedAmount ?? 0} · Final ${event.finalAmount ?? 0}`}
+                      {event.resourceBefore !== undefined &&
+                        ` · Resource ${event.resourceBefore}→${event.resourceAfter}`}
+                    </div>
+                  </details>
+                </li>
+              ))
+            ) : showingAftermath ? (
               <li>
-                <time>T{String(game.turn).padStart(2, '0')}</time>
-                <span>Threat forecast locked without consuming the combat stream.</span>
+                <time>T{String(aftermath.turn).padStart(2, '0')}</time>
+                <span>{aftermath.summary}</span>
               </li>
-              <li>
-                <time>T{String(game.turn).padStart(2, '0')}</time>
-                <span>
-                  {isOperation ? game.currentEncounter?.signature : scenario?.forecast.likelyRisk}
-                </span>
-              </li>
-              <li>
-                <time>T{String(game.turn).padStart(2, '0')}</time>
-                <span>
-                  {isOperation
-                    ? 'Change formation, stances, and priority before committing once.'
-                    : 'Choose one response; its consequence becomes campaign memory.'}
-                </span>
-              </li>
-            </>
-          )}
-        </ol>
+            ) : (
+              <>
+                <li>
+                  <time>T{String(game.turn).padStart(2, '0')}</time>
+                  <span>Threat forecast locked without consuming the combat stream.</span>
+                </li>
+                <li>
+                  <time>T{String(game.turn).padStart(2, '0')}</time>
+                  <span>
+                    {isOperation ? game.currentEncounter?.signature : scenario?.forecast.likelyRisk}
+                  </span>
+                </li>
+                <li>
+                  <time>T{String(game.turn).padStart(2, '0')}</time>
+                  <span>
+                    {isOperation
+                      ? 'Change formation, stances, and priority before taking action.'
+                      : 'Choose one response; its consequence becomes campaign memory.'}
+                  </span>
+                </li>
+              </>
+            )}
+          </ol>
+        </details>
       </section>
       <ManagementDrawer />
     </main>

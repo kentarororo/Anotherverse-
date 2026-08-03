@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildCorpusReviewEntries } from '../../engine/reports/corpus-review';
-
-const REVIEW_STORAGE_KEY = 'anotherverse.corpus-review.v1';
+import {
+  buildCorpusReviewEntries,
+  corpusReviewStorageKey,
+} from '../../engine/reports/corpus-review';
 
 interface ReviewScore {
   natural: boolean;
@@ -10,9 +11,9 @@ interface ReviewScore {
 
 type ReviewScores = Record<string, ReviewScore>;
 
-function loadScores(): ReviewScores {
+function loadScores(storageKey: string): ReviewScores {
   try {
-    const raw = globalThis.localStorage.getItem(REVIEW_STORAGE_KEY);
+    const raw = globalThis.localStorage.getItem(storageKey);
     return raw === null ? {} : (JSON.parse(raw) as ReviewScores);
   } catch {
     return {};
@@ -21,7 +22,8 @@ function loadScores(): ReviewScores {
 
 export function CorpusReviewScreen() {
   const entries = useMemo(() => buildCorpusReviewEntries(), []);
-  const [scores, setScores] = useState<ReviewScores>(loadScores);
+  const storageKey = useMemo(() => corpusReviewStorageKey(entries), [entries]);
+  const [scores, setScores] = useState<ReviewScores>(() => loadScores(storageKey));
   const naturalCount = entries.filter((entry) => scores[entry.id]?.natural).length;
   const coherentCount = entries.filter((entry) => scores[entry.id]?.coherent).length;
   const reviewedCount = entries.filter(
@@ -30,8 +32,8 @@ export function CorpusReviewScreen() {
   const passed = naturalCount >= 95 && coherentCount >= 85;
 
   useEffect(() => {
-    globalThis.localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(scores));
-  }, [scores]);
+    globalThis.localStorage.setItem(storageKey, JSON.stringify(scores));
+  }, [scores, storageKey]);
 
   const score = (entryId: string, field: keyof ReviewScore, checked: boolean) => {
     setScores((current) => ({

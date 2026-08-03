@@ -20,11 +20,11 @@ test('offers explicit corrupted and incompatible-save recovery', async ({ page }
   await page.evaluate(() =>
     localStorage.setItem(
       'anotherverse.prototype.autosave',
-      JSON.stringify({ schemaVersion: 6, savedAtCommandIndex: 0, state: {} }),
+      JSON.stringify({ schemaVersion: 7, savedAtCommandIndex: 0, state: {} }),
     ),
   );
   await page.reload();
-  await expect(page.getByRole('alert')).toContainText('Save schema 6 is not compatible');
+  await expect(page.getByRole('alert')).toContainText('Save schema 7 cannot be safely migrated');
   await page.getByRole('button', { name: 'Reset autosave' }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
@@ -54,7 +54,7 @@ test('persists accessible title settings without adding them to campaign state',
   ).toBeLessThan(0.001);
 });
 
-test('keeps the command hierarchy and sticky commit at mobile width with scaled text', async ({
+test('keeps the command hierarchy and sticky action at mobile width with scaled text', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -68,7 +68,7 @@ test('keeps the command hierarchy and sticky commit at mobile width with scaled 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.getByRole('heading', { name: 'The Trio' })).toBeVisible();
   await expect(page.locator('.operation-content h2')).toBeVisible();
-  const commit = page.getByRole('button', { name: 'Commit Plan' });
+  const commit = page.getByRole('button', { name: 'Take Action' });
   await commit.scrollIntoViewIfNeeded();
   await expect(commit).toBeVisible();
   expect(await commit.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
@@ -77,6 +77,74 @@ test('keeps the command hierarchy and sticky commit at mobile width with scaled 
       Number.parseFloat(getComputedStyle(element).transitionDuration),
     ),
   ).toBeLessThan(0.001);
+  await commit.click();
+  const stage = page.getByLabel('Battle playback', { exact: true });
+  await expect(stage).toBeFocused();
+  expect(
+    await stage.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return bounds.top >= 0 && bounds.bottom <= globalThis.innerHeight;
+    }),
+  ).toBe(true);
+  expect(
+    await stage.evaluate((element) => {
+      const stageBounds = element.getBoundingClientRect();
+      return [...element.querySelectorAll('.combat-unit')].every((unit) => {
+        const unitBounds = unit.getBoundingClientRect();
+        return (
+          unitBounds.left >= stageBounds.left &&
+          unitBounds.right <= stageBounds.right &&
+          unitBounds.top >= stageBounds.top &&
+          unitBounds.bottom <= stageBounds.bottom
+        );
+      });
+    }),
+  ).toBe(true);
+  await expect(page.locator('.battle-result')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skip to result' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Replay' }).click();
+  const nextHighlight = page.getByRole('button', { name: 'Next highlight' });
+  await expect(nextHighlight).toBeVisible();
+  await nextHighlight.click();
+  await expect(page.locator('.battle-beat .round-label')).toBeVisible();
+});
+
+test('waits to consume mobile highlights until the battlefield is visible', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByText('Advanced').click();
+  await page.getByLabel('Campaign seed').fill('mobile-visibility-gate-seed');
+  await page.getByRole('button', { name: 'New Campaign' }).click();
+  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '125%';
+    const scope = globalThis as typeof globalThis & {
+      originalScrollIntoView?: typeof Element.prototype.scrollIntoView;
+    };
+    scope.originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = () => undefined;
+  });
+
+  const action = page.getByRole('button', { name: 'Take Action' });
+  await action.scrollIntoViewIfNeeded();
+  await action.click();
+  const stage = page.getByLabel('Battle playback', { exact: true });
+  await expect(stage).toHaveAttribute('data-playback-state', 'waiting');
+  await expect(stage.locator('.playback-count')).toContainText('Ready');
+  const initialHighlight = await stage.getAttribute('data-highlight-index');
+  await page.waitForTimeout(750);
+  await expect(stage).toHaveAttribute('data-playback-state', 'waiting');
+  await expect(stage).toHaveAttribute('data-highlight-index', initialHighlight ?? '0');
+
+  await page.evaluate(() => {
+    const scope = globalThis as typeof globalThis & {
+      originalScrollIntoView?: typeof Element.prototype.scrollIntoView;
+    };
+    if (scope.originalScrollIntoView !== undefined) {
+      Element.prototype.scrollIntoView = scope.originalScrollIntoView;
+    }
+  });
+  await stage.scrollIntoViewIfNeeded();
+  await expect(stage).toHaveAttribute('data-playback-state', 'playing');
 });
 
 test('completes a planned battle, reviews aftermath, and resumes the next turn', async ({
@@ -110,11 +178,21 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
     await page.evaluate(() => document.documentElement.scrollHeight <= globalThis.innerHeight),
   ).toBe(true);
 
-  await page.getByRole('button', { name: 'Commit Plan' }).click();
+  await page.getByRole('button', { name: 'Take Action' }).click();
   await expect(page.getByRole('heading', { name: /Victory|Defeat|Round Cap/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue to Turn 2' })).toBeVisible();
   await expect(page.getByText('1 campaign fact recorded')).toBeVisible();
-  await expect(page.locator('.event-feed summary').first()).toBeVisible();
+  await expect(page.getByLabel('Battle playback', { exact: true })).toBeVisible();
+  await expect(page.locator('.combat-unit')).toHaveCount(5);
+  await expect(page.locator('.combat-unit.is-actor')).toHaveCount(1);
+  await expect(page.locator('.combat-unit.is-target')).toHaveCount(1);
+  const skipPlayback = page.getByRole('button', { name: 'Skip to result' });
+  if (await skipPlayback.isVisible()) await skipPlayback.click();
+  await expect(page.locator('.battle-result')).toBeVisible();
+  const exactLog = page.locator('.exact-battle-log');
+  await expect(exactLog.getByText('Exact battle log')).toBeVisible();
+  await exactLog.locator(':scope > summary').click();
+  await expect(exactLog.locator('.exact-event').first()).toBeVisible();
   const savedTotals = await page.evaluate(() => {
     const envelope = JSON.parse(localStorage.getItem('anotherverse.prototype.autosave')!);
     const state = envelope.state;
@@ -128,6 +206,11 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
         xp: state.aftermathReports.at(-1).experienceByCharacter[hero.id],
       })),
       firstAttack,
+      combatants: Object.entries(state.battleReports[0].hpAtEnd).map(([id, hp]) => ({
+        name: state.battleReports[0].combatantNames[id],
+        hp,
+        maxHp: 16 + state.generatedDefinitions.combatants[id].stats.vitality * 2,
+      })),
     };
   });
   for (const hero of savedTotals.heroes) {
@@ -135,11 +218,15 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
     await expect(row).toContainText(`${hero.hp} HP`);
     await expect(row).toContainText(`+${hero.xp} XP`);
   }
+  for (const combatant of savedTotals.combatants) {
+    await expect(page.locator('.combat-unit').filter({ hasText: combatant.name })).toContainText(
+      `${combatant.hp}/${combatant.maxHp}`,
+    );
+  }
   const firstMechanics = page
-    .locator('.event-feed details')
+    .locator('.exact-event')
     .filter({ hasText: `Raw ${savedTotals.firstAttack.rawAmount}` })
     .first();
-  await firstMechanics.locator('summary').click();
   await expect(firstMechanics.locator('.mechanics-line')).toContainText(
     `Raw ${savedTotals.firstAttack.rawAmount}`,
   );
@@ -180,9 +267,9 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
 
   await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
   await expect(page.getByText('Personal', { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Commit Plan' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Take Action' })).toBeDisabled();
   await page.getByRole('radio').first().click();
-  await page.getByRole('button', { name: 'Commit Plan' }).click();
+  await page.getByRole('button', { name: 'Take Action' }).click();
   await expect(page.getByRole('heading', { name: 'Resolved' })).toBeVisible();
   await page.getByRole('button', { name: 'Continue to Turn 3' }).click();
 
@@ -190,7 +277,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'The Trio' })).toBeVisible();
   await expect(page.getByText('Turn').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Commit Plan' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Take Action' })).toBeDisabled();
 
   await page.getByRole('button', { name: 'Save / Menu' }).click();
   let confirmation = '';

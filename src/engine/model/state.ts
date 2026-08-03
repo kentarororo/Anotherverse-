@@ -12,9 +12,10 @@ import {
   RelationshipStateSchema,
 } from './progression';
 
-// Milestone 4 persists progression, relationships, equipment, and Bestiary state. Earlier saves are
-// intentionally reported as incompatible instead of being misread as corrupt.
-export const GAME_SCHEMA_VERSION = 7 as const;
+// Schema 8 rejects saves created before relationship facts were restricted to genuine two-person
+// rival/social decisions. Replaying that provenance from a schema-7 snapshot is not trustworthy,
+// so earlier saves are intentionally incompatible rather than silently migrated.
+export const GAME_SCHEMA_VERSION = 8 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),

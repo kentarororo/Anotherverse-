@@ -32,10 +32,37 @@ describe('progression and management', () => {
     const choice = personal.currentScenario!.choices[0]!;
     personal = applyGameCommand(personal, { type: 'CHOOSE_SITUATION', choiceId: choice.id });
     personal = applyGameCommand(personal, { type: 'COMMIT_TURN' });
-    expect(personal.relationships.some((relationship) => relationship.value > 0)).toBe(true);
-    expect(personal.relationships.some((relationship) => relationship.factIds.length > 0)).toBe(
-      true,
+    expect(personal.relationships).toEqual(resolved.relationships);
+
+    let pairedScene = personal;
+    while (
+      pairedScene.currentScenario?.category !== 'rival' &&
+      pairedScene.currentScenario?.category !== 'social' &&
+      pairedScene.turn <= 20
+    ) {
+      if (pairedScene.pendingPlan.situationChoiceId === null) {
+        pairedScene = applyGameCommand(pairedScene, {
+          type: 'CHOOSE_SITUATION',
+          choiceId: pairedScene.currentScenario!.choices[0]!.id,
+        });
+      }
+      pairedScene = applyGameCommand(pairedScene, { type: 'COMMIT_TURN' });
+    }
+    expect(['rival', 'social']).toContain(pairedScene.currentScenario?.category);
+    const castIds = pairedScene.currentScenario!.castIds;
+    const relationshipBefore = pairedScene.relationships.find((relationship) =>
+      castIds.every((id) => relationship.characterIds.includes(id)),
+    )!;
+    const pairedChoice = pairedScene.currentScenario!.choices[0]!;
+    const pairedResult = applyGameCommand(
+      applyGameCommand(pairedScene, { type: 'CHOOSE_SITUATION', choiceId: pairedChoice.id }),
+      { type: 'COMMIT_TURN' },
     );
+    const relationshipAfter = pairedResult.relationships.find(
+      (relationship) => relationship.pairId === relationshipBefore.pairId,
+    )!;
+    expect(relationshipAfter.value).toBe(relationshipBefore.value + 4);
+    expect(relationshipAfter.factIds).toContain(`fact-scenario-result-${pairedScene.turn}`);
   });
 
   it('equips recovered rewards and persists the slot in canonical state', () => {

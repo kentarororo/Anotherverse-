@@ -418,6 +418,8 @@ export function applyGameCommand(
       worldFacts: [...state.worldFacts, resolutionFact],
       storyThreads: updatedThreads,
       relationships: state.relationships.map((relationship) =>
+        (scenario.category === 'rival' || scenario.category === 'social') &&
+        scenario.castIds.length === 2 &&
         scenario.castIds.every((id) => relationship.characterIds.includes(id))
           ? {
               ...relationship,

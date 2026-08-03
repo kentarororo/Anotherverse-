@@ -75,6 +75,12 @@ describe('save repository boundary', () => {
       JSON.stringify({ schemaVersion: 999, state: {} }),
     );
     expect(repository.load()).toEqual({ status: 'incompatible', foundVersion: 999 });
+
+    storage.setItem(
+      'anotherverse.prototype.autosave',
+      JSON.stringify({ schemaVersion: 7, state: {} }),
+    );
+    expect(repository.load()).toEqual({ status: 'incompatible', foundVersion: 7 });
   });
 
   it('can explicitly clear the slot', () => {
