@@ -2,7 +2,9 @@ import { calculateForecast } from '../../engine/combat/forecast';
 import type { Position } from '../../engine/model/commands';
 import { maximumHp } from '../../engine/combat/stats';
 import { useAppStore } from '../../app/store';
-import { actionName, renderCombatEvent } from '../../narrative/realiser/combat';
+import { renderCombatEvent } from '../../narrative/realiser/combat';
+import { ManagementDrawer } from '../components/ManagementDrawer';
+import { renderWorldFact } from '../../narrative/realiser/facts';
 
 const positions: Position[] = ['front', 'centre', 'rear'];
 const stances = ['aggressive', 'guarded', 'tactical', 'supportive'] as const;
@@ -24,14 +26,22 @@ export function CommandScreen() {
   const setPosition = useAppStore((state) => state.setPosition);
   const setStance = useAppStore((state) => state.setStance);
   const setTeamPriority = useAppStore((state) => state.setTeamPriority);
+  const chooseSituation = useAppStore((state) => state.chooseSituation);
   const commitTurn = useAppStore((state) => state.commitTurn);
   const continueToPlanning = useAppStore((state) => state.continueToPlanning);
+  const openDrawer = useAppStore((state) => state.openDrawer);
   const forecast = calculateForecast(game);
-  const report = game.battleReports.at(-1);
   const aftermath = game.aftermathReports.at(-1);
-  const showingAftermath =
-    turnView === 'aftermath' && report !== undefined && aftermath !== undefined;
-  const displayedTurn = showingAftermath ? report.turn : game.turn;
+  const report = game.battleReports.find((candidate) => candidate.id === aftermath?.battleReportId);
+  const showingAftermath = turnView === 'aftermath' && aftermath !== undefined;
+  const displayedTurn = showingAftermath ? aftermath.turn : game.turn;
+  const scenario = game.currentScenario;
+  const isOperation = scenario?.category === 'operation';
+  const causalFacts =
+    scenario?.premiseFactIds.flatMap((factId) => {
+      const fact = game.worldFacts.find((candidate) => candidate.id === factId && candidate.active);
+      return fact === undefined ? [] : [renderWorldFact(game, fact)];
+    }) ?? [];
 
   return (
     <main className="command-screen">
@@ -46,7 +56,9 @@ export function CommandScreen() {
           </div>
           <div>
             <dt>Rank</dt>
-            <dd>{game.rank}</dd>
+            <dd>
+              {game.rank} · {game.reputation} rep
+            </dd>
           </div>
           <div>
             <dt>Threat</dt>
@@ -57,9 +69,48 @@ export function CommandScreen() {
             <dd>{game.supplies}</dd>
           </div>
         </dl>
-        <button className="button button-quiet header-menu" type="button" onClick={returnToTitle}>
-          Save / Menu
-        </button>
+        <div className="header-actions">
+          <button
+            className="header-link"
+            type="button"
+            onClick={() => openDrawer({ type: 'world' })}
+          >
+            World
+          </button>
+          <button
+            className="header-link"
+            type="button"
+            onClick={() => openDrawer({ type: 'equipment' })}
+          >
+            Inventory
+          </button>
+          <button
+            className="header-link"
+            type="button"
+            onClick={() => openDrawer({ type: 'bestiary' })}
+          >
+            Bestiary
+          </button>
+          <button
+            className="header-link"
+            type="button"
+            onClick={() => openDrawer({ type: 'logs' })}
+          >
+            Logs
+          </button>
+          {import.meta.env.DEV && (
+            <button
+              className="header-link"
+              type="button"
+              onClick={() => openDrawer({ type: 'debug' })}
+            >
+              Debug
+            </button>
+          )}
+          <button className="button button-quiet header-menu" type="button" onClick={returnToTitle}>
+            Save / Menu
+          </button>
+        </div>
       </header>
 
       <div className="command-grid">
@@ -82,7 +133,7 @@ export function CommandScreen() {
                     <div>
                       <strong>{hero.name}</strong>
                       <span>
-                        {hero.callingName} · {titleCase(hero.role)}
+                        {hero.callingName} · {titleCase(hero.role)} · Ready {member.readiness}%
                       </span>
                     </div>
                     <b>
@@ -127,7 +178,14 @@ export function CommandScreen() {
                       </select>
                     </label>
                   </div>
-                  <p>{hero.techniqueIds.map(actionName).join(' · ')}</p>
+                  <p>{hero.techniques.map((technique) => technique.name).join(' · ')}</p>
+                  <button
+                    className="hero-detail-button"
+                    type="button"
+                    onClick={() => openDrawer({ type: 'character', id: hero.id })}
+                  >
+                    Details · Level {member.level}
+                  </button>
                 </article>
               );
             })}
@@ -147,19 +205,36 @@ export function CommandScreen() {
           </nav>
           <div className="operation-content">
             <p className="eyebrow">
-              Operation {String(displayedTurn).padStart(2, '0')} · Transit district
+              {showingAftermath
+                ? 'Resolved situation'
+                : titleCase(scenario?.category ?? 'situation')}{' '}
+              {String(displayedTurn).padStart(2, '0')} · {game.campaignBible?.city.name}
             </p>
-            <h2 id="operation-title">{game.currentEncounter?.title}</h2>
-            <p>{showingAftermath ? aftermath.summary : game.currentEncounter?.brief}</p>
+            <h2 id="operation-title">{showingAftermath ? 'Aftermath' : scenario?.title}</h2>
+            <p>{showingAftermath ? aftermath.summary : scenario?.premise}</p>
+            {!showingAftermath && causalFacts.length > 0 && (
+              <aside className="causal-record" aria-label="Why this situation is happening">
+                <strong>Why now</strong>
+                {causalFacts.map((fact) => (
+                  <span key={fact}>{fact}</span>
+                ))}
+              </aside>
+            )}
             <div
               className="battle-stage"
               aria-label={showingAftermath ? 'Battle result' : 'Enemy forecast'}
             >
-              {game.currentEncounter?.enemyIds.map((enemyId) => {
+              {(showingAftermath && report !== undefined
+                ? Object.keys(report.hpAtEnd).filter(
+                    (id) => game.generatedDefinitions.enemies[id] !== undefined,
+                  )
+                : (game.currentEncounter?.enemyIds ?? [])
+              ).map((enemyId) => {
                 const enemy = game.generatedDefinitions.enemies[enemyId];
                 if (enemy === undefined) return null;
                 const maxHp = maximumHp(enemy.stats);
-                const hp = showingAftermath ? (report.hpAtEnd[enemyId] ?? 0) : maxHp;
+                const hp =
+                  showingAftermath && report !== undefined ? (report.hpAtEnd[enemyId] ?? 0) : maxHp;
                 return (
                   <article className="enemy-card" key={enemyId}>
                     <span>{enemy.role.toUpperCase()}</span>
@@ -174,10 +249,24 @@ export function CommandScreen() {
                   </article>
                 );
               })}
-              {showingAftermath && (
+              {!showingAftermath && !isOperation && scenario !== null && (
+                <article className="situation-card">
+                  <span>{titleCase(scenario.category)}</span>
+                  <strong>{scenario.title}</strong>
+                  <p>{scenario.forecast.likelyBenefit}</p>
+                  <small>References {scenario.premiseFactIds.length} live campaign facts.</small>
+                </article>
+              )}
+              {showingAftermath && report !== undefined && (
                 <div className={`outcome-stamp outcome-${report.outcome}`}>
                   <span>{report.outcome}</span>
                   <strong>{report.rounds} rounds</strong>
+                </div>
+              )}
+              {showingAftermath && report === undefined && (
+                <div className="resolution-stamp">
+                  <span>Resolved</span>
+                  <strong>Memory written</strong>
                 </div>
               )}
             </div>
@@ -189,7 +278,13 @@ export function CommandScreen() {
             <div>
               <p className="eyebrow">{showingAftermath ? 'Consequences' : 'Decision / Forecast'}</p>
               <h2 id="decision-title">
-                {showingAftermath ? titleCase(report.outcome) : 'Lock the squad plan'}
+                {showingAftermath
+                  ? report === undefined
+                    ? 'Resolved'
+                    : titleCase(report.outcome)
+                  : isOperation
+                    ? 'Lock the squad plan'
+                    : 'Choose a response'}
               </h2>
             </div>
           </div>
@@ -209,42 +304,79 @@ export function CommandScreen() {
                 <strong>+{aftermath.suppliesDelta}</strong>
               </div>
               <div>
-                <span>Memory</span>
-                <strong>Glassline result recorded</strong>
+                <span>Reputation</span>
+                <strong>
+                  {aftermath.reputationDelta >= 0 ? '+' : ''}
+                  {aftermath.reputationDelta}
+                </strong>
               </div>
+              <div>
+                <span>Memory</span>
+                <strong>{aftermath.factIdsWritten.length} campaign fact recorded</strong>
+              </div>
+              {aftermath.itemIdsGranted.map((itemId) => (
+                <div key={itemId}>
+                  <span>Equipment recovered</span>
+                  <strong>{game.generatedDefinitions.items[itemId]?.name}</strong>
+                </div>
+              ))}
             </div>
           ) : (
             <>
-              <label className="priority-control">
-                Team priority
-                <select
-                  aria-label="Team priority"
-                  value={game.pendingPlan.teamPriorityId ?? ''}
-                  onChange={(event) => setTeamPriority(event.target.value)}
-                >
-                  {priorities.map(([value, label]) => (
-                    <option value={value} key={value}>
-                      {label}
-                    </option>
+              {isOperation ? (
+                <>
+                  <label className="priority-control">
+                    Team priority
+                    <select
+                      aria-label="Team priority"
+                      value={game.pendingPlan.teamPriorityId ?? ''}
+                      onChange={(event) => setTeamPriority(event.target.value)}
+                    >
+                      {priorities.map(([value, label]) => (
+                        <option value={value} key={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="forecast-list">
+                    <div>
+                      <span>Victory band</span>
+                      <strong>{titleCase(forecast.victoryBand)}</strong>
+                    </div>
+                    <div>
+                      <span>Incoming damage</span>
+                      <strong>
+                        {forecast.incomingDamage[0]}–{forecast.incomingDamage[1]}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Scouting confidence</span>
+                      <strong>{titleCase(forecast.confidence)}</strong>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="choice-list" role="radiogroup" aria-label="Situation response">
+                  {scenario?.choices.map((choice) => (
+                    <button
+                      className={
+                        game.pendingPlan.situationChoiceId === choice.id
+                          ? 'choice selected'
+                          : 'choice'
+                      }
+                      type="button"
+                      role="radio"
+                      aria-checked={game.pendingPlan.situationChoiceId === choice.id}
+                      onClick={() => chooseSituation(choice.id)}
+                      key={choice.id}
+                    >
+                      <strong>{choice.label}</strong>
+                      <span>{choice.description}</span>
+                    </button>
                   ))}
-                </select>
-              </label>
-              <div className="forecast-list">
-                <div>
-                  <span>Victory band</span>
-                  <strong>{titleCase(forecast.victoryBand)}</strong>
                 </div>
-                <div>
-                  <span>Incoming damage</span>
-                  <strong>
-                    {forecast.incomingDamage[0]}–{forecast.incomingDamage[1]}
-                  </strong>
-                </div>
-                <div>
-                  <span>Scouting confidence</span>
-                  <strong>{titleCase(forecast.confidence)}</strong>
-                </div>
-              </div>
+              )}
               <div className="forecast-notes">
                 <p>
                   <b>Advantage:</b> {forecast.advantages[0]}
@@ -259,6 +391,7 @@ export function CommandScreen() {
             className="button button-primary commit-button"
             type="button"
             onClick={showingAftermath ? continueToPlanning : commitTurn}
+            disabled={!showingAftermath && game.pendingPlan.situationChoiceId === null}
           >
             {showingAftermath ? `Continue to Turn ${game.turn}` : 'Commit Plan'}
           </button>
@@ -271,7 +404,7 @@ export function CommandScreen() {
           <h2 id="event-feed-title">Event Feed</h2>
         </div>
         <ol>
-          {showingAftermath ? (
+          {showingAftermath && report !== undefined ? (
             report.events.map((event) => (
               <li key={event.index}>
                 <time>R{String(event.round).padStart(2, '0')}</time>
@@ -288,6 +421,11 @@ export function CommandScreen() {
                 </details>
               </li>
             ))
+          ) : showingAftermath ? (
+            <li>
+              <time>T{String(aftermath.turn).padStart(2, '0')}</time>
+              <span>{aftermath.summary}</span>
+            </li>
           ) : (
             <>
               <li>
@@ -296,16 +434,23 @@ export function CommandScreen() {
               </li>
               <li>
                 <time>T{String(game.turn).padStart(2, '0')}</time>
-                <span>{game.currentEncounter?.signature}</span>
+                <span>
+                  {isOperation ? game.currentEncounter?.signature : scenario?.forecast.likelyRisk}
+                </span>
               </li>
               <li>
                 <time>T{String(game.turn).padStart(2, '0')}</time>
-                <span>Change formation, stances, and priority before committing once.</span>
+                <span>
+                  {isOperation
+                    ? 'Change formation, stances, and priority before committing once.'
+                    : 'Choose one response; its consequence becomes campaign memory.'}
+                </span>
               </li>
             </>
           )}
         </ol>
       </section>
+      <ManagementDrawer />
     </main>
   );
 }

@@ -37,26 +37,47 @@ export function calculateForecast(state: CanonicalGameState): ScenarioForecast {
     heroScore * 0.45 + stanceTotal + priorityScore + currentHpRatio * 6 - enemyScore * 0.55,
   );
   const victoryBand = score >= 24 ? 'favoured' : score >= 15 ? 'contested' : 'precarious';
+  const striker = heroes.find((hero) => hero.role === 'striker');
+  const highestThreat = [...enemies].sort((a, b) => b.threat - a.threat)[0];
+  const charger = enemies.find((enemy) => enemy.policyId === 'charger');
+  const hexer = enemies.find((enemy) => enemy.policyId === 'hexer');
   const guardedCount = Object.values(state.pendingPlan.stanceIds).filter(
     (stance) => stance === 'guarded',
   ).length;
   const incomingBase = Math.max(16, 34 - guardedCount * 4 - (priority === 'protect-rear' ? 4 : 0));
+  const encounterKnowledge = enemyIds.map((id) => state.bestiary[id]?.knowledge ?? 0);
+  const lowestKnowledge = encounterKnowledge.length > 0 ? Math.min(...encounterKnowledge) : 0;
+  const confidence = lowestKnowledge >= 2 ? 'high' : lowestKnowledge === 1 ? 'moderate' : 'low';
+  const equippedCounters = heroes.flatMap((hero) => {
+    const member = state.partyState[hero.id];
+    if (member === undefined) return [];
+    return Object.values(member.equipment).flatMap((itemId) => {
+      const item = itemId === null ? undefined : state.generatedDefinitions.items[itemId];
+      if (item === undefined || !enemies.some((enemy) => enemy.policyId === item.counterTag)) {
+        return [];
+      }
+      return [`${hero.name}'s ${item.name} counters ${item.counterTag} actions.`];
+    });
+  });
 
   return {
     victoryBand,
     incomingDamage: [incomingBase, incomingBase + 14],
-    confidence: 'high',
+    confidence,
     advantages: [
       priority === 'break-threat'
-        ? 'The squad will pressure the Glass Weaver first.'
+        ? `The squad will pressure ${highestThreat?.name ?? 'the largest threat'} first.`
         : priority === 'protect-rear'
-          ? 'Rear-line protection reduces Weaver pressure.'
+          ? `Rear-line protection reduces ${hexer?.name ?? 'hexer'} pressure.`
           : 'The trio has reliable protection, damage, and recovery.',
+      ...equippedCounters,
     ],
     vulnerabilities: [
-      state.pendingPlan.positions['dax-ren'] === 'front'
-        ? 'Dax is exposed to the Hound at the front.'
-        : 'Rending Hex can still mark the rear hero.',
+      lowestKnowledge < 2
+        ? 'Enemy counterplay is still partly unverified; another encounter will sharpen this forecast.'
+        : striker !== undefined && state.pendingPlan.positions[striker.id] === 'front'
+          ? `${striker.name} is exposed to ${charger?.name ?? 'the charger'} at the front.`
+          : `${hexer?.signature ?? 'The enemy hexer can still mark the rear hero.'}`,
     ],
     score,
   };

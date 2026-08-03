@@ -27,6 +27,14 @@ export const PartyMemberStateSchema = z.object({
   maxResource: z.number().int().positive(),
   readiness: z.number().int().min(0).max(100),
   experience: z.number().int().nonnegative(),
+  level: z.number().int().positive(),
+  callingRank: z.number().int().positive(),
+  trainingPoints: z.number().int().nonnegative(),
+  learnedTechniqueIds: z.array(z.string().min(1)).max(4),
+  equipment: z.object({
+    weapon: z.string().min(1).nullable(),
+    support: z.string().min(1).nullable(),
+  }),
   statuses: z.array(StatusStateSchema),
 });
 export type PartyMemberState = z.infer<typeof PartyMemberStateSchema>;
@@ -36,12 +44,23 @@ export const CombatantDefinitionSchema = z.object({
   name: z.string().min(1),
   side: z.enum(['heroes', 'enemies']),
   role: z.string().min(1),
+  policyId: z.enum(['vanguard', 'striker', 'controller', 'support', 'charger', 'hexer']),
   stats: CoreStatsSchema,
   maxResource: z.number().int().positive(),
   basicActionId: z.string().min(1),
   techniqueIds: z.array(z.string().min(1)),
+  techniqueCosts: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  techniqueCooldowns: z.record(z.string(), z.number().int().nonnegative()).optional(),
   signature: z.string().min(1),
+  signatureRuleId: z.string().min(1),
+  reaction: z.string().min(1).optional(),
+  reactionRuleId: z.string().min(1).optional(),
   limitation: z.string().min(1),
+  limitationRuleId: z.string().min(1),
+  ecology: z.string().min(1).optional(),
+  counterplay: z.string().min(1).optional(),
+  rewardIdentity: z.string().min(1).optional(),
+  scenarioTags: z.array(z.string().min(1)).optional(),
   threat: z.number().int().positive(),
 });
 export type CombatantDefinition = z.infer<typeof CombatantDefinitionSchema>;

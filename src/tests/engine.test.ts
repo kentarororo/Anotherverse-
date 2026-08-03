@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { calculateForecast } from '../engine/combat/forecast';
+import { directDamageLimitationPenalty } from '../engine/combat/stats';
 import { CONTENT_MANIFEST_HASH } from '../content/manifest';
 import { GameCommandSchema, type GameCommand } from '../engine/model/commands';
 import { CanonicalGameStateSchema, createEmptyGameState } from '../engine/model/state';
-import { applyGameCommand, MilestoneNotReadyError } from '../engine/simulation/apply-command';
+import { applyGameCommand } from '../engine/simulation/apply-command';
 
 function start(seed = 'fixed-seed-001') {
   return applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
@@ -34,38 +35,53 @@ describe('canonical command reducer', () => {
     expect(first.generatedDefinitions.characters).toHaveLength(3);
   });
 
-  it('initialises every named stream without consuming a draw', () => {
+  it('consumes only world and character streams during campaign generation', () => {
     const state = start('stream-seed');
     expect(state.rngStreams).not.toBeNull();
-    expect(Object.values(state.rngStreams ?? {}).every((stream) => stream.position === 0)).toBe(
-      true,
-    );
+    expect(state.rngStreams?.world.position).toBeGreaterThan(0);
+    expect(state.rngStreams?.characters.position).toBeGreaterThan(0);
+    expect(state.rngStreams?.combat.position).toBe(0);
+    expect(state.rngStreams?.narration.position).toBe(0);
   });
 
   it('swaps occupied formation positions so all three remain unique', () => {
-    const state = applyGameCommand(start(), {
+    const initial = start();
+    const striker = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'striker',
+    )!;
+    const vanguard = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'vanguard',
+    )!;
+    const state = applyGameCommand(initial, {
       type: 'SET_POSITION',
-      characterId: 'dax-ren',
+      characterId: striker.id,
       position: 'front',
     });
-    expect(state.pendingPlan.positions).toEqual({
-      'mira-vale': 'centre',
-      'dax-ren': 'front',
-      'sorrel-voss': 'rear',
-    });
+    expect(state.pendingPlan.positions[striker.id]).toBe('front');
+    expect(state.pendingPlan.positions[vanguard.id]).toBe('centre');
+    expect(new Set(Object.values(state.pendingPlan.positions)).size).toBe(3);
   });
 
-  it('keeps later milestone commands explicitly unavailable', () => {
+  it('rejects equipment that is not in inventory', () => {
+    const state = start();
     expect(() =>
-      applyGameCommand(start(), { type: 'EQUIP_ITEM', characterId: 'mira-vale', itemId: 'none' }),
-    ).toThrow(MilestoneNotReadyError);
+      applyGameCommand(state, {
+        type: 'EQUIP_ITEM',
+        characterId: state.generatedDefinitions.characters[0]!.id,
+        itemId: 'none',
+      }),
+    ).toThrow('Item cannot be equipped');
   });
 });
 
 describe('Milestone 1 battle', () => {
   it('is byte-equivalent for the same seed and command sequence', () => {
+    const initial = start('combat-seed');
+    const vanguard = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'vanguard',
+    )!;
     const commands: GameCommand[] = [
-      { type: 'SET_STANCE', characterId: 'mira-vale', stanceId: 'tactical' },
+      { type: 'SET_STANCE', characterId: vanguard.id, stanceId: 'tactical' },
       { type: 'SET_TEAM_PRIORITY', priorityId: 'focus-weakest' },
       { type: 'COMMIT_TURN' },
     ];
@@ -99,11 +115,18 @@ describe('Milestone 1 battle', () => {
 
   it('makes formation, stance, and priority change the deterministic result', () => {
     const baseline = applyGameCommand(start('plan-impact-seed'), { type: 'COMMIT_TURN' });
+    const initial = start('plan-impact-seed');
+    const striker = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'striker',
+    )!;
+    const support = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'support',
+    )!;
     const changed = applyAll(
       [
-        { type: 'SET_POSITION', characterId: 'dax-ren', position: 'front' },
-        { type: 'SET_STANCE', characterId: 'dax-ren', stanceId: 'guarded' },
-        { type: 'SET_STANCE', characterId: 'sorrel-voss', stanceId: 'tactical' },
+        { type: 'SET_POSITION', characterId: striker.id, position: 'front' },
+        { type: 'SET_STANCE', characterId: striker.id, stanceId: 'guarded' },
+        { type: 'SET_STANCE', characterId: support.id, stanceId: 'tactical' },
         { type: 'SET_TEAM_PRIORITY', priorityId: 'conserve-power' },
         { type: 'COMMIT_TURN' },
       ],
@@ -122,10 +145,103 @@ describe('Milestone 1 battle', () => {
     );
     expect(triggers).toContain('rear-intercept');
     expect(triggers).toContain('exploit-exposed');
+    expect(triggers).toContain('reaction:intercept-brace');
+    expect(triggers).toContain('reaction:finisher-surge');
+    expect(triggers).toContain('reaction:recovery-loop');
+    expect(triggers).toContain('limitation:measured-strikes');
+    expect(triggers).toContain('limitation:low-direct-output');
     expect(statuses).toContain('exposed');
     expect(statuses).toContain('strained');
     expect(statuses).toContain('marked');
     expect(statuses).toContain('warded');
+    expect(statuses).toContain('inspired');
+  });
+
+  it('enforces the striker open-guard limitation when Aggressive at the front', () => {
+    const initial = start('open-guard-seed');
+    const striker = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'striker',
+    )!;
+    const exposedPlan = applyGameCommand(initial, {
+      type: 'SET_POSITION',
+      characterId: striker.id,
+      position: 'front',
+    });
+    const resolved = applyGameCommand(exposedPlan, { type: 'COMMIT_TURN' });
+    expect(
+      resolved.battleReports[0]!.events.some((event) =>
+        event.ruleTriggers?.includes('limitation:open-guard'),
+      ),
+    ).toBe(true);
+  });
+
+  it('applies distinct direct-damage penalties for vanguard and support limitations', () => {
+    expect(directDamageLimitationPenalty('measured-strikes')).toBe(1);
+    expect(directDamageLimitationPenalty('low-direct-output')).toBe(2);
+    expect(directDamageLimitationPenalty('open-guard')).toBe(0);
+  });
+
+  it('executes every second starting technique under its visible plan condition', () => {
+    const initial = start('second-techniques-seed');
+    const striker = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'striker',
+    )!;
+    const support = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'support',
+    )!;
+    const planned = applyAll(
+      [
+        {
+          type: 'SET_TEAM_PRIORITY',
+          priorityId: 'protect-rear',
+        },
+        {
+          type: 'SET_POSITION',
+          characterId: striker.id,
+          position: 'rear',
+        },
+        {
+          type: 'SET_STANCE',
+          characterId: striker.id,
+          stanceId: 'tactical',
+        },
+        {
+          type: 'SET_STANCE',
+          characterId: support.id,
+          stanceId: 'tactical',
+        },
+        { type: 'COMMIT_TURN' },
+      ],
+      'second-techniques-seed',
+    );
+    const actions = new Set(planned.battleReports[0]!.events.map((event) => event.actionId));
+    const statuses = planned.battleReports[0]!.events.flatMap(
+      (event) => event.statusChanges?.map((change) => change.statusId) ?? [],
+    );
+    for (const hero of initial.generatedDefinitions.characters) {
+      expect(actions).toContain(hero.techniqueIds[1]);
+    }
+    expect(statuses).toContain('staggered');
+  });
+
+  it('sets authored technique cooldowns and prevents consecutive-round reuse', () => {
+    const resolved = applyGameCommand(start('cooldown-seed'), { type: 'COMMIT_TURN' });
+    const report = resolved.battleReports[0]!;
+    expect(
+      report.events.some((event) =>
+        event.ruleTriggers?.some((trigger) => trigger.startsWith('cooldown-set:')),
+      ),
+    ).toBe(true);
+    for (const hero of resolved.generatedDefinitions.characters) {
+      for (const technique of hero.techniques) {
+        const rounds = report.events
+          .filter((event) => event.actorId === hero.id && event.actionId === technique.id)
+          .map((event) => event.round);
+        for (let index = 1; index < rounds.length; index += 1) {
+          expect(rounds[index]! - rounds[index - 1]!).toBeGreaterThan(1);
+        }
+      }
+    }
   });
 
   it('calculates a plan-sensitive forecast without consuming combat RNG', () => {
@@ -140,5 +256,16 @@ describe('Milestone 1 battle', () => {
     expect(first).not.toEqual(second);
     expect(baseline.rngStreams?.combat.position).toBe(before);
     expect(changedPlan.rngStreams?.combat.position).toBe(before);
+  });
+
+  it('raises forecast confidence when Bestiary knowledge improves', () => {
+    const initial = start('bestiary-forecast-seed');
+    expect(calculateForecast(initial).confidence).toBe('moderate');
+    const resolved = applyGameCommand(initial, { type: 'COMMIT_TURN' });
+    const nextOperation = CanonicalGameStateSchema.parse({
+      ...resolved,
+      currentEncounter: initial.currentEncounter,
+    });
+    expect(calculateForecast(nextOperation).confidence).toBe('high');
   });
 });

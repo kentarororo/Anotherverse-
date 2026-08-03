@@ -4,7 +4,14 @@ import type { CombatantDefinition, PartyMemberState, StanceId, StatusState } fro
 import type { Position } from '../model/commands';
 import type { RngStreamsState } from '../rng/streams';
 import { drawFromStream, drawInteger } from '../rng/streams';
-import { clampChance, effectiveGuard, maximumHp, mitigateDamage } from './stats';
+import {
+  clampChance,
+  directDamageLimitationPenalty,
+  effectiveGuard,
+  maximumHp,
+  mitigateDamage,
+} from './stats';
+import { selectHeroAction } from './policy';
 
 interface RuntimeCombatant {
   definition: CombatantDefinition;
@@ -12,6 +19,9 @@ interface RuntimeCombatant {
   maxHp: number;
   resource: number;
   statuses: StatusState[];
+  mastered: boolean;
+  equipmentCounterTags: string[];
+  cooldowns: Record<string, number>;
 }
 
 interface SimulationResult {
@@ -23,6 +33,20 @@ interface SimulationResult {
 
 function getStatus(actor: RuntimeCombatant, statusId: string): StatusState | undefined {
   return actor.statuses.find((status) => status.statusId === statusId);
+}
+
+function techniqueCost(actor: RuntimeCombatant, actionId: string, fallback: number): number {
+  return actor.definition.techniqueCosts?.[actionId] ?? fallback;
+}
+
+function techniqueReady(actor: RuntimeCombatant, actionId: string): boolean {
+  return (actor.cooldowns[actionId] ?? 0) === 0;
+}
+
+function startTechniqueCooldown(actor: RuntimeCombatant, actionId: string): number {
+  const rounds = actor.definition.techniqueCooldowns?.[actionId] ?? 0;
+  if (rounds > 0) actor.cooldowns[actionId] = rounds;
+  return rounds;
 }
 
 function applyStatus(
@@ -70,11 +94,11 @@ function selectHeroTarget(
 }
 
 function chooseEnemyTarget(
-  enemyId: string,
+  policyId: CombatantDefinition['policyId'],
   heroes: RuntimeCombatant[],
   positions: Record<string, Position>,
 ): RuntimeCombatant {
-  const direction = enemyId === 'glass-weaver' ? -1 : 1;
+  const direction = policyId === 'hexer' ? -1 : 1;
   return [...heroes].sort(
     (a, b) =>
       direction *
@@ -111,22 +135,39 @@ function resolveAttack(
   const draw = drawFromStream(streams, 'combat');
   const hit = draw.value < hitChance;
   const aggressiveBonus = stance === 'aggressive' ? 2 : 0;
+  const inspiredBonus = getStatus(actor, 'inspired') === undefined ? 0 : 2;
   const markedBonus = getStatus(target, 'marked') === undefined ? 0 : 2;
+  const limitationPenalty = directDamageLimitationPenalty(actor.definition.limitationRuleId);
   const exposedExploit =
-    actor.definition.id === 'dax-ren' && getStatus(target, 'exposed') !== undefined ? 3 : 0;
+    actor.definition.signatureRuleId === 'exploit-exposed' &&
+    getStatus(target, 'exposed') !== undefined
+      ? 3
+      : 0;
   const rawAmount = hit
     ? Math.max(
         1,
-        actor.definition.stats.power + rawBonus + aggressiveBonus + markedBonus + exposedExploit,
+        actor.definition.stats.power +
+          rawBonus +
+          aggressiveBonus +
+          inspiredBonus +
+          markedBonus +
+          exposedExploit -
+          limitationPenalty,
       )
     : 0;
   const guard = effectiveGuard(target.definition.stats, targetStance, target.statuses);
   const beforeWard = hit ? mitigateDamage(rawAmount, guard) : 0;
   const wardReduction = getStatus(target, 'warded') === undefined ? 0 : Math.min(3, beforeWard - 1);
   const priorityReduction = ruleTriggers.includes('protect-rear') ? Math.min(2, beforeWard - 1) : 0;
+  const equipmentReduction = target.equipmentCounterTags.includes(actor.definition.policyId)
+    ? Math.min(2, beforeWard - 1)
+    : 0;
   const resolvedAmount = Math.max(
     0,
-    beforeWard - Math.max(0, wardReduction) - Math.max(0, priorityReduction),
+    beforeWard -
+      Math.max(0, wardReduction) -
+      Math.max(0, priorityReduction) -
+      Math.max(0, equipmentReduction),
   );
   const hpBefore = target.hp;
   const finalAmount = Math.min(hpBefore, resolvedAmount);
@@ -144,6 +185,16 @@ function resolveAttack(
   if (wardReduction > 0) triggers.push('warded-reduction');
   if (exposedExploit > 0) triggers.push('exploit-exposed');
   if (markedBonus > 0) triggers.push('marked-amplification');
+  if (actor.definition.limitationRuleId === 'low-direct-output') {
+    triggers.push('limitation:low-direct-output');
+  }
+  if (actor.definition.limitationRuleId === 'measured-strikes') {
+    triggers.push('limitation:measured-strikes');
+  }
+  if (target.definition.limitationRuleId === 'open-guard' && targetStance === 'aggressive') {
+    triggers.push('limitation:open-guard');
+  }
+  if (equipmentReduction > 0) triggers.push(`equipment-counter:${actor.definition.policyId}`);
 
   appendEvent(events, {
     round,
@@ -184,17 +235,24 @@ function resolveHeal(
   actor: RuntimeCombatant,
   target: RuntimeCombatant,
   round: number,
+  actionId: string,
 ) {
+  const cost = techniqueCost(actor, actionId, 2);
   const resourceBefore = actor.resource;
-  actor.resource -= 2;
+  actor.resource -= cost;
+  const recoveryLoop = actor.definition.reactionRuleId === 'recovery-loop';
+  if (recoveryLoop) actor.resource = Math.min(actor.definition.maxResource, actor.resource + 1);
   const hpBefore = target.hp;
   const amount = actor.definition.stats.focus + 5;
   target.hp = Math.min(target.maxHp, target.hp + amount);
-  const statusChange = applyStatus(target, 'warded', 2);
+  const statusChanges = [
+    applyStatus(target, 'warded', actor.mastered ? 3 : 2),
+    applyStatus(target, 'inspired', 2),
+  ];
   appendEvent(events, {
     round,
     actorId: actor.definition.id,
-    actionId: 'restorative-sigil',
+    actionId,
     targetIds: [target.definition.id],
     eventType: 'heal',
     rawAmount: amount,
@@ -203,9 +261,39 @@ function resolveHeal(
     hpAfter: target.hp,
     resourceBefore,
     resourceAfter: actor.resource,
-    statusChanges: [statusChange],
-    ruleTriggers: ['mending-ward'],
+    statusChanges,
+    ruleTriggers: [
+      'mending-ward',
+      ...(recoveryLoop ? ['reaction:recovery-loop'] : []),
+      `cooldown-set:${startTechniqueCooldown(actor, actionId)}`,
+    ],
     tags: ['heroes', 'recovery'],
+  });
+}
+
+function resolveGuard(
+  events: CombatEvent[],
+  actor: RuntimeCombatant,
+  target: RuntimeCombatant,
+  round: number,
+  actionId: string,
+) {
+  const cost = techniqueCost(actor, actionId, 1);
+  const resourceBefore = actor.resource;
+  actor.resource = Math.max(0, actor.resource - cost);
+  const statusChange = applyStatus(target, 'warded', 2);
+  appendEvent(events, {
+    round,
+    actorId: actor.definition.id,
+    actionId,
+    targetIds: [target.definition.id],
+    eventType: 'guard',
+    finalAmount: 3,
+    resourceBefore,
+    resourceAfter: actor.resource,
+    statusChanges: [statusChange],
+    ruleTriggers: ['protect-rear', `cooldown-set:${startTechniqueCooldown(actor, actionId)}`],
+    tags: ['heroes', 'protection'],
   });
 }
 
@@ -234,6 +322,11 @@ function expireStatuses(events: CombatEvent[], actors: RuntimeCombatant[], round
       if (status.duration === 0) actor.statuses.splice(actor.statuses.indexOf(status), 1);
     }
   }
+  for (const actor of actors) {
+    for (const [actionId, remaining] of Object.entries(actor.cooldowns)) {
+      actor.cooldowns[actionId] = Math.max(0, remaining - 1);
+    }
+  }
 }
 
 export function simulateBattle(state: CanonicalGameState): SimulationResult {
@@ -246,15 +339,32 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
   const definitions = state.generatedDefinitions.combatants;
   const heroActors = state.generatedDefinitions.characters.map((hero) => {
     const member = state.partyState[hero.id];
-    const definition = definitions[hero.id];
-    if (member === undefined || definition === undefined)
+    const baseDefinition = definitions[hero.id];
+    if (member === undefined || baseDefinition === undefined)
       throw new Error(`Missing hero combat state: ${hero.id}`);
+    const equipped = Object.values(member.equipment).flatMap((id) => {
+      const item = id === null ? undefined : state.generatedDefinitions.items[id];
+      return item === undefined ? [] : [item];
+    });
+    const definition = {
+      ...baseDefinition,
+      stats: {
+        ...baseDefinition.stats,
+        power:
+          baseDefinition.stats.power + equipped.reduce((sum, item) => sum + item.powerBonus, 0),
+        guard:
+          baseDefinition.stats.guard + equipped.reduce((sum, item) => sum + item.guardBonus, 0),
+      },
+    };
     return {
       definition,
       hp: member.hp,
       maxHp: member.maxHp,
       resource: member.resource,
       statuses: member.statuses.map((status) => ({ ...status })),
+      mastered: member.learnedTechniqueIds.some((id) => id.endsWith('-awakening')),
+      equipmentCounterTags: equipped.map((item) => item.counterTag),
+      cooldowns: {},
     };
   });
   const enemyActors = state.currentEncounter.enemyIds.map((id) => {
@@ -266,6 +376,9 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       maxHp: maximumHp(definition.stats),
       resource: 0,
       statuses: [] as StatusState[],
+      mastered: false,
+      equipmentCounterTags: [],
+      cooldowns: {},
     };
   });
   const actors = [...heroActors, ...enemyActors];
@@ -299,47 +412,85 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         const enemies = living(actors, 'enemies');
         const target = selectHeroTarget(enemies, state.pendingPlan.teamPriorityId);
         const stance = (stances[actor.definition.id] as StanceId | undefined) ?? 'tactical';
-        const conserve = state.pendingPlan.teamPriorityId === 'conserve-power';
-        if (actor.definition.id === 'sorrel-voss') {
-          const wounded = living(actors, 'heroes').sort(
-            (a, b) => a.hp / a.maxHp - b.hp / b.maxHp,
-          )[0]!;
-          const threshold = stance === 'supportive' ? 0.9 : 0.7;
-          if (actor.resource >= 2 && wounded.hp / wounded.maxHp < threshold) {
-            resolveHeal(events, actor, wounded, round);
-            continue;
-          }
+        const wounded = living(actors, 'heroes').sort(
+          (a, b) => a.hp / a.maxHp - b.hp / b.maxHp,
+        )[0]!;
+        const firstTechnique = actor.definition.techniqueIds[0];
+        const secondTechnique = actor.definition.techniqueIds[1];
+        const selectedAction = selectHeroAction({
+          policyId: actor.definition.policyId,
+          basicActionId: actor.definition.basicActionId,
+          firstTechniqueId: firstTechnique,
+          secondTechniqueId: secondTechnique,
+          resource: actor.resource,
+          firstTechniqueCost:
+            firstTechnique === undefined ? 0 : techniqueCost(actor, firstTechnique, 2),
+          secondTechniqueCost:
+            secondTechnique === undefined ? 0 : techniqueCost(actor, secondTechnique, 1),
+          firstTechniqueReady:
+            firstTechnique === undefined ? false : techniqueReady(actor, firstTechnique),
+          secondTechniqueReady:
+            secondTechnique === undefined ? false : techniqueReady(actor, secondTechnique),
+          stance,
+          position: positions[actor.definition.id] ?? 'centre',
+          teamPriorityId: state.pendingPlan.teamPriorityId,
+          woundedAllyRatio: wounded.hp / wounded.maxHp,
+          targetHpRatio: target.hp / target.maxHp,
+        });
+
+        if (selectedAction.kind === 'heal') {
+          resolveHeal(events, actor, wounded, round, selectedAction.actionId);
+          continue;
         }
-        let actionId = actor.definition.basicActionId;
-        let bonus = actor.definition.id === 'mira-vale' ? -1 : 0;
+        if (selectedAction.kind === 'guard') {
+          const frontHero = living(actors, 'heroes').sort(
+            (a, b) =>
+              positionRank(positions[a.definition.id]) - positionRank(positions[b.definition.id]),
+          )[0]!;
+          resolveGuard(events, actor, frontHero, round, selectedAction.actionId);
+          continue;
+        }
+
+        const actionId = selectedAction.actionId;
+        let bonus = 0;
         let statusToApply: { id: string; duration: number } | undefined;
         let resourceCost = 0;
         const triggers: string[] = [];
-        if (actor.definition.id === 'mira-vale' && actor.resource >= 2 && !conserve) {
-          actionId = 'aegis-break';
+        if (actor.definition.policyId === 'vanguard' && actionId === firstTechnique) {
           bonus = 3;
-          resourceCost = 2;
+          resourceCost = techniqueCost(actor, actionId, 2);
           statusToApply = { id: 'exposed', duration: 2 };
-        } else if (
-          actor.definition.id === 'dax-ren' &&
-          actor.resource >= 2 &&
-          !conserve &&
-          (stance === 'aggressive' || target.hp / target.maxHp <= 0.65)
-        ) {
-          actionId = 'arc-finish';
-          bonus = 8;
-          resourceCost = 2;
+        } else if (actor.definition.policyId === 'striker' && actionId === firstTechnique) {
+          bonus = actor.mastered ? 10 : 8;
+          resourceCost = techniqueCost(actor, actionId, 2);
           triggers.push('conditional-finisher');
-        } else if (
-          actor.definition.id === 'sorrel-voss' &&
-          actor.resource >= 2 &&
-          stance === 'tactical' &&
-          !conserve
-        ) {
-          actionId = 'binding-shot';
+        } else if (actor.definition.policyId === 'striker' && actionId === secondTechnique) {
+          bonus = 4;
+          resourceCost = techniqueCost(actor, actionId, 1);
+          triggers.push('cross-step-route');
+        } else if (actor.definition.policyId === 'support' && actionId === secondTechnique) {
           bonus = 2;
-          resourceCost = 2;
+          resourceCost = techniqueCost(actor, actionId, 2);
           statusToApply = { id: 'staggered', duration: 2 };
+        }
+        if (
+          actor.definition.reactionRuleId === 'finisher-surge' &&
+          triggers.includes('conditional-finisher')
+        ) {
+          const statusChange = applyStatus(actor, 'inspired', 2);
+          appendEvent(events, {
+            round,
+            actorId: actor.definition.id,
+            actionId: 'finisher-surge',
+            targetIds: [actor.definition.id],
+            eventType: 'status',
+            statusChanges: [statusChange],
+            ruleTriggers: ['reaction:finisher-surge'],
+            tags: ['heroes', 'reaction'],
+          });
+        }
+        if (resourceCost > 0) {
+          triggers.push(`cooldown-set:${startTechniqueCooldown(actor, actionId)}`);
         }
         streams = resolveAttack(
           events,
@@ -357,30 +508,49 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         );
       } else {
         const heroes = living(actors, 'heroes');
-        let target = chooseEnemyTarget(actor.definition.id, heroes, positions);
+        let target = chooseEnemyTarget(actor.definition.policyId, heroes, positions);
         const triggers: string[] = [];
         const rearTargeted = positions[target.definition.id] === 'rear';
-        const mira = heroes.find((hero) => hero.definition.id === 'mira-vale');
+        const interceptor = heroes.find(
+          (hero) => hero.definition.signatureRuleId === 'rear-intercept',
+        );
         if (
           rearTargeted &&
-          mira !== undefined &&
-          target.definition.id !== mira.definition.id &&
-          !intercepted.has('mira-vale')
+          interceptor !== undefined &&
+          target.definition.id !== interceptor.definition.id &&
+          !intercepted.has(interceptor.definition.id)
         ) {
-          target = mira;
-          intercepted.add('mira-vale');
+          target = interceptor;
+          if (!interceptor.mastered) intercepted.add(interceptor.definition.id);
           triggers.push('rear-intercept');
+          if (interceptor.definition.reactionRuleId === 'intercept-brace') {
+            const statusChange = applyStatus(interceptor, 'warded', 1);
+            appendEvent(events, {
+              round,
+              actorId: interceptor.definition.id,
+              actionId: 'intercept-brace',
+              targetIds: [interceptor.definition.id],
+              eventType: 'guard',
+              finalAmount: 3,
+              statusChanges: [statusChange],
+              ruleTriggers: ['reaction:intercept-brace'],
+              tags: ['heroes', 'reaction'],
+            });
+          }
         }
         if (rearTargeted && state.pendingPlan.teamPriorityId === 'protect-rear')
           triggers.push('protect-rear');
         const special = round % 3 === 1;
         const actionId = special
-          ? actor.definition.id === 'rift-hound'
+          ? actor.definition.policyId === 'charger'
             ? 'breach-charge'
             : 'rending-hex'
           : actor.definition.basicActionId;
         const statusToApply = special
-          ? { id: actor.definition.id === 'rift-hound' ? 'strained' : 'marked', duration: 2 }
+          ? {
+              id: actor.definition.policyId === 'charger' ? 'strained' : 'marked',
+              duration: 2,
+            }
           : undefined;
         streams = resolveAttack(
           events,
@@ -416,6 +586,11 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
     combatantNames: Object.fromEntries(
       actors.map((actor) => [actor.definition.id, actor.definition.name]),
     ),
+    actionNames: Object.fromEntries(
+      state.generatedDefinitions.characters.flatMap((character) =>
+        character.techniques.map((technique) => [technique.id, technique.name]),
+      ),
+    ),
     hpAtStart,
     hpAtEnd,
   };
@@ -425,6 +600,8 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       const previous = state.partyState[actor.definition.id]!;
       const endingHp = Math.max(outcome === 'defeat' ? Math.ceil(actor.maxHp * 0.35) : 1, actor.hp);
       const damageTaken = Math.max(0, previous.hp - actor.hp);
+      const nextExperience = previous.experience + experience;
+      const nextLevel = 1 + Math.floor(nextExperience / 50);
       return [
         actor.definition.id,
         {
@@ -432,7 +609,10 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
           hp: endingHp,
           resource: actor.resource,
           readiness: Math.max(0, previous.readiness - Math.ceil((damageTaken / actor.maxHp) * 25)),
-          experience: previous.experience + experience,
+          experience: nextExperience,
+          level: nextLevel,
+          callingRank: 1 + Math.floor(nextLevel / 2),
+          trainingPoints: previous.trainingPoints + Math.max(0, nextLevel - previous.level),
           statuses: [],
         },
       ];
@@ -455,9 +635,10 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       heroActors.map((actor) => [actor.definition.id, partyState[actor.definition.id]!.readiness]),
     ),
     suppliesDelta: outcome === 'victory' ? 2 : 0,
+    reputationDelta: outcome === 'victory' ? 3 : outcome === 'defeat' ? -2 : 0,
     summary:
       outcome === 'victory'
-        ? `The squad closed the Glassline Breach in ${completedRounds} rounds.`
+        ? `The squad closed ${state.currentEncounter.title} in ${completedRounds} rounds.`
         : outcome === 'defeat'
           ? 'The squad was recovered after losing control of the concourse.'
           : 'The squad withdrew when the twelve-round safety limit was reached.',

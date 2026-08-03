@@ -8,7 +8,7 @@ export const ContentPackReferenceSchema = z.object({
 
 export const ContentManifestSchema = z.object({
   schemaVersion: z.literal(1),
-  milestone: z.literal('M1'),
+  milestone: z.literal('M4'),
   packs: z.object({
     campaign: ContentPackReferenceSchema,
     characters: ContentPackReferenceSchema,
@@ -24,12 +24,36 @@ const pack = (id: string, moduleIds: string[] = []) => ({ id, version: 1, module
 
 export const contentManifest = ContentManifestSchema.parse({
   schemaVersion: 1,
-  milestone: 'M1',
+  milestone: 'M4',
   packs: {
-    campaign: pack('campaign-foundation', ['foundation-city']),
-    characters: pack('characters-m1', ['mira-vale', 'dax-ren', 'sorrel-voss']),
-    scenarios: pack('scenarios-m1', ['m1-glassline-breach']),
-    enemies: pack('enemies-m1', ['rift-hound', 'glass-weaver']),
+    campaign: pack('campaign-m2', ['lumen-port', 'vanta-cross', 'halcyon-ward', 'cinder-bay']),
+    characters: pack('characters-m2', [
+      'iron-echo',
+      'anchor-saint',
+      'storm-bastion',
+      'vector-edge',
+      'red-interval',
+      'comet-thread',
+      'quiet-lattice',
+      'mercy-engine',
+      'spirit-switchboard',
+    ]),
+    scenarios: pack(
+      'scenarios-m3',
+      ['operation', 'personal', 'discovery', 'rival', 'social'].flatMap((category) =>
+        [1, 2, 3, 4].map((index) => `${category}-${index}`),
+      ),
+    ),
+    enemies: pack('enemies-m4', [
+      'rift-hound',
+      'glass-weaver',
+      'storm-jackal',
+      'signal-leech',
+      'ironback-mauler',
+      'veil-scribe',
+      'survey-beast',
+      'mirror-oracle',
+    ]),
     techniques: pack('techniques-m1', [
       'aegis-break',
       'hold-the-line',
@@ -38,8 +62,13 @@ export const contentManifest = ContentManifestSchema.parse({
       'restorative-sigil',
       'binding-shot',
     ]),
-    equipment: pack('equipment-foundation'),
-    combatLanguage: pack('combat-language-m1', ['attack', 'heal', 'defeat', 'status']),
+    equipment: pack('equipment-m4', ['houndglass-edge', 'weaver-ward']),
+    combatLanguage: pack(
+      'combat-language-m4',
+      ['attack', 'heal', 'guard', 'status', 'interrupt', 'defeat', 'resource'].flatMap(
+        (eventType) => [1, 2, 3, 4].map((index) => `${eventType}-frame-${index}`),
+      ),
+    ),
   },
 });
 

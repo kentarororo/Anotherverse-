@@ -5,17 +5,15 @@ import {
   type CanonicalGameState,
   createEmptyGameState,
 } from '../model/state';
-import type { CampaignBible } from '../model/world';
-import { createRngStreams } from '../rng/streams';
 import {
-  createMilestoneOneDefinitions,
-  createMilestoneOnePartyState,
-  defaultPositions,
-  defaultStances,
-  temporaryEncounter,
+  createDefaultPositions,
+  createDefaultStances,
+  encounterForOperationTemplate,
 } from '../../content/milestone-one';
 import { StanceIdSchema, TeamPriorityIdSchema } from '../model/combat';
 import { simulateBattle } from '../combat/simulate';
+import { createGeneratedCampaignState } from '../generation/campaign';
+import { selectNextScenario } from '../director/scenario-director';
 
 export class MilestoneNotReadyError extends Error {
   public readonly commandType: GameCommand['type'];
@@ -27,55 +25,27 @@ export class MilestoneNotReadyError extends Error {
   }
 }
 
-function createFoundationCampaignBible(seed: string): CampaignBible {
-  return {
-    seed,
-    city: { id: 'city-foundation', name: 'Foundation City', tags: ['temporary', 'urban'] },
-    civicOrder: {
-      id: 'civic-order-foundation',
-      name: 'Civic Breach Office',
-      mandate: 'License squads and contain active breaches.',
-      tags: ['temporary', 'regulator'],
-    },
-    guildModel: {
-      id: 'guild-model-foundation',
-      name: 'Licensed Squads',
-      mandate: 'Contract small teams for district operations.',
-      tags: ['temporary', 'contract'],
-    },
-    rankSystem: {
-      id: 'rank-system-foundation',
-      tiers: ['Unranked', 'Bronze', 'Silver', 'Gold'],
-    },
-    breachLaw: {
-      id: 'breach-law-foundation',
-      summary: 'Every breach leaves measurable pressure and must be formally closed.',
-    },
-    powerLaw: {
-      id: 'power-law-foundation',
-      summary: 'A Calling grows when its bearer fulfils an explicit personal condition.',
-    },
-    threatEcology: {
-      id: 'ecology-foundation',
-      summary: 'Threats adapt to the districts in which breaches remain open.',
-      tags: ['temporary'],
-    },
-    activeFactions: [],
-    terminology: {
-      heroCollective: 'licensed squad',
-      incursion: 'breach',
-      powerSource: 'Calling',
-      technique: 'technique',
-    },
-    toneProfileId: 'modern-progression-foundation',
-  };
-}
-
 function appendCommand(state: CanonicalGameState, command: GameCommand): CanonicalGameState {
   return {
     ...state,
     commandHistory: [...state.commandHistory, { index: state.commandHistory.length, command }],
   };
+}
+
+function squadRankForReputation(reputation: number): string {
+  if (reputation >= 24) return 'Gold';
+  if (reputation >= 14) return 'Silver';
+  if (reputation >= 6) return 'Bronze';
+  return 'Provisional';
+}
+
+function nonCombatReputationDelta(
+  category: 'personal' | 'discovery' | 'rival' | 'social',
+  choiceIndex: number,
+): number {
+  if (category === 'personal' || category === 'discovery') return choiceIndex === 0 ? 1 : 0;
+  if (category === 'rival') return choiceIndex === 0 ? 2 : 1;
+  return choiceIndex === 0 ? 1 : 2;
 }
 
 export function applyGameCommand(
@@ -87,23 +57,111 @@ export function applyGameCommand(
 
   if (command.type === 'START_CAMPAIGN') {
     const nextState = createEmptyGameState(state.contentManifestHash);
+    const generated = createGeneratedCampaignState(command.seed);
+    const characters = generated.draft.characters;
+    const [firstCharacter, secondCharacter, thirdCharacter] = characters;
+    if (
+      firstCharacter === undefined ||
+      secondCharacter === undefined ||
+      thirdCharacter === undefined
+    ) {
+      throw new Error('Campaign generation did not produce a complete trio.');
+    }
+    const faction = generated.draft.bible.activeFactions[0]!;
+    const foundation = CanonicalGameStateSchema.parse({
+      ...nextState,
+      phase: 'command',
+      rank: squadRankForReputation(0),
+      campaignSeed: command.seed,
+      selectedDraftIndex: command.selectedDraftIndex,
+      campaignBible: generated.draft.bible,
+      rngStreams: generated.draft.rngStreams,
+      generatedDefinitions: generated.generatedDefinitions,
+      partyState: generated.partyState,
+      currentEncounter: generated.currentEncounter,
+      worldFacts: [
+        {
+          id: 'fact-campaign-city',
+          kind: 'campaign',
+          subjectId: generated.draft.bible.city.id,
+          relation: 'is-squad-city',
+          value: generated.draft.bible.city.name,
+          createdTurn: 0,
+          sourceEventId: 'campaign-generation',
+          tags: ['city'],
+          active: true,
+        },
+        {
+          id: 'fact-active-faction',
+          kind: 'faction',
+          subjectId: faction.id,
+          relation: 'pursues-motive',
+          value: faction.motive,
+          createdTurn: 0,
+          sourceEventId: 'campaign-generation',
+          tags: ['faction'],
+          active: true,
+        },
+        ...characters.map((character) => ({
+          id: `fact-origin-${character.id}`,
+          kind: 'character-origin',
+          subjectId: character.id,
+          relation: 'comes-from',
+          value: character.origin,
+          createdTurn: 0,
+          sourceEventId: 'campaign-generation',
+          tags: ['character', character.role],
+          active: true,
+        })),
+      ],
+      storyThreads: characters.map((character) => ({
+        id: `thread-personal-${character.id}`,
+        arcId: 'calling-record-arc',
+        stage: 0,
+        castIds: [character.id],
+        factIds: [`fact-origin-${character.id}`],
+        urgency: 35,
+        status: 'open',
+        nextEligibleTurn: 2,
+      })),
+      relationships: [
+        { first: firstCharacter, second: secondCharacter },
+        { first: firstCharacter, second: thirdCharacter },
+        { first: secondCharacter, second: thirdCharacter },
+      ].map((pair) => ({
+        pairId: [pair.first.id, pair.second.id].sort().join(':'),
+        characterIds: [pair.first.id, pair.second.id],
+        value: 0,
+        factIds: [],
+      })),
+      bestiary: Object.fromEntries(
+        Object.values(generated.generatedDefinitions.enemies).map((enemy) => [
+          enemy.id,
+          { enemyId: enemy.id, knowledge: 1, revealedTags: [enemy.policyId] },
+        ]),
+      ),
+      pendingPlan: {
+        positions: createDefaultPositions(characters),
+        stanceIds: createDefaultStances(characters),
+        teamPriorityId: 'break-threat',
+        situationChoiceId: null,
+      },
+    });
+    const selected = selectNextScenario(foundation, 1, foundation.rngStreams!);
     return CanonicalGameStateSchema.parse(
       appendCommand(
         {
-          ...nextState,
-          phase: 'command',
-          campaignSeed: command.seed,
-          selectedDraftIndex: command.selectedDraftIndex,
-          campaignBible: createFoundationCampaignBible(command.seed),
-          rngStreams: createRngStreams(command.seed),
-          generatedDefinitions: createMilestoneOneDefinitions(),
-          partyState: createMilestoneOnePartyState(),
-          currentEncounter: temporaryEncounter,
+          ...foundation,
+          rngStreams: selected.streams,
+          currentScenario: selected.scenario,
+          currentEncounter:
+            selected.scenario.category === 'operation'
+              ? encounterForOperationTemplate(selected.scenario.templateId)
+              : null,
+          directorDebug: selected.debug,
           pendingPlan: {
-            positions: defaultPositions,
-            stanceIds: defaultStances,
-            teamPriorityId: 'break-threat',
-            situationChoiceId: null,
+            ...foundation.pendingPlan,
+            situationChoiceId: selected.scenario.choices[0]?.id ?? null,
           },
         },
         command,
@@ -155,6 +213,9 @@ export function applyGameCommand(
   }
 
   if (command.type === 'CHOOSE_SITUATION') {
+    if (!state.currentScenario?.choices.some((choice) => choice.id === command.choiceId)) {
+      throw new Error('Choice is not valid for the current situation.');
+    }
     return CanonicalGameStateSchema.parse(
       appendCommand(
         {
@@ -166,39 +227,254 @@ export function applyGameCommand(
     );
   }
 
-  if (command.type === 'COMMIT_TURN') {
-    const result = simulateBattle(state);
-    const factId = result.aftermath.factIdsWritten[0]!;
+  if (command.type === 'EQUIP_ITEM') {
+    const member = state.partyState[command.characterId];
+    const item = state.generatedDefinitions.items[command.itemId];
+    if (
+      member === undefined ||
+      item === undefined ||
+      !state.inventoryIds.includes(command.itemId)
+    ) {
+      throw new Error('Item cannot be equipped by this character.');
+    }
     return CanonicalGameStateSchema.parse(
       appendCommand(
         {
           ...state,
-          turn: state.turn + 1,
-          threat: Math.min(100, state.threat + (result.report.outcome === 'victory' ? 3 : 8)),
-          supplies: state.supplies + result.aftermath.suppliesDelta,
-          partyState: result.partyState,
-          rngStreams: result.streams,
-          battleReports: [...state.battleReports, result.report],
-          aftermathReports: [...state.aftermathReports, result.aftermath],
-          worldFacts: [
-            ...state.worldFacts,
-            {
-              id: factId,
-              kind: 'operation-result',
-              subjectId: 'licensed-squad',
-              relation: 'resolved-glassline-breach',
-              value: result.report.outcome,
-              createdTurn: state.turn,
-              sourceEventId: result.report.id,
-              tags: ['milestone-one', result.report.outcome],
-              active: true,
+          partyState: {
+            ...state.partyState,
+            [command.characterId]: {
+              ...member,
+              equipment: { ...member.equipment, [item.slot]: item.id },
             },
-          ],
+          },
         },
         command,
       ),
     );
   }
 
-  throw new MilestoneNotReadyError(command.type);
+  if (command.type === 'LEARN_TECHNIQUE') {
+    const member = state.partyState[command.characterId];
+    if (
+      member === undefined ||
+      state.generatedDefinitions.techniques[command.techniqueId] === undefined ||
+      member.trainingPoints < 1 ||
+      member.learnedTechniqueIds.includes(command.techniqueId)
+    ) {
+      throw new Error('Technique cannot be learned.');
+    }
+    return CanonicalGameStateSchema.parse(
+      appendCommand(
+        {
+          ...state,
+          partyState: {
+            ...state.partyState,
+            [command.characterId]: {
+              ...member,
+              trainingPoints: member.trainingPoints - 1,
+              learnedTechniqueIds: [...member.learnedTechniqueIds, command.techniqueId].slice(0, 4),
+            },
+          },
+        },
+        command,
+      ),
+    );
+  }
+
+  if (command.type === 'COMMIT_TURN') {
+    const scenario = state.currentScenario;
+    if (scenario === null) throw new Error('No current situation to resolve.');
+    const choiceId = state.pendingPlan.situationChoiceId;
+    const choice = scenario.choices.find((candidate) => candidate.id === choiceId);
+    if (choice === undefined) throw new Error('Choose a situation response before committing.');
+    const combatResult = scenario.category === 'operation' ? simulateBattle(state) : null;
+    const choiceIndex = Math.max(
+      0,
+      scenario.choices.findIndex((candidate) => candidate.id === choice.id),
+    );
+    const reputationDelta =
+      scenario.category === 'operation'
+        ? (combatResult?.aftermath.reputationDelta ?? 0)
+        : nonCombatReputationDelta(scenario.category, choiceIndex);
+    const factId = `fact-scenario-result-${state.turn}`;
+    const experience = scenario.category === 'operation' ? 25 : 8;
+    const baseAftermath = combatResult?.aftermath ?? {
+      id: `aftermath-turn-${state.turn}`,
+      turn: state.turn,
+      experienceByCharacter: Object.fromEntries(
+        state.generatedDefinitions.characters.map((hero) => [hero.id, experience]),
+      ),
+      itemIdsGranted: [],
+      factIdsWritten: [factId],
+      threadIdsChanged: scenario.advancesThreadId === undefined ? [] : [scenario.advancesThreadId],
+      hpByCharacter: Object.fromEntries(
+        Object.values(state.partyState).map((member) => [member.characterId, member.hp]),
+      ),
+      readinessByCharacter: Object.fromEntries(
+        Object.values(state.partyState).map((member) => [member.characterId, member.readiness]),
+      ),
+      suppliesDelta: choice === scenario.choices[0] ? 1 : 0,
+      reputationDelta,
+      summary: `${choice.label} resolved ${scenario.title}. ${choice.consequence}`,
+    };
+    const rewardId =
+      combatResult?.report.outcome === 'victory'
+        ? state.turn % 2 === 1
+          ? 'houndglass-edge'
+          : 'weaver-ward'
+        : null;
+    const progressedPartyState =
+      combatResult?.partyState ??
+      Object.fromEntries(
+        Object.values(state.partyState).map((member) => [
+          member.characterId,
+          {
+            ...member,
+            experience: member.experience + experience,
+            level: 1 + Math.floor((member.experience + experience) / 50),
+            callingRank:
+              1 + Math.floor((1 + Math.floor((member.experience + experience) / 50)) / 2),
+            trainingPoints:
+              member.trainingPoints +
+              Math.max(0, 1 + Math.floor((member.experience + experience) / 50) - member.level),
+          },
+        ]),
+      );
+    const supplySpent = combatResult === null && state.supplies > 0 ? 1 : 0;
+    const partyState =
+      supplySpent === 0
+        ? progressedPartyState
+        : Object.fromEntries(
+            Object.values(progressedPartyState).map((member) => [
+              member.characterId,
+              {
+                ...member,
+                hp: Math.min(member.maxHp, member.hp + 4),
+                readiness: Math.min(100, member.readiness + 8),
+              },
+            ]),
+          );
+    const aftermath = {
+      ...baseAftermath,
+      itemIdsGranted: rewardId === null ? baseAftermath.itemIdsGranted : [rewardId],
+      hpByCharacter: Object.fromEntries(
+        Object.values(partyState).map((member) => [member.characterId, member.hp]),
+      ),
+      readinessByCharacter: Object.fromEntries(
+        Object.values(partyState).map((member) => [member.characterId, member.readiness]),
+      ),
+      suppliesDelta: baseAftermath.suppliesDelta - supplySpent,
+      reputationDelta,
+      summary:
+        supplySpent === 0
+          ? baseAftermath.summary
+          : `${baseAftermath.summary} The squad spent one supply to recover 4 HP and 8 readiness each.`,
+    };
+    const updatedThreads = state.storyThreads.map((thread) => {
+      if (thread.id !== scenario.advancesThreadId) return thread;
+      const stage = thread.stage + 1;
+      return {
+        ...thread,
+        stage,
+        urgency: Math.max(0, thread.urgency - 10),
+        status: stage >= 3 ? ('resolved' as const) : ('open' as const),
+        nextEligibleTurn: state.turn + 5,
+        factIds: [...thread.factIds, factId],
+      };
+    });
+    const resolutionFact = {
+      id: factId,
+      kind: `${scenario.category}-result`,
+      subjectId: scenario.castIds[0] ?? 'licensed-squad',
+      relation: `chose-${choice.id}`,
+      value: choice.label,
+      createdTurn: state.turn,
+      sourceEventId: combatResult?.report.id ?? `resolution-turn-${state.turn}`,
+      tags: [scenario.category, choice.id],
+      active: true,
+    };
+    const nextReputation = Math.max(-100, Math.min(100, state.reputation + reputationDelta));
+    const resolvedBase = CanonicalGameStateSchema.parse({
+      ...state,
+      turn: state.turn + 1,
+      rank: squadRankForReputation(nextReputation),
+      reputation: nextReputation,
+      threat: Math.min(
+        100,
+        state.threat +
+          (combatResult === null ? 1 : combatResult.report.outcome === 'victory' ? 3 : 8),
+      ),
+      supplies: state.supplies + aftermath.suppliesDelta,
+      inventoryIds:
+        rewardId === null || state.inventoryIds.includes(rewardId)
+          ? state.inventoryIds
+          : [...state.inventoryIds, rewardId],
+      partyState,
+      rngStreams: combatResult?.streams ?? state.rngStreams,
+      battleReports:
+        combatResult === null ? state.battleReports : [...state.battleReports, combatResult.report],
+      aftermathReports: [...state.aftermathReports, aftermath],
+      worldFacts: [...state.worldFacts, resolutionFact],
+      storyThreads: updatedThreads,
+      relationships: state.relationships.map((relationship) =>
+        scenario.castIds.every((id) => relationship.characterIds.includes(id))
+          ? {
+              ...relationship,
+              value: Math.min(100, relationship.value + (choice === scenario.choices[0] ? 4 : -1)),
+              factIds: [...relationship.factIds, factId],
+            }
+          : relationship,
+      ),
+      bestiary:
+        combatResult === null
+          ? state.bestiary
+          : Object.fromEntries(
+              Object.entries(state.bestiary).map(([id, entry]) => [
+                id,
+                state.currentEncounter?.enemyIds.includes(id)
+                  ? {
+                      ...entry,
+                      knowledge: Math.min(3, entry.knowledge + 1),
+                      revealedTags: [
+                        ...new Set([
+                          ...entry.revealedTags,
+                          state.generatedDefinitions.enemies[id]?.signatureRuleId ?? 'observed',
+                        ]),
+                      ],
+                    }
+                  : entry,
+              ]),
+            ),
+      scenarioFingerprints: [...state.scenarioFingerprints, scenario.semanticFingerprint],
+      currentScenario: null,
+      currentEncounter: null,
+      pendingPlan: { ...state.pendingPlan, situationChoiceId: null },
+    });
+    const next = selectNextScenario(resolvedBase, resolvedBase.turn, resolvedBase.rngStreams!);
+    return CanonicalGameStateSchema.parse(
+      appendCommand(
+        {
+          ...resolvedBase,
+          rngStreams: next.streams,
+          currentScenario: next.scenario,
+          currentEncounter:
+            next.scenario.category === 'operation'
+              ? encounterForOperationTemplate(next.scenario.templateId)
+              : null,
+          directorDebug: next.debug,
+          pendingPlan: {
+            ...resolvedBase.pendingPlan,
+            situationChoiceId:
+              next.scenario.category === 'operation'
+                ? (next.scenario.choices[0]?.id ?? null)
+                : null,
+          },
+        },
+        command,
+      ),
+    );
+  }
+
+  throw new Error('Unsupported game command.');
 }

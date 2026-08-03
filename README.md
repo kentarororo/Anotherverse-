@@ -1,22 +1,44 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **Milestone 1: Combat Vertical
+The project is a clean-room implementation and currently contains **Milestone 4: First Playable
 Slice**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
 ## What runs now
 
-- A title screen with New Campaign, Continue, Settings, version, and an advanced seed input.
-- A fixed temporary trio and two-enemy Glassline Breach encounter played through the real Command
-  screen.
+- A clean title screen with New Campaign, Continue, accessible display settings, version, and an
+  advanced seed input.
+- A deterministic campaign generator with four world rule packs and coherent seeded Campaign
+  Bibles.
+- A whole-campaign creation and regeneration screen with three complete generated hero dossiers.
+- Generated vanguard, striker, and support Callings with executable signatures, limitations,
+  reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
+  conditions.
+- A deterministic scenario director covering operation, personal, discovery, rival, and social
+  situations with choice-specific consequences.
+- Persistent WorldFacts, three-stage personal StoryThreads, semantic cooldowns, causal premise
+  references, and visible director score reasons in canonical state.
+- Typed grammar helpers and complete authored scenario frames with unresolved-slot validation.
+- Levels, experience, training points, Calling ranks, licence ranks, supply recovery, Calling
+  mastery, equipment rewards, and relationship bonds that affect later situations.
+- Bestiary intelligence that raises forecast confidence and equipment counter tags that resolve in
+  authoritative combat events.
+- Contextual character, inventory, Bestiary, world-memory, archived-log, and development inspector
+  drawers.
+- Four distinct two-enemy operations with eight complete ecology/counterplay/reward modules, played
+  through the real Command screen.
 - Formation, stance, and team-priority controls that measurably change target selection, action
   policy, mitigation, and deterministic outcomes.
+- Scored legal-action policies whose visible weights and failed conditions appear in the
+  development inspector.
 - A discrete-round auto-battle with explicit HP, resource, hit, mitigation, status, signature,
   defeat, and twelve-round-cap events.
 - A plan-sensitive forecast that never consumes the authoritative combat RNG stream.
 - A readable battle chronology with expandable exact mechanics and a persistent Aftermath report.
+- Four complete deterministic narration frames for every structured combat event type; rendering
+  never advances or mutates simulation RNG.
 - A pure TypeScript command reducer with the complete serialisable `GameCommand` contract.
 - Seven independently derived named RNG streams: world, characters, scenarios, enemies, rewards,
   combat, and narration.
@@ -29,9 +51,9 @@ Slice**.
 
 ## Deliberately stubbed
 
-Campaign and trio generation, scenario direction, corpus expansion, equipment, technique growth,
-and broader progression belong to later milestones. Milestone 1 deliberately repeats one temporary
-encounter so its combat rules can be tested before procedural content replaces it.
+The director supplies 20 non-repeating causal turns before its first content cycle. The current
+equipment and growth corpus is intentionally compact so playtesting can validate decisions before
+more modules are authored.
 
 ## Setup and verification
 
@@ -54,11 +76,19 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Run the non-browser Milestone 1 gate in one command:
+The browser suite includes a complete 20-turn campaign, equipment and Calling progression, every
+situation category, archived reports, and a save/reload continuation after Turn 10.
+
+Run the non-browser First Playable Slice gate in one command:
 
 ```bash
 npm run check
 ```
+
+The final human quality gate is documented in [`PLAYTEST.md`](./PLAYTEST.md).
+The fixed 100-paragraph read-aloud harness is available at `/?review=corpus` without adding
+anything to the normal title screen.
+The requirement-by-requirement evidence ledger is in [`ACCEPTANCE.md`](./ACCEPTANCE.md).
 
 ## Web deployment
 

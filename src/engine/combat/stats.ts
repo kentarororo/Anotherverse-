@@ -20,6 +20,12 @@ export function mitigateDamage(rawAmount: number, guard: number): number {
   return Math.max(1, rawAmount - mitigated);
 }
 
+export function directDamageLimitationPenalty(limitationRuleId: string): number {
+  if (limitationRuleId === 'low-direct-output') return 2;
+  if (limitationRuleId === 'measured-strikes') return 1;
+  return 0;
+}
+
 export function clampChance(value: number): number {
   return Math.max(0.15, Math.min(0.95, value));
 }

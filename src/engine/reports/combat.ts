@@ -41,6 +41,7 @@ export const BattleReportSchema = z.object({
   rngStartPosition: z.number().int().nonnegative(),
   rngEndPosition: z.number().int().nonnegative(),
   combatantNames: z.record(z.string(), z.string().min(1)),
+  actionNames: z.record(z.string(), z.string().min(1)),
   hpAtStart: z.record(z.string(), z.number().int().nonnegative()),
   hpAtEnd: z.record(z.string(), z.number().int().nonnegative()),
 });
@@ -58,6 +59,7 @@ export const AftermathReportSchema = z.object({
   hpByCharacter: z.record(z.string(), z.number().int().nonnegative()),
   readinessByCharacter: z.record(z.string(), z.number().int().min(0).max(100)),
   suppliesDelta: z.number().int(),
+  reputationDelta: z.number().int(),
   summary: z.string().min(1),
 });
 
