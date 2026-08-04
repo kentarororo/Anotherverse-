@@ -83,6 +83,18 @@ export function createMythicOpeningScenario(
           label,
           description: chapter.choiceDescriptions[choiceIndex],
           consequence: chapter.choiceResults[choiceIndex],
+          ...(chapter.id === 'ferrymans-price' && choiceIndex === 1
+            ? {
+                encounterId: 'secret-drowned-stair',
+                outcomeConsequences: {
+                  victory: chapter.choiceResults[choiceIndex],
+                  defeat:
+                    'The drowned drove the trio back to the ferryman. He carried them across, but took one bright childhood summer from each hero as payment.',
+                  roundCap:
+                    'The trio held the drowned until the funeral bell rang. In the silence that followed, they climbed the last steps and found the royal seal nailed to the bell-room door.',
+                },
+              }
+            : {}),
           effects:
             chapter.choiceEffects?.[choiceIndex] ?? effectsFor(chapter.category, choiceIndex),
         }));

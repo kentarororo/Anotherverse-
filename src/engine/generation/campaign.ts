@@ -14,59 +14,120 @@ import { CampaignBibleSchema } from '../model/world';
 import type { RngStreamsState } from '../rng/streams';
 import { createRngStreams, drawInteger } from '../rng/streams';
 
-function firstSentence(value: string) {
-  return value.match(/^[^.!?]+[.!?]/)?.[0] ?? value;
+interface CharacterOrigin {
+  name: string;
+  background: string;
+  detail: string;
 }
 
-function asClause(value: string) {
-  return value
-    .trim()
-    .replace(/[.!?]+/g, ',')
-    .replace(/,+$/g, '');
-}
+const ORIGINS: Record<'fallen-heavens' | 'underworld-tide', readonly CharacterOrigin[]> = {
+  'fallen-heavens': [
+    {
+      name: 'the rooftop gardens of Aster Vale',
+      background: 'Keeper of the Sky Gardens',
+      detail: 'where families grow silver pears beneath the ribs of a dead star-god',
+    },
+    {
+      name: 'the walking shrine of Saint Orra',
+      background: 'Pilgrim of the Walking Shrine',
+      detail: 'a temple carried from village to village on the backs of six stone elephants',
+    },
+    {
+      name: 'Moth-Wood Monastery',
+      background: 'Runaway of Moth-Wood',
+      detail: 'where novices learn sword forms by following lantern moths through the pines',
+    },
+    {
+      name: 'the Red Quarry villages',
+      background: 'Child of the Red Quarry',
+      detail: 'whose miners carve warm godbone from the cliffs and sing before every blast',
+    },
+    {
+      name: 'the cloud-market of Veyra',
+      background: 'Courier of the Cloud Market',
+      detail: 'a rope-and-sail bazaar that crosses the high valleys with the monsoon winds',
+    },
+    {
+      name: 'the lion farms of Hearthstep',
+      background: 'Beast-Keeper of Hearthstep',
+      detail: 'where bronze-maned lions guard the wheat fields from hungry spirits',
+    },
+  ],
+  'underworld-tide': [
+    {
+      name: 'the stilt-houses of Bellwater',
+      background: 'Bellwater Boat Child',
+      detail: 'where every doorway keeps a bell for the drowned and a lamp for the living',
+    },
+    {
+      name: 'the pearl-diver isle of Soryu',
+      background: 'Diver of Soryu',
+      detail: 'whose children learn the names of sea spirits before they learn to swim',
+    },
+    {
+      name: 'the moonless monastery at Kest',
+      background: 'Novice of the Moonless Abbey',
+      detail: 'where monks fence with candle flames and bury no one with an unpaid promise',
+    },
+    {
+      name: 'the salt orchards of Namar',
+      background: 'Harvester of the Salt Orchards',
+      detail: 'where white fruit grows on black trees after the tide retreats',
+    },
+    {
+      name: 'the wandering funeral fleet',
+      background: 'Singer of the Funeral Fleet',
+      detail: 'a family of painted boats that carries the nameless dead home',
+    },
+    {
+      name: 'the cliff city of Nine Ropes',
+      background: 'Runner of Nine Ropes',
+      detail: 'whose streets hang above the sea and vanish whenever the storm bells ring',
+    },
+  ],
+};
 
-function createCharacter(hero: MythicHero, worldName: string, progressionLaw: string) {
+const TECHNIQUE_CONDITIONS: Readonly<Record<string, string>> = {
+  'aegis-break': 'Any enemy.',
+  'hold-the-line': 'Front hero only.',
+  'arc-finish': 'Aggressive stance or target below 65% HP.',
+  'cross-step': 'Rear position or Tactical stance.',
+  'restorative-sigil': 'A wounded ally.',
+  'binding-shot': 'Tactical stance.',
+};
+
+function createCharacter(hero: MythicHero, origin: CharacterOrigin) {
   const rules = PATH_CLASSES[hero.role];
   const techniques = hero.techniques.map((technique) => ({
     id: technique.id,
     name: technique.name,
-    storyDescription: `${hero.name} calls on ${hero.pathName}. ${technique.visibleAction} ${technique.tacticalPurpose}`,
+    storyDescription: technique.visibleAction,
     mechanicLabel: technique.mechanicRule,
     resourceCost: technique.cost,
     cooldownRounds: technique.cooldown,
-    condition: technique.tacticalPurpose,
+    condition: TECHNIQUE_CONDITIONS[technique.id] ?? 'No special condition.',
   }));
 
   return CharacterBlueprintSchema.parse({
     id: hero.id,
     name: hero.name,
-    pronouns:
-      hero.role === 'vanguard'
-        ? { subject: 'she', object: 'her', possessive: 'her' }
-        : hero.role === 'striker'
-          ? { subject: 'he', object: 'him', possessive: 'his' }
-          : { subject: 'they', object: 'them', possessive: 'their' },
+    pronouns: hero.pronouns,
     callingId: hero.pathName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     callingName: hero.pathName,
     pathClassId: rules.id,
     pathClassName: rules.name,
     pathClassSummary: rules.summary,
-    backgroundName:
-      hero.role === 'vanguard'
-        ? 'Survivor of the Broken Shrine'
-        : hero.role === 'striker'
-          ? 'Heir to a Vanished Hunter'
-          : 'Keeper of the Unanswered Prayer',
-    bond: hero.desire,
+    backgroundName: origin.background,
+    bond: hero.bond,
     role: hero.role,
     ageBand: 'young-adult',
-    origin: worldName,
-    formativeEvent: firstSentence(hero.introduction),
+    origin: origin.name,
+    formativeEvent: hero.definingChoice,
     drive: hero.desire,
     contradiction: hero.flaw,
     temperament: hero.voiceLine,
     story: {
-      portrait: `${hero.name} lives in ${worldName}. ${hero.introduction}`,
+      portrait: `${hero.name} comes from ${origin.name}, ${origin.detail}. ${hero.introduction}`,
       fear: hero.flaw,
       interiorVoice: hero.voiceLine,
       signature: rules.signatureStory,
@@ -84,7 +145,7 @@ function createCharacter(hero: MythicHero, worldName: string, progressionLaw: st
     techniques,
     personalHookIds: [`hook-${hero.id}-desire`, `hook-${hero.id}-flaw`],
     personalHooks: [hero.desire, hero.flaw],
-    awakeningCondition: `${asClause(progressionLaw)}; ${hero.name} must confront this flaw: ${asClause(hero.flaw)}`,
+    awakeningCondition: hero.awakeningTrial,
     coverageTags: rules.coverageTags,
     semanticFingerprint: `mythic:${hero.role}:${hero.id}`,
   });
@@ -110,9 +171,6 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
   rngStreams = factionDraw.streams;
   const regionDraw = drawInteger(rngStreams, 'world', 0, 7);
   rngStreams = regionDraw.streams;
-  for (let index = 0; index < 6; index += 1) {
-    rngStreams = drawInteger(rngStreams, 'characters', 0, 1).streams;
-  }
   const [openingLaw, openingDisruption] = mythic.world.opening;
   const regionNames =
     mythic.world.id === 'fallen-heavens'
@@ -208,14 +266,23 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
       hiddenRoute: 'forgotten stair',
       publicVenue: 'guild hall',
       publicSignal: 'omen bell',
-      recordMedium: 'Soul Ledger',
+      recordMedium: 'Book of Deeds',
       privateRefuge: 'wayside shrine',
     },
     toneProfileId: 'mythic-progression-fantasy',
   });
-  const characters = mythic.trio.map((hero) =>
-    createCharacter(hero, campaignRealmName, mythic.world.progressionLaw),
-  );
+  const originPool = ORIGINS[mythic.world.id as keyof typeof ORIGINS] ?? ORIGINS['fallen-heavens'];
+  const originStart = drawInteger(rngStreams, 'characters', 0, originPool.length - 1);
+  rngStreams = originStart.streams;
+  const originStride = drawInteger(rngStreams, 'characters', 1, originPool.length - 1);
+  rngStreams = originStride.streams;
+  const usedOrigins = new Set<number>();
+  const characters = mythic.trio.map((hero, index) => {
+    let originIndex = (originStart.value + originStride.value * index) % originPool.length;
+    while (usedOrigins.has(originIndex)) originIndex = (originIndex + 1) % originPool.length;
+    usedOrigins.add(originIndex);
+    return createCharacter(hero, originPool[originIndex]!);
+  });
   const quest = QUEST_ARCS[questWorldId(bible.city.id)];
 
   return {

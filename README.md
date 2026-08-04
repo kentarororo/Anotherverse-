@@ -1,7 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **v0.9: World Quest**.
+The project is a clean-room implementation and currently contains **v0.10: Tactical Slice**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -9,8 +9,8 @@ The project is a clean-room implementation and currently contains **v0.9: World 
 
 - A clean title screen with New Campaign, Continue, accessible display settings, version, and an
   advanced seed input.
-- A deterministic campaign generator with two whole mythology-first realms, varied regions, six
-  fixed hero archetypes, and coherent seeded Campaign Bibles.
+- A deterministic campaign generator with two mythology-first realms, six complete hero identities,
+  and three distinct, colourful origins per generated squad.
 - A whole-campaign creation and regeneration screen with three complete generated hero dossiers.
 - Original Oathward, Doomseeker, and Fateweaver classes beneath each hero's unique Mythic Path, with executable signatures, limitations,
   reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
@@ -23,23 +23,23 @@ The project is a clean-room implementation and currently contains **v0.9: World 
   what actually happened instead of reinterpreting a button label.
 - Build-time validation for unresolved slots, chapter order, choice count, forbidden meta language,
   and unsupported procedural substitutions.
-- Levels, experience, training points, Path ranks, Renown, Provisions, Path
+- Levels, experience, training points, Path ranks, Renown, Rations, Coin, relic dust, Path
   mastery, equipment rewards, and relationship bonds that affect later situations.
 - Bestiary intelligence that raises forecast confidence and equipment counter tags that resolve in
   authoritative combat events.
 - Contextual character, inventory, Bestiary, world-memory, archived-log, and development inspector
   drawers.
-- Four distinct two-enemy operations with eight complete ecology/counterplay/reward modules, played
-  through the real Command screen.
+- Four core battles and three choice-bound secret encounters with ten enemy modules and ten unique
+  equipment rewards, played through the real Command screen.
 - Formation, stance, and team-priority controls that measurably change target selection, action
   policy, mitigation, and deterministic outcomes.
 - Scored legal-action policies whose visible weights and failed conditions appear in the
   development inspector.
 - A discrete-round auto-battle with explicit HP, resource, hit, mitigation, status, signature,
   defeat, and twelve-round-cap events.
-- A compact two-lane battle playback with canonical HP, actor/target highlights, composed
-  damage/status cues, pause/replay/skip controls, and visibility-gated mobile playback.
-- A 2D formation preview and five-combatant arena presentation with distinct role/enemy
+- A two-lane battle playback that shows every action in order at a readable 800 ms pace, with
+  canonical HP, actor/target highlights, pause/replay/skip, and reduced-motion manual advance.
+- A 2D formation preview and six-combatant arena presentation with distinct role/enemy
   silhouettes, event VFX placeholders, stable Calling/enemy/arena asset IDs, and safe CSS fallbacks.
 - Visible VIT, POW, GRD, SPD, FOC, and AP numbers on the command screen, plus plan effect,
   post-battle squad HP retention, level progress, and formation review.
@@ -47,8 +47,8 @@ The project is a clean-room implementation and currently contains **v0.9: World 
   instead of skipping the battle entirely.
 - A plan-sensitive forecast that never consumes the authoritative combat RNG stream.
 - A readable battle chronology with expandable exact mechanics and a persistent Aftermath report.
-- Four complete deterministic narration frames for every structured combat event type; rendering
-  never advances or mutates simulation RNG.
+- One stable plain-English narration frame for every structured combat event type; rendering never
+  advances or mutates simulation RNG.
 - A pure TypeScript command reducer with the complete serialisable `GameCommand` contract.
 - Seven independently derived named RNG streams: world, characters, scenarios, enemies, rewards,
   combat, and narration.
@@ -56,8 +56,8 @@ The project is a clean-room implementation and currently contains **v0.9: World 
   combat/aftermath reports, content manifest, and save envelopes.
 - One LocalStorage autosave behind a replaceable `SaveRepository` interface, including explicit
   corrupt and incompatible-save results.
-- Save schema 11 deliberately rejects older campaigns whose label-only history cannot reconstruct
-  the authored outcomes used by the new quest arcs.
+- Save schema 12 deliberately rejects older campaigns that cannot reconstruct the current resources,
+  choice-bound battles, and rewards.
 - A corpus renderer contract that can later be joined by an optional LLM renderer without changing
   authoritative mechanics.
 

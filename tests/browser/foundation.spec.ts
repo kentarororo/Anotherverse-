@@ -28,7 +28,7 @@ test('renders authored campaign and character stories with exact rules kept visi
     .first()
     .click();
   const drawer = page.getByRole('dialog', { name: 'character details' });
-  await expect(drawer.getByRole('heading', { name: 'Path in the story' })).toBeVisible();
+  await expect(drawer.getByRole('heading', { name: 'Class features' })).toBeVisible();
   await expect(drawer.getByText('Wants')).toBeVisible();
   await expect(drawer.getByText('Fatal flaw')).toBeVisible();
   await expect(drawer.locator('.technique-mechanics').first()).toContainText('Cost');
@@ -120,7 +120,7 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
   await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
   await expect(page.locator('.operation-content h2')).toBeVisible();
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
-  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
+  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(6);
   const commit = page.getByRole('button', { name: 'Take Action' });
   await commit.scrollIntoViewIfNeeded();
   await expect(commit).toBeVisible();
@@ -154,7 +154,7 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
     }),
   ).toBe(true);
   await expect(page.locator('.battle-result')).toHaveCount(0);
-  const nextHighlight = page.getByRole('button', { name: 'Next highlight' });
+  const nextHighlight = page.getByRole('button', { name: 'Next action' });
   await expect(nextHighlight).toBeVisible();
   await nextHighlight.click();
   await expect(page.locator('.battle-beat .round-label')).toBeVisible();
@@ -225,7 +225,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByLabel('Story situation')).toBeVisible();
   await expect(page.getByLabel('Story situation').locator('dt')).toHaveCount(3);
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
-  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
+  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(6);
   await expect(page.getByLabel(`${strikerName} position`)).toHaveValue('centre');
   await page.getByLabel(`${strikerName} position`).selectOption('front');
   await expect(page.getByLabel(`${vanguardName} position`)).toHaveValue('centre');
@@ -241,8 +241,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByRole('button', { name: 'Continue to Turn 2' })).toBeVisible();
   await expect(page.getByText('Chapter 1 complete')).toBeVisible();
   await expect(page.getByLabel('Battle playback', { exact: true })).toBeVisible();
-  await expect(page.locator('.combat-unit')).toHaveCount(5);
-  await expect(page.locator('.battle-playback-stage [data-art-slot^="unit:"]')).toHaveCount(5);
+  await expect(page.locator('.combat-unit')).toHaveCount(6);
+  await expect(page.locator('.battle-playback-stage [data-art-slot^="unit:"]')).toHaveCount(6);
   await expect(page.locator('.battle-playback-stage [data-art-slot^="vfx:"]')).toHaveCount(1);
   await expect(page.locator('.combat-unit.is-actor')).toHaveCount(1);
   await expect(page.locator('.combat-unit.is-target')).toHaveCount(1);
@@ -304,15 +304,15 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await inventoryButton.focus();
   await inventoryButton.click();
   await expect(page.getByRole('dialog', { name: 'equipment details' })).toBeVisible();
-  await expect(
-    page.getByRole('dialog', { name: 'equipment details' }).getByRole('heading', {
-      name: /Godbone Edge|Augur Ward/,
-    }),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: /Equip ·/ })
-    .first()
-    .click();
+  const recovered = page
+    .getByRole('dialog', { name: 'equipment details' })
+    .locator('.inventory-item');
+  if ((await recovered.count()) > 0) {
+    await expect(recovered.first()).toContainText(/Godbone Edge|Augur Ward/);
+    await recovered.first().getByRole('button').first().click();
+  } else {
+    await expect(page.getByText('No equipment recovered yet.')).toBeVisible();
+  }
   await page.getByRole('button', { name: 'Close' }).click();
   await expect(inventoryButton).toBeFocused();
 
@@ -348,4 +348,26 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await page.getByRole('button', { name: 'New Campaign' }).click();
   expect(confirmation).toContain('replace');
   await expect(page.getByRole('heading', { name: 'ANOTHERVERSE' })).toBeVisible();
+});
+
+test('shows resources and turns the ferryman refusal into a battle', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByText('Advanced').click();
+  await page.getByLabel('Campaign seed').fill('reputation-choice-seed');
+  await page.getByRole('button', { name: 'New Campaign' }).click();
+  await page.getByRole('button', { name: 'Start Campaign' }).click();
+
+  await expect(page.locator('.campaign-metrics')).toContainText('Rations');
+  await expect(page.locator('.campaign-metrics')).toContainText('Coin');
+  await expect(page.locator('.campaign-metrics')).toContainText('Dust');
+  await expect(page.locator('.campaign-metrics')).toContainText('Gear');
+
+  await page.getByRole('button', { name: 'Take Action' }).click();
+  await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
+  await page.getByRole('radio', { name: /Take the drowned stair/i }).click();
+  await expect(page.getByLabel('Planned battle formation')).toBeVisible();
+  await expect(page.getByLabel('Enemy threats')).toContainText('Drowned Lancer');
+  await page.getByRole('button', { name: 'Take Action' }).click();
+  await expect(page.getByText('Chapter 2 complete')).toBeVisible();
+  await expect(page.getByText('Battle details')).toBeVisible();
 });

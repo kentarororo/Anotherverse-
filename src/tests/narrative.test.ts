@@ -45,7 +45,7 @@ function event(eventType: CombatEvent['eventType'], index: number): CombatEvent 
 }
 
 describe('combat narrative frames', () => {
-  it('provides four complete deterministic frames for every event type', () => {
+  it('uses one stable plain-English frame for every event type', () => {
     const eventTypes: CombatEvent['eventType'][] = [
       'attack',
       'heal',
@@ -55,13 +55,13 @@ describe('combat narrative frames', () => {
       'defeat',
       'resource',
     ];
-    expect(COMBAT_FRAMES_PER_EVENT_TYPE).toBe(4);
+    expect(COMBAT_FRAMES_PER_EVENT_TYPE).toBe(1);
 
     for (const eventType of eventTypes) {
       const variants = Array.from({ length: COMBAT_FRAMES_PER_EVENT_TYPE }, (_, index) =>
         renderCombatEvent(report, event(eventType, index)),
       );
-      expect(new Set(variants).size, eventType).toBe(COMBAT_FRAMES_PER_EVENT_TYPE);
+      expect(new Set(variants).size, eventType).toBe(1);
       expect(
         variants.every((variant) => variant.endsWith('.')),
         eventType,
@@ -77,9 +77,9 @@ describe('combat narrative frames', () => {
     const decidedEvent = event('attack', 0);
     const snapshot = JSON.stringify({ report, decidedEvent });
     const text = renderCombatEvent(report, decidedEvent);
-    expect(text).toContain('8');
     expect(text).toContain('5');
     expect(text).toContain('15 HP');
+    expect(text).not.toMatch(/raw became|timer shifted|resource changed|removed from the battle/i);
     expect(JSON.stringify({ report, decidedEvent })).toBe(snapshot);
   });
 });

@@ -98,7 +98,7 @@ describe('save repository boundary', () => {
 
     expect(repository.load()).toEqual({
       status: 'incompatible',
-      foundVersion: 11,
+      foundVersion: 12,
       foundContentManifestHash: 'fnv1a-stale-content',
       reason:
         'This autosave was created with different story or gameplay content and cannot be safely continued in this build.',
@@ -108,7 +108,7 @@ describe('save repository boundary', () => {
   it('reports a malformed same-schema state as corrupt before checking its content hash', () => {
     storage.setItem(
       'anotherverse.prototype.autosave',
-      JSON.stringify({ schemaVersion: 11, savedAtCommandIndex: 0, state: {} }),
+      JSON.stringify({ schemaVersion: 12, savedAtCommandIndex: 0, state: {} }),
     );
     expect(repository.load()).toEqual(expect.objectContaining({ status: 'corrupt' }));
   });

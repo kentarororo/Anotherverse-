@@ -23,18 +23,17 @@ export const PATH_CLASSES: Readonly<Record<MythicRole, PathClassDefinition>> = {
     id: 'oathward',
     name: 'Oathward',
     role: 'vanguard',
-    summary:
-      'A front-line guardian who turns a promise into armour and intercepts danger meant for an ally.',
+    summary: 'Guards allies and holds the front.',
     signatureRuleId: 'rear-intercept',
-    signature: 'Once each round, intercept the first attack aimed at an ally in the rear.',
+    signature: 'Once per round, intercept the first attack against the rear hero.',
     signatureStory:
       'The oath answers danger before thought, carrying its bearer between the enemy and the person who would have been struck.',
     reactionRuleId: 'intercept-brace',
-    reaction: 'After intercepting, gain 3 Ward for the rest of the round.',
+    reaction: 'After intercepting, gain 3 Ward for 1 round.',
     reactionStory:
       'The same promise that draws the blow hardens into a brief shield around its bearer.',
     limitationRuleId: 'measured-strikes',
-    limitation: 'Direct attacks deal 1 less raw damage.',
+    limitation: 'Attacks deal 1 less damage.',
     limitationStory:
       "Strength spent sheltering others cannot land with an executioner's full force.",
     coverageTags: ['defence', 'control'],
@@ -43,18 +42,17 @@ export const PATH_CLASSES: Readonly<Record<MythicRole, PathClassDefinition>> = {
     id: 'doomseeker',
     name: 'Doomseeker',
     role: 'striker',
-    summary:
-      "A relentless finisher who reads the fracture in a monster's legend and turns it into a killing line.",
+    summary: 'Hunts wounded foes and finishes them quickly.',
     signatureRuleId: 'exploit-exposed',
-    signature: 'Deal +3 raw damage when attacking an Exposed enemy.',
+    signature: 'Deal +3 damage to Exposed enemies.',
     signatureStory:
       "The Path recognises the instant a monster's legend falters and turns that opening into a killing line.",
     reactionRuleId: 'finisher-surge',
-    reaction: 'After committing a finisher, gain Inspired for 2 rounds.',
+    reaction: 'After a finisher, gain Inspired for 2 rounds.',
     reactionStory:
       "A decisive strike wakes the hunter's legend, sharpening the next heartbeat into momentum.",
     limitationRuleId: 'open-guard',
-    limitation: 'Aggressive stance reduces effective Guard by 2.',
+    limitation: 'Aggressive stance gives −4 Guard.',
     limitationStory:
       'Power bought through pursuit leaves no room to hide behind a perfect defence.',
     coverageTags: ['damage', 'resource'],
@@ -63,18 +61,17 @@ export const PATH_CLASSES: Readonly<Record<MythicRole, PathClassDefinition>> = {
     id: 'fateweaver',
     name: 'Fateweaver',
     role: 'support',
-    summary:
-      'A keeper of living threads who mends wounds, binds threats, and returns strength to the party.',
+    summary: 'Heals allies and binds dangerous enemies.',
     signatureRuleId: 'mending-ward',
-    signature: 'Recovery techniques also grant a 3-point Ward.',
+    signature: 'Healing techniques also grant 3 Ward.',
     signatureStory:
       'The Path does more than close a wound; it leaves a visible promise that the next blow will not reopen it.',
     reactionRuleId: 'recovery-loop',
-    reaction: 'The first recovery each battle refunds 1 AP.',
+    reaction: 'The first heal each battle restores 1 AP.',
     reactionStory:
       'When a life steadies beneath the Path, some of the power spent to save it returns.',
     limitationRuleId: 'low-direct-output',
-    limitation: 'Direct attacks deal 2 less raw damage.',
+    limitation: 'Attacks deal 2 less damage.',
     limitationStory: 'A gift shaped to preserve life resists being reduced to a weapon.',
     coverageTags: ['sustain', 'control', 'resource'],
   },

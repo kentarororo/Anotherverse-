@@ -167,6 +167,7 @@ export function selectNextScenario(
             defeat: bind(candidate.outcomeConsequences.defeat, slots),
             roundCap: bind(candidate.outcomeConsequences.roundCap, slots),
           },
+    encounterId: candidate.encounterId,
     effects: candidate.effects,
   }));
   const quest = {

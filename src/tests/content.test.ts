@@ -20,7 +20,7 @@ describe('production content manifest', () => {
       expect(hero.signatureRuleId).toBe(pathClass.signatureRuleId);
       expect(hero.backgroundName).not.toBe(hero.callingName);
       expect(hero.formativeEvent.length).toBeGreaterThan(40);
-      expect(hero.bond).toBe(hero.drive);
+      expect(hero.bond).not.toBe(hero.drive);
     }
   });
 
@@ -32,10 +32,11 @@ describe('production content manifest', () => {
     expect(contentManifest.packs.characters.moduleIds).toContain('tarin-sol');
     expect(contentManifest.packs.scenarios.moduleIds).toHaveLength(60);
     expect(contentManifest.packs.scenarios.moduleIds).toContain('quest-last-bell-turn-20');
-    expect(contentManifest.packs.enemies.moduleIds).toHaveLength(8);
-    expect(contentManifest.packs.equipment.moduleIds).toEqual(['houndglass-edge', 'weaver-ward']);
-    expect(contentManifest.packs.combatLanguage.moduleIds).toHaveLength(28);
-    expect(contentManifest.packs.combatLanguage.moduleIds).toContain('resource-frame-4');
+    expect(contentManifest.packs.enemies.moduleIds).toHaveLength(10);
+    expect(contentManifest.packs.equipment.moduleIds).toHaveLength(10);
+    expect(contentManifest.packs.equipment.moduleIds).toContain('funeral-bell');
+    expect(contentManifest.packs.combatLanguage.moduleIds).toHaveLength(7);
+    expect(contentManifest.packs.combatLanguage.moduleIds).toContain('resource-frame-1');
     expect(contentManifest.packs.story.moduleIds).toHaveLength(6);
     expect(contentManifest.packs.story.moduleIds).toContain('mythic-opening-turns-1-3');
     expect(contentManifest.packs.story.moduleIds).toContain('causal-scene-beats');

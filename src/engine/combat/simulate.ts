@@ -10,6 +10,7 @@ import {
   effectiveGuard,
   maximumHp,
   mitigateDamage,
+  scaledEnemyStats,
 } from './stats';
 import { selectHeroAction } from './policy';
 import {
@@ -147,22 +148,27 @@ function resolveAttack(
   streams: RngStreamsState,
   stance: StanceId | null,
   targetStance: StanceId | null,
+  actorPosition: Position | null,
+  targetPosition: Position | null,
   rawBonus: number,
   statusToApply?: { id: string; duration: number },
   ruleTriggers: string[] = [],
   resourceCost = 0,
 ): RngStreamsState {
   const strainedPenalty = getStatus(actor, 'strained') === undefined ? 0 : 0.1;
-  const tacticalBonus = stance === 'tactical' ? 0.1 : 0;
+  const tacticalBonus = stance === 'tactical' ? 0.12 : 0;
+  const rearBonus = actorPosition === 'rear' ? 0.05 : 0;
   const hitChance = clampChance(
     0.72 +
       (actor.definition.stats.focus - target.definition.stats.focus) * 0.02 +
-      tacticalBonus -
+      tacticalBonus +
+      rearBonus -
       strainedPenalty,
   );
   const draw = drawFromStream(streams, 'combat');
   const hit = draw.value < hitChance;
-  const aggressiveBonus = stance === 'aggressive' ? 2 : 0;
+  const aggressiveBonus = stance === 'aggressive' ? 3 : 0;
+  const supportivePenalty = stance === 'supportive' ? 2 : 0;
   const inspiredBonus = getStatus(actor, 'inspired') === undefined ? 0 : 2;
   const markedBonus = getStatus(target, 'marked') === undefined ? 0 : 2;
   const limitationPenalty = directDamageLimitationPenalty(actor.definition.limitationRuleId);
@@ -180,10 +186,13 @@ function resolveAttack(
           inspiredBonus +
           markedBonus +
           exposedExploit -
+          supportivePenalty -
           limitationPenalty,
       )
     : 0;
-  const guard = effectiveGuard(target.definition.stats, targetStance, target.statuses);
+  const guard =
+    effectiveGuard(target.definition.stats, targetStance, target.statuses) +
+    (targetPosition === 'front' ? 2 : 0);
   const beforeWard = hit ? mitigateDamage(rawAmount, guard) : 0;
   const wardReduction = getStatus(target, 'warded') === undefined ? 0 : Math.min(3, beforeWard - 1);
   const priorityReduction = ruleTriggers.includes('protect-rear') ? Math.min(2, beforeWard - 1) : 0;
@@ -264,6 +273,7 @@ function resolveHeal(
   target: RuntimeCombatant,
   round: number,
   actionId: string,
+  stance: StanceId,
 ) {
   const contract = executableTechnique(actor, actionId);
   if (contract === undefined) throw new Error(`Unknown executable heal technique: ${actionId}.`);
@@ -273,7 +283,10 @@ function resolveHeal(
   const recoveryLoop = actor.definition.reactionRuleId === 'recovery-loop';
   if (recoveryLoop) actor.resource = Math.min(actor.definition.maxResource, actor.resource + 1);
   const hpBefore = target.hp;
-  const amount = actor.definition.stats.focus + effectNumber(contract, 'focusBonusHp');
+  const amount =
+    actor.definition.stats.focus +
+    effectNumber(contract, 'focusBonusHp') +
+    (stance === 'supportive' ? 2 : 0);
   target.hp = Math.min(target.maxHp, target.hp + amount);
   const statusChanges = [
     applyStatus(
@@ -406,8 +419,12 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
     };
   });
   const enemyActors = state.currentEncounter.enemyIds.map((id) => {
-    const definition = definitions[id];
-    if (definition === undefined) throw new Error(`Missing enemy definition: ${id}`);
+    const baseDefinition = definitions[id];
+    if (baseDefinition === undefined) throw new Error(`Missing enemy definition: ${id}`);
+    const definition = {
+      ...baseDefinition,
+      stats: scaledEnemyStats(baseDefinition.stats, state.turn),
+    };
     return {
       definition,
       hp: maximumHp(definition.stats),
@@ -432,7 +449,16 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       const draw = drawInteger(streams, 'combat', 0, 5);
       streams = draw.streams;
       const staggerPenalty = getStatus(actor, 'staggered') === undefined ? 0 : 3;
-      initiative.push({ actor, score: actor.definition.stats.speed - staggerPenalty + draw.value });
+      const stance = stances[actor.definition.id] as StanceId | undefined;
+      const heroInitiative =
+        actor.definition.side === 'heroes'
+          ? (positions[actor.definition.id] === 'centre' ? 1 : 0) +
+            (stance === 'tactical' ? 1 : stance === 'guarded' ? -1 : 0)
+          : 0;
+      initiative.push({
+        actor,
+        score: actor.definition.stats.speed - staggerPenalty + heroInitiative + draw.value,
+      });
     }
     initiative.sort(
       (a, b) => b.score - a.score || a.actor.definition.id.localeCompare(b.actor.definition.id),
@@ -477,7 +503,7 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         });
 
         if (selectedAction.kind === 'heal') {
-          resolveHeal(events, actor, wounded, round, selectedAction.actionId);
+          resolveHeal(events, actor, wounded, round, selectedAction.actionId, stance);
           continue;
         }
         if (selectedAction.kind === 'guard') {
@@ -552,6 +578,8 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
           streams,
           stance,
           null,
+          positions[actor.definition.id] ?? 'centre',
+          null,
           bonus,
           statusToApply,
           triggers,
@@ -568,6 +596,7 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         if (
           rearTargeted &&
           interceptor !== undefined &&
+          positions[interceptor.definition.id] === 'front' &&
           target.definition.id !== interceptor.definition.id &&
           !intercepted.has(interceptor.definition.id)
         ) {
@@ -612,6 +641,8 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
           streams,
           null,
           (stances[target.definition.id] as StanceId | undefined) ?? null,
+          null,
+          positions[target.definition.id] ?? 'centre',
           special ? 4 : 0,
           statusToApply,
           triggers,

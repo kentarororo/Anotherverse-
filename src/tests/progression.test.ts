@@ -12,6 +12,43 @@ function start(seed = 'progression-seed') {
 }
 
 describe('progression and management', () => {
+  it('turns the dangerous ferryman refusal into a secret battle', () => {
+    const seed = Array.from({ length: 40 }, (_, index) => `ferryman-${index}`).find((candidate) =>
+      start(candidate).campaignBible!.city.id.includes('underworld-tide'),
+    )!;
+    const afterOpening = applyGameCommand(start(seed), { type: 'COMMIT_TURN' });
+    const refusal = afterOpening.currentScenario!.choices.find(
+      (choice) => choice.encounterId === 'secret-drowned-stair',
+    )!;
+    const planned = applyGameCommand(afterOpening, {
+      type: 'CHOOSE_SITUATION',
+      choiceId: refusal.id,
+    });
+    expect(planned.currentEncounter?.id).toBe('secret-drowned-stair');
+    const resolved = applyGameCommand(planned, { type: 'COMMIT_TURN' });
+    expect(resolved.battleReports).toHaveLength(2);
+    expect(resolved.aftermathReports.at(-1)!.summary).toMatch(/drowned|ferryman|funeral bell/i);
+  });
+
+  it('grants battle resources and never reports a duplicate equipment drop', () => {
+    let state = start('reward-cadence-seed');
+    const granted: string[] = [];
+    while (state.turn <= 20) {
+      if (state.pendingPlan.situationChoiceId === null) {
+        state = applyGameCommand(state, {
+          type: 'CHOOSE_SITUATION',
+          choiceId: state.currentScenario!.choices[0]!.id,
+        });
+      }
+      state = applyGameCommand(state, { type: 'COMMIT_TURN' });
+      granted.push(...state.aftermathReports.at(-1)!.itemIdsGranted);
+    }
+    expect(new Set(granted).size).toBe(granted.length);
+    expect(state.coins).toBeGreaterThan(30);
+    expect(state.relicDust).toBeGreaterThan(0);
+    expect(state.inventoryIds).toEqual(expect.arrayContaining(granted));
+  });
+
   it('records relationships and Bestiary intelligence after resolution', () => {
     const initial = start();
     const resolved = applyGameCommand(initial, { type: 'COMMIT_TURN' });
@@ -208,13 +245,13 @@ describe('progression and management', () => {
       afterOperation.reputation + publicChoice!.effects.renownDelta,
     );
     expect(privateResult.reputation).toBe(
-      afterOperation.reputation + privateChoice!.effects.renownDelta,
+      afterOperation.reputation + privateResult.aftermathReports.at(-1)!.reputationDelta,
     );
     expect(publicResult.aftermathReports.at(-1)!.reputationDelta).toBe(
       publicChoice!.effects.renownDelta,
     );
-    expect(privateResult.aftermathReports.at(-1)!.reputationDelta).toBe(
-      privateChoice!.effects.renownDelta,
+    expect(privateResult.battleReports.length).toBeGreaterThanOrEqual(
+      privateChoice!.encounterId === undefined ? 1 : 2,
     );
     expect(publicChoice!.effects).not.toEqual(privateChoice!.effects);
   });

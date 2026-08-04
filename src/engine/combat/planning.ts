@@ -13,17 +13,17 @@ export const POSITION_RULES: readonly PlanningRule<Position>[] = [
   {
     id: 'front',
     label: 'Front',
-    effect: 'Chargers attack this position first. Put Guard and Ward here.',
+    effect: 'Chargers attack here. +2 Guard.',
   },
   {
     id: 'centre',
     label: 'Centre',
-    effect: 'Safer from opening target rules, but exposed after either line falls.',
+    effect: '+1 initiative. Becomes exposed when either line falls.',
   },
   {
     id: 'rear',
     label: 'Rear',
-    effect: 'Hexers attack this position first. Some techniques become legal here.',
+    effect: 'Hexers attack here. +5% hit chance.',
   },
 ];
 
@@ -31,22 +31,22 @@ export const STANCE_RULES: readonly PlanningRule<StanceId>[] = [
   {
     id: 'aggressive',
     label: 'Aggressive',
-    effect: '+2 raw attack damage, but −3 Guard. Enables striker finishers immediately.',
+    effect: '+3 damage, −4 Guard. Enables finishers.',
   },
   {
     id: 'guarded',
     label: 'Guarded',
-    effect: '+4 Guard against every incoming hit.',
+    effect: '+5 Guard, −1 initiative.',
   },
   {
     id: 'tactical',
     label: 'Tactical',
-    effect: '+10 percentage points to hit chance and enables route techniques.',
+    effect: '+12% hit chance, +1 initiative. Enables route techniques.',
   },
   {
     id: 'supportive',
     label: 'Supportive',
-    effect: 'The support hero heals when any ally falls below 90% HP instead of 70%.',
+    effect: 'Heal below 90% HP. Healing gains +2; attacks deal −2.',
   },
 ];
 
@@ -102,8 +102,8 @@ export function buildHeroActionPreview(state: CanonicalGameState) {
       actionName,
       explanation:
         technique === undefined
-          ? 'No higher-priority technique is legal at the start, so this attack builds 1 AP.'
-          : `${technique.condition} Cost ${technique.resourceCost} AP; cooldown ${technique.cooldownRounds} rounds.`,
+          ? 'Basic attack · restores 1 AP'
+          : `Cost ${technique.resourceCost} AP · ${technique.cooldownRounds}-round cooldown`,
     };
   });
 }

@@ -157,6 +157,24 @@ describe('Milestone 1 battle', () => {
     expect(statuses).toContain('inspired');
   });
 
+  it('requires the Oathward to hold Front before intercepting the rear', () => {
+    const initial = start('front-intercept-gate');
+    const vanguard = initial.generatedDefinitions.characters.find(
+      (hero) => hero.role === 'vanguard',
+    )!;
+    const moved = applyGameCommand(initial, {
+      type: 'SET_POSITION',
+      characterId: vanguard.id,
+      position: 'centre',
+    });
+    const resolved = applyGameCommand(moved, { type: 'COMMIT_TURN' });
+    expect(
+      resolved.battleReports[0]!.events.some((event) =>
+        event.ruleTriggers?.includes('rear-intercept'),
+      ),
+    ).toBe(false);
+  });
+
   it('enforces the striker open-guard limitation when Aggressive at the front', () => {
     const initial = start('open-guard-seed');
     const striker = initial.generatedDefinitions.characters.find(

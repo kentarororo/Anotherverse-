@@ -1,5 +1,6 @@
 import type { CanonicalGameState } from '../model/state';
 import type { ScenarioForecast, StanceId, TeamPriorityId } from '../model/combat';
+import { scaledEnemyStats } from './stats';
 
 const stanceScores: Record<StanceId, number> = {
   aggressive: 3,
@@ -19,22 +20,43 @@ export function calculateForecast(state: CanonicalGameState): ScenarioForecast {
     const stance = state.pendingPlan.stanceIds[hero.id] as StanceId | undefined;
     return total + (stance === undefined ? 0 : stanceScores[stance]);
   }, 0);
+  const formationScore = heroes.reduce((total, hero) => {
+    const position = state.pendingPlan.positions[hero.id];
+    if (hero.role === 'vanguard') return total + (position === 'front' ? 4 : -3);
+    if (hero.role === 'striker') return total + (position === 'front' ? -3 : 2);
+    return total + (position === 'rear' ? 2 : 0);
+  }, 0);
   const priority = state.pendingPlan.teamPriorityId as TeamPriorityId | null;
   const priorityScore = priority === 'break-threat' || priority === 'focus-weakest' ? 3 : 2;
   const currentHpRatio = heroes.reduce((total, hero) => {
     const member = state.partyState[hero.id];
     return total + (member === undefined ? 0 : member.hp / member.maxHp);
   }, 0);
-  const heroScore = heroes.reduce(
-    (total, hero) => total + hero.stats.power + hero.stats.guard + hero.stats.focus,
-    0,
-  );
-  const enemyScore = enemies.reduce(
-    (total, enemy) => total + enemy.stats.power + enemy.stats.guard + enemy.threat,
-    0,
-  );
+  const heroScore = heroes.reduce((total, hero) => {
+    const member = state.partyState[hero.id];
+    const equipment = Object.values(member?.equipment ?? {}).flatMap((itemId) => {
+      const item = itemId === null ? undefined : state.generatedDefinitions.items[itemId];
+      return item === undefined ? [] : [item];
+    });
+    return (
+      total +
+      hero.stats.power +
+      hero.stats.guard +
+      hero.stats.focus +
+      equipment.reduce((sum, item) => sum + item.powerBonus + item.guardBonus, 0)
+    );
+  }, 0);
+  const enemyScore = enemies.reduce((total, enemy) => {
+    const stats = scaledEnemyStats(enemy.stats, state.turn);
+    return total + stats.power + stats.guard + enemy.threat;
+  }, 0);
   const score = Math.round(
-    heroScore * 0.45 + stanceTotal + priorityScore + currentHpRatio * 6 - enemyScore * 0.55,
+    heroScore * 0.45 +
+      stanceTotal +
+      formationScore +
+      priorityScore +
+      currentHpRatio * 6 -
+      enemyScore * 0.55,
   );
   const victoryBand = score >= 24 ? 'favoured' : score >= 15 ? 'contested' : 'precarious';
   const striker = heroes.find((hero) => hero.role === 'striker');
@@ -44,7 +66,14 @@ export function calculateForecast(state: CanonicalGameState): ScenarioForecast {
   const guardedCount = Object.values(state.pendingPlan.stanceIds).filter(
     (stance) => stance === 'guarded',
   ).length;
-  const incomingBase = Math.max(16, 34 - guardedCount * 4 - (priority === 'protect-rear' ? 4 : 0));
+  const enemyPower = enemies.reduce(
+    (total, enemy) => total + scaledEnemyStats(enemy.stats, state.turn).power,
+    0,
+  );
+  const incomingBase = Math.max(
+    16,
+    enemyPower + 10 - guardedCount * 5 - (priority === 'protect-rear' ? 4 : 0),
+  );
   const encounterKnowledge = enemyIds.map((id) => state.bestiary[id]?.knowledge ?? 0);
   const lowestKnowledge = encounterKnowledge.length > 0 ? Math.min(...encounterKnowledge) : 0;
   const confidence = lowestKnowledge >= 2 ? 'high' : lowestKnowledge === 1 ? 'moderate' : 'low';

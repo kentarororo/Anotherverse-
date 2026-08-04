@@ -27,9 +27,13 @@ export interface MythicHero {
   name: string;
   role: MythicRole;
   pathName: string;
+  pronouns: { subject: string; object: string; possessive: string };
   introduction: string;
+  definingChoice: string;
   desire: string;
+  bond: string;
   flaw: string;
+  awakeningTrial: string;
   voiceLine: string;
   stats: MythicStats;
   techniques: [MythicTechnique, MythicTechnique];
@@ -110,7 +114,7 @@ const WORLDS: readonly WorldTemplate[] = [
     subtitle: 'Dead gods became dungeons, and mortals learned to climb through their bones.',
     opening: [
       'Eight years ago, the moon cracked and three gods fell out of the sky. Their bodies struck the kingdom of Orison and became vast dungeons called Godgraves. Monsters crawl from them each winter, but so do relics that can turn a shepherd into a ranked hunter. The strongest guilds now own every road to the graves. Tonight, a fourth star is falling.',
-      'Everyone in Orison knows the five hunter ranks: Ash, Bronze, Silver, Gold, and Divine. Most Ash-ranks spend their lives carrying torches for stronger parties. A rare few awaken a Mythic Path and hear the Soul Ledger count their victories. No one has reached Divine rank since the moon broke. The nameless thing descending through the clouds may be the reason why.',
+      'Everyone in Orison knows the five hunter ranks: Ash, Bronze, Silver, Gold, and Divine. Most Ash-ranks spend their lives carrying torches for stronger parties. A rare few awaken a Mythic Path and hear the Book of Deeds announce their victories. No one has reached Divine rank since the moon broke. The nameless thing descending through the clouds may be the reason why.',
     ],
     mythLaw:
       'A dead god cannot speak its own name, but it can lend one fragment of its legend to a mortal who completes its unfinished trial.',
@@ -191,7 +195,7 @@ const WORLDS: readonly WorldTemplate[] = [
     subtitle: 'Each new moon reveals a stair beneath the sea, and every descent demands a memory.',
     opening: [
       'On the first night of every new moon, the sea withdraws from Morcant and reveals a black stair descending beyond the horizon. Hunters have until dawn to enter the Underworld, claim a relic, and return before the water closes above them. Those who fail do not drown. They come back one month later with white eyes and no memory of the people waiting on shore.',
-      'The Tide Guild ranks hunters by the depth they survive: Shell, Coral, Pearl, Abyss, and Crown. Every descent strengthens the Soul Ledger, and every relic carries a blessing from a forgotten god. This month the sea retreats three nights early. At the bottom of the exposed stair, someone is ringing the funeral bell of a king who has not died yet.',
+      'The Tide Guild ranks hunters by the depth they survive: Shell, Coral, Pearl, Abyss, and Crown. Every descent deepens a hunter’s Path, and every relic carries a blessing from a forgotten god. This month the sea retreats three nights early. At the bottom of the exposed stair, someone is ringing the funeral bell of a king who has not died yet.',
     ],
     mythLaw:
       'Nothing crosses the Underworld Tide for free; a relic, a life, or a true memory must remain behind whenever the sea closes.',
@@ -255,7 +259,7 @@ const WORLDS: readonly WorldTemplate[] = [
         category: 'personal',
         leadRole: 'striker',
         variants: [
-          "The bell chamber contains a crown and the living king's shadow. It kneels to {lead}, calling {path} by a title that belongs to the Underworld's executioner. Wearing the crown for one minute would unlock that title and raise the Path immediately. It would also mark {lead} as the person destined to kill Morcant's king. The Soul Ledger offers the advancement before the squad has decided whether prophecy deserves an answer.",
+          "The bell chamber contains a crown and the living king's shadow. It kneels to {lead}, calling {path} by a title that belongs to the Underworld's executioner. Wearing the crown for one minute would unlock that title and raise the Path immediately. It would also mark {lead} as the person destined to kill Morcant's king. The Book of Deeds opens to a blank page before the squad has decided whether prophecy deserves an answer.",
           "At the bottom of the stair, {lead} meets a child wearing the king's shadow like a cloak. The child claims {path} once guarded the Underworld throne and can reclaim its lost rank by drawing one ceremonial blade. The blade is harmless today; the vision it creates ends with Morcant's king dead at {lead}'s feet. Refusing leaves the Path unchanged, while accepting turns every future royal hunter into an enemy. The choice is powerful because both consequences will survive the chapter.",
         ],
         choices: ['Claim the Underworld title', "Refuse the crown's prophecy"],
@@ -278,10 +282,14 @@ const HEROES: readonly HeroTemplate[] = [
     name: 'Lyra Vale',
     role: 'vanguard',
     pathName: 'Aegis Heir',
+    pronouns: { subject: 'she', object: 'her', possessive: 'her' },
     biography:
       'Lyra was thirteen when a Gate opened beneath her village shrine. She survived by holding a cracked bronze door while everyone else escaped through the roof. The people behind her lived, but her older brother never made it to the door. Lyra became a hunter because she refuses to believe survival should depend on who happens to stand closest to the exit.',
+    definingChoice: 'Lyra held the bronze door so the villagers could escape.',
     desire: 'Become strong enough that nobody behind her has to be chosen for sacrifice.',
+    bond: 'The brother who never reached the door, and every companion who now stands behind her.',
     flaw: 'She treats retreat as betrayal, even when staying will endanger the entire squad.',
+    awakeningTrial: 'Order a retreat and trust an ally to guard her back.',
     voiceLine: 'If it wants the others, it can learn to get through me first.',
     stats: { vitality: 12, power: 7, guard: 12, speed: 6, focus: 8 },
     techniques: [
@@ -292,7 +300,7 @@ const HEROES: readonly HeroTemplate[] = [
           "Lyra catches the enemy's strike on her bronze shield, twists, and drives the shield rim through its guard.",
           "The lion carved on Lyra's shield opens its eyes as she slams the enemy off balance.",
         ],
-        tacticalPurpose: 'Open a defended target so the striker can finish it.',
+        tacticalPurpose: 'Breaks enemy guard.',
         mechanicRule: 'Spend 2 AP to attack with +3 Power and apply Exposed for 2 rounds.',
         cost: 2,
         cooldown: 2,
@@ -301,10 +309,10 @@ const HEROES: readonly HeroTemplate[] = [
         id: 'hold-the-line',
         name: 'Stand Behind Me',
         visualVariants: [
-          'Lyra plants her shield, and the bronze lion grows into a wall around the front position.',
+          'Lyra plants her shield. The bronze lion carved upon it becomes a wall before the front hero.',
           "A ring of old shields rises from the ground and locks around Lyra's chosen ally.",
         ],
-        tacticalPurpose: 'Absorb an incoming charge and keep the rear line free to act.',
+        tacticalPurpose: 'Shields the front hero.',
         mechanicRule: 'Spend 1 AP to grant the front hero 3 Ward for 2 rounds.',
         cost: 1,
         cooldown: 2,
@@ -316,10 +324,14 @@ const HEROES: readonly HeroTemplate[] = [
     name: 'Doran Vey',
     role: 'vanguard',
     pathName: 'Titanbound',
+    pronouns: { subject: 'he', object: 'him', possessive: 'his' },
     biography:
       'Doran grew up carrying stone for a temple that promised the gods would protect obedient families. When a monster came through the altar, the priests fled and Doran brought the roof down on it with his bare hands. A dying earth-titan offered him its heart after the battle. Doran accepted, but he has never decided whether the voice in his chest is a companion or a second monster waiting to wake.',
+    definingChoice: 'When the priests fled, Doran brought the temple roof down on the monster.',
     desire: 'Build a refuge no god, guild, or king can take away from ordinary people.',
+    bond: 'The families who still believe his unfinished refuge will keep them safe.',
     flaw: 'He hides pain until it becomes a crisis that the rest of the squad must solve.',
+    awakeningTrial: 'Admit he is hurt and let an ally take his place.',
     voiceLine: 'I can carry it. Ask me whether I should, not whether I can.',
     stats: { vitality: 14, power: 8, guard: 11, speed: 5, focus: 7 },
     techniques: [
@@ -330,7 +342,7 @@ const HEROES: readonly HeroTemplate[] = [
           'Doran catches the target in one stone hand and hammers its guard apart with the other.',
           "The ground rises behind Doran's fist, turning one short punch into the weight of a falling hill.",
         ],
-        tacticalPurpose: 'Break a durable enemy before it can settle into a long fight.',
+        tacticalPurpose: 'Breaks enemy guard.',
         mechanicRule: 'Spend 2 AP to attack with +3 Power and apply Exposed for 2 rounds.',
         cost: 2,
         cooldown: 2,
@@ -342,7 +354,7 @@ const HEROES: readonly HeroTemplate[] = [
           'Doran stamps once, raising a curved wall of stone around the hero holding the front.',
           'The titan-heart beats, and every loose stone nearby locks into a shield around the front line.',
         ],
-        tacticalPurpose: 'Protect the front hero when enemy pressure cannot be avoided.',
+        tacticalPurpose: 'Shields the front hero.',
         mechanicRule: 'Spend 1 AP to grant the front hero 3 Ward for 2 rounds.',
         cost: 1,
         cooldown: 2,
@@ -354,10 +366,14 @@ const HEROES: readonly HeroTemplate[] = [
     name: 'Mira Rook',
     role: 'striker',
     pathName: 'Moonfang',
+    pronouns: { subject: 'she', object: 'her', possessive: 'her' },
     biography:
       'Mira learned to hunt monsters for the bounty on their teeth. Every coin paid for medicine that kept her younger sister alive one more week. On her final unranked hunt, the wounded moon-wolf she cornered offered its fang instead of its life. Mira took the bargain and awakened Moonfang, a Path that grows stronger whenever she chooses the dangerous target everyone else avoids.',
+    definingChoice: 'Mira accepted the moon-wolf’s fang instead of killing it for the bounty.',
     desire: "Reach Gold rank before her sister's borrowed time runs out.",
+    bond: 'Her younger sister, who keeps every monster tooth Mira sends home.',
     flaw: 'She measures every delay as a life lost and rushes decisions that require trust.',
+    awakeningTrial: 'Spare a dangerous foe and trust the squad to finish the hunt another way.',
     voiceLine: 'You can call it reckless after we survive it.',
     stats: { vitality: 9, power: 12, guard: 7, speed: 11, focus: 10 },
     techniques: [
@@ -368,7 +384,7 @@ const HEROES: readonly HeroTemplate[] = [
           "Mira vanishes beneath the target's shadow and rises through it in a single silver arc.",
           "Moonlight gathers along Mira's fang-blade before she cuts through the wound her ally opened.",
         ],
-        tacticalPurpose: 'Finish a wounded or Exposed enemy before it can act again.',
+        tacticalPurpose: 'Deals heavy damage.',
         mechanicRule: 'Spend 2 AP to make a high-damage attack with +8 Power.',
         cost: 2,
         cooldown: 2,
@@ -380,7 +396,7 @@ const HEROES: readonly HeroTemplate[] = [
           "Mira steps into one shadow and out of another behind the enemy's unfinished swing.",
           'A silver wolf crosses the field first; Mira appears wherever its paws touch darkness.',
         ],
-        tacticalPurpose: 'Attack safely from the rear or turn Tactical stance into an ambush.',
+        tacticalPurpose: 'Attacks from the rear.',
         mechanicRule: 'Spend 1 AP to attack with +4 Power from rear position or Tactical stance.',
         cost: 1,
         cooldown: 1,
@@ -392,10 +408,14 @@ const HEROES: readonly HeroTemplate[] = [
     name: 'Ren Ash',
     role: 'striker',
     pathName: 'Underworld Blade',
+    pronouns: { subject: 'he', object: 'him', possessive: 'his' },
     biography:
       'Ren died for eleven seconds during his first dungeon collapse. He woke beside his own body with a black sword in his hand and a gatekeeper demanding payment. Ren escaped without paying, which should have been impossible. Now the Underworld sends collectors after him, and every one he defeats teaches the stolen blade a new way to cut what mortals are not meant to touch.',
+    definingChoice: 'Ren fled the gatekeeper and returned to life without paying its price.',
     desire: 'Learn why the Underworld let him escape before it takes payment from someone else.',
+    bond: 'The delvers who dragged his body from the collapsed dungeon and waited for him to breathe.',
     flaw: 'He jokes whenever he is afraid, making honest warnings sound like another performance.',
+    awakeningTrial: 'Name what frightens him before drawing the Underworld Blade.',
     voiceLine: 'Good news: I have died before. Bad news: they remember me.',
     stats: { vitality: 8, power: 13, guard: 6, speed: 12, focus: 10 },
     techniques: [
@@ -406,7 +426,7 @@ const HEROES: readonly HeroTemplate[] = [
           "Ren draws the black blade through the target's shadow, and the wound appears a heartbeat later.",
           "The gatekeeper's mark opens beneath the enemy as Ren delivers the strike death was still owed.",
         ],
-        tacticalPurpose: 'Convert a weakened target into a decisive kill before help can reach it.',
+        tacticalPurpose: 'Deals heavy damage.',
         mechanicRule: 'Spend 2 AP to make a high-damage attack with +8 Power.',
         cost: 2,
         cooldown: 2,
@@ -418,8 +438,7 @@ const HEROES: readonly HeroTemplate[] = [
           "Ren crosses the thin dark line between two shadows and attacks from the enemy's blind side.",
           'For one step, Ren becomes the pale outline he left in the Underworld and ignores the space between him and his target.',
         ],
-        tacticalPurpose:
-          'Strike from safety when the rear position or Tactical stance is available.',
+        tacticalPurpose: 'Attacks from the rear.',
         mechanicRule: 'Spend 1 AP to attack with +4 Power from rear position or Tactical stance.',
         cost: 1,
         cooldown: 1,
@@ -431,10 +450,14 @@ const HEROES: readonly HeroTemplate[] = [
     name: 'Sena Quill',
     role: 'support',
     pathName: 'Fatekeeper',
+    pronouns: { subject: 'she', object: 'her', possessive: 'her' },
     biography:
       'Sena could see the red threads joining people long before she knew they were real. She became a village healer and spent years pretending each impossible recovery was luck. Then she saw her own thread end inside a Gate that had not opened yet. Sena entered the hunter trials to find that Gate first and discovered Fatekeeper, a Path that can knot a life back together without deciding what that life must become.',
+    definingChoice: 'Sena entered the hunter trials to meet the death she had already seen.',
     desire: 'Reach the place where her future ends and prove that prophecy is only a warning.',
+    bond: 'The patients who trusted her even when she called every miracle luck.',
     flaw: 'She protects other people from painful truths until secrecy becomes its own betrayal.',
+    awakeningTrial: 'Tell the squad a painful future before trying to change it.',
     voiceLine: 'Fate is a thread, not a chain. Hold still while I prove it.',
     stats: { vitality: 10, power: 6, guard: 9, speed: 8, focus: 14 },
     techniques: [
@@ -445,7 +468,7 @@ const HEROES: readonly HeroTemplate[] = [
           "Sena gathers the torn red strands above an ally's wound and knots them back into one bright line.",
           'A web of red fate settles around the most wounded ally, pulling breath and strength back into place.',
         ],
-        tacticalPurpose: 'Restore the most wounded ally and protect them from the next hit.',
+        tacticalPurpose: 'Heals and wards an ally.',
         mechanicRule: 'Spend 2 AP to heal Focus + 5 HP, grant Inspired, and add a 3-point Ward.',
         cost: 2,
         cooldown: 2,
@@ -457,7 +480,7 @@ const HEROES: readonly HeroTemplate[] = [
           "Sena loops three red threads around the enemy's limbs and pulls its next movement out of order.",
           "The enemy's shadow snags on a red knot only Sena can see, breaking its rhythm mid-step.",
         ],
-        tacticalPurpose: 'Slow a dangerous enemy when healing is not yet necessary.',
+        tacticalPurpose: 'Slows an enemy.',
         mechanicRule: 'Spend 2 AP to attack with +2 Power and apply Staggered for 2 rounds.',
         cost: 2,
         cooldown: 2,
@@ -469,10 +492,14 @@ const HEROES: readonly HeroTemplate[] = [
     name: 'Tarin Sol',
     role: 'support',
     pathName: 'Phoenix Psalm',
+    pronouns: { subject: 'he', object: 'him', possessive: 'his' },
     biography:
       'Tarin was raised to sing the dawn hymn that kept his mountain temple warm. The hymn failed during the longest winter, and the elders chose three novices to feed the sacred flame. Tarin broke the altar instead. The phoenix sleeping beneath it chose him for that refusal, granting a Path whose fire heals only those who still have something they are willing to live for.',
+    definingChoice: 'Tarin broke the altar rather than feed three novices to its flame.',
     desire: 'Turn a sacrificial faith into one that asks people to survive together.',
+    bond: 'The three novices whose names were drawn for the sacred flame.',
     flaw: 'He needs suffering to have meaning and struggles to accept losses that solve nothing.',
+    awakeningTrial: 'Mourn a loss without calling it necessary.',
     voiceLine: 'No sacrifices today. I checked with the god living in my lungs.',
     stats: { vitality: 9, power: 7, guard: 8, speed: 9, focus: 14 },
     techniques: [
@@ -483,7 +510,7 @@ const HEROES: readonly HeroTemplate[] = [
           'Tarin sings one clear note, and warm gold feathers close around the most wounded ally.',
           'The phoenix breathes through Tarin, burning pain into harmless ash and leaving a shield of bright wings.',
         ],
-        tacticalPurpose: 'Recover a wounded ally and leave them guarded against immediate danger.',
+        tacticalPurpose: 'Heals and wards an ally.',
         mechanicRule: 'Spend 2 AP to heal Focus + 5 HP, grant Inspired, and add a 3-point Ward.',
         cost: 2,
         cooldown: 2,
@@ -495,7 +522,7 @@ const HEROES: readonly HeroTemplate[] = [
           'Tarin sends a ring of singing embers around the enemy, forcing its body to move against the rhythm.',
           'Three phoenix notes strike the ground around the target and erupt whenever it tries to advance.',
         ],
-        tacticalPurpose: 'Disrupt a fast enemy while the squad prepares its next attack.',
+        tacticalPurpose: 'Slows an enemy.',
         mechanicRule: 'Spend 2 AP to attack with +2 Power and apply Staggered for 2 rounds.',
         cost: 2,
         cooldown: 2,
@@ -638,12 +665,16 @@ export function generateMythicReviewDraft(seed: string): MythicReviewDraft {
       name: hero.name,
       role: hero.role,
       pathName: hero.pathName,
+      pronouns: hero.pronouns,
       introduction: `${hero.biography} ${bind(world.roleBonds[role], {
         hero: hero.name,
         path: hero.pathName,
       })}`,
+      definingChoice: hero.definingChoice,
       desire: hero.desire,
+      bond: hero.bond,
       flaw: hero.flaw,
+      awakeningTrial: hero.awakeningTrial,
       voiceLine: hero.voiceLine,
       stats: hero.stats,
       techniques,

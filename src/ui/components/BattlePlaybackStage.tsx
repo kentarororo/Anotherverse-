@@ -4,8 +4,7 @@ import type { BattleReport, CombatEvent } from '../../engine/reports/combat';
 import { maximumHp } from '../../engine/combat/stats';
 import { PixelArtSlot } from './PixelArtSlot';
 
-const MAX_VISIBLE_BEATS = 16;
-const BEAT_DURATION_MS = 520;
+export const BEAT_DURATION_MS = 800;
 
 interface BattlePlaybackStageProps {
   report: BattleReport;
@@ -20,49 +19,10 @@ function titleCase(value: string) {
   return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function selectBattleBeats(events: CombatEvent[]) {
-  if (events.length <= MAX_VISIBLE_BEATS) return events;
-
-  const chosen = new Map<number, CombatEvent>();
-  const first = events[0];
-  const last = events.at(-1);
-  if (first !== undefined) chosen.set(first.index, first);
-  events
-    .filter((event) => event.eventType === 'defeat')
-    .forEach((event) => chosen.set(event.index, event));
-  if (last !== undefined) chosen.set(last.index, last);
-
-  const strongestImpacts = events
-    .filter((event) => (event.finalAmount ?? 0) > 0)
-    .sort(
-      (left, right) =>
-        Math.abs(right.finalAmount ?? 0) - Math.abs(left.finalAmount ?? 0) ||
-        left.index - right.index,
-    )
-    .slice(0, 4);
-  strongestImpacts.forEach((event) => chosen.set(event.index, event));
-
-  const priorityBeats = events.filter((event) =>
-    ['interrupt', 'heal', 'status'].includes(event.eventType),
+export function selectBattleBeats(events: CombatEvent[]) {
+  return events.filter((event) =>
+    ['attack', 'heal', 'guard', 'interrupt', 'defeat'].includes(event.eventType),
   );
-  for (const event of priorityBeats) {
-    if (chosen.size >= MAX_VISIBLE_BEATS) break;
-    chosen.set(event.index, event);
-  }
-
-  const remaining = events
-    .filter((event) => !chosen.has(event.index))
-    .sort(
-      (left, right) =>
-        Math.abs(right.finalAmount ?? 0) - Math.abs(left.finalAmount ?? 0) ||
-        left.index - right.index,
-    );
-  for (const event of remaining) {
-    if (chosen.size >= MAX_VISIBLE_BEATS) break;
-    chosen.set(event.index, event);
-  }
-
-  return [...chosen.values()].sort((left, right) => left.index - right.index);
 }
 
 function reducedMotionIsActive() {
@@ -357,8 +317,8 @@ export function BattlePlaybackStage({
           {playback === 'result'
             ? 'Result'
             : playback === 'waiting'
-              ? `Ready · ${beats.length} highlights`
-              : `${beatIndex + 1}/${beats.length} highlights`}
+              ? `Ready · ${beats.length} actions`
+              : `${beatIndex + 1}/${beats.length} actions`}
         </span>
         {!reducedMotion && playback !== 'result' && (
           <button
@@ -374,7 +334,7 @@ export function BattlePlaybackStage({
             {playback === 'waiting'
               ? 'Start playback'
               : reducedMotion
-                ? 'Next highlight'
+                ? 'Next action'
                 : playback === 'playing'
                   ? 'Pause'
                   : 'Play'}

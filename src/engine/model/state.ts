@@ -13,9 +13,9 @@ import {
   RelationshipStateSchema,
 } from './progression';
 
-// Schema 11 begins the world-specific authored quest model. Older snapshots stored only a choice
-// label and cannot reconstruct the authored outcome required by later chapters.
-export const GAME_SCHEMA_VERSION = 11 as const;
+// Schema 12 adds player-owned coin and relic dust. Older snapshots cannot reconstruct the
+// battle rewards that should have produced those resources.
+export const GAME_SCHEMA_VERSION = 12 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),
@@ -47,6 +47,8 @@ export const CanonicalGameStateSchema = z.object({
   reputation: z.number().int().min(-100).max(100),
   threat: z.number().int().min(0).max(100),
   supplies: z.number().int().nonnegative(),
+  coins: z.number().int().nonnegative(),
+  relicDust: z.number().int().nonnegative(),
   campaignBible: CampaignBibleSchema.nullable(),
   generatedDefinitions: GeneratedDefinitionsSchema,
   partyState: z.record(z.string(), PartyMemberStateSchema),
@@ -80,6 +82,8 @@ export function createEmptyGameState(contentManifestHash: string): CanonicalGame
     reputation: 0,
     threat: 0,
     supplies: 0,
+    coins: 0,
+    relicDust: 0,
     campaignBible: null,
     generatedDefinitions: {
       characters: [],

@@ -13,6 +13,7 @@ export interface QuestChoiceDefinition {
     defeat: string;
     roundCap: string;
   };
+  encounterId?: string;
   effects: {
     renownDelta: number;
     provisionsDelta: number;
@@ -228,13 +229,24 @@ const fallenHeavens: QuestArcDefinition = {
           'The trio copied every name and oath from the mural. The last line warned that three living Paths could open the heart, and Serin arrived in time to read it.',
           fx(1, 0, 0, 0),
         ),
-        choice(
-          'fallen-t8-b',
-          'Take the missing piece',
-          'Gain the stone key and wake the ward protecting it.',
-          'The trio pulled the missing hunter from the wall and found a stone key behind it. The chamber ward woke, and Serin arrived while the floor was still shaking.',
-          fx(0, 0, 2, 0),
-        ),
+        {
+          ...choice(
+            'fallen-t8-b',
+            'Take the missing piece',
+            'Gain the stone key and wake the ward protecting it.',
+            'The trio pulled the missing hunter from the wall and found a stone key behind it. They defeated the chamber ward as Serin arrived.',
+            fx(0, 0, 2, 0),
+          ),
+          encounterId: 'secret-awakened-ward',
+          outcomeConsequences: {
+            victory:
+              'The trio took the stone key and defeated the chamber ward. Serin arrived as the last guardian fell.',
+            defeat:
+              'The chamber ward drove the trio from the mural. Serin pulled them into a side passage, but the stone key remained behind.',
+            roundCap:
+              'The trio held the chamber ward long enough for Serin to pry the stone key free. They escaped together before the floor collapsed.',
+          },
+        },
       ],
     },
     {
@@ -437,13 +449,24 @@ const fallenHeavens: QuestArcDefinition = {
         'The roots are breaking one by one, and the guardian will wake before the squad can study the prison.',
       decision: 'Will the trio take the guardian’s chain or cross the roots before it wakes?',
       choices: [
-        choice(
-          'fallen-t16-a',
-          'Take the guardian’s chain',
-          'Gain a weapon for the final battle and wake the guardian early.',
-          '{lead} pulled the chain free before the guardian woke. Black roots wrapped around the hero’s arm, and the guardian fled to the chamber above.',
-          fx(1, 0, 2, 0),
-        ),
+        {
+          ...choice(
+            'fallen-t16-a',
+            'Take the guardian’s chain',
+            'Gain a weapon for the final battle and wake the guardian early.',
+            '{lead} pulled the chain free and the trio defeated the waking guardian. Black roots wrapped around the hero’s arm.',
+            fx(1, 0, 2, 0),
+          ),
+          encounterId: 'secret-waking-guardian',
+          outcomeConsequences: {
+            victory:
+              '{lead} took the chain and the trio defeated the waking guardian. Black roots wrapped around the hero’s arm.',
+            defeat:
+              'The guardian drove the trio from the heart. {lead} kept one broken link, but black roots had already reached the hero’s arm.',
+            roundCap:
+              'The trio held the guardian while {lead} broke one link from its chain. They withdrew as black roots reached the hero’s arm.',
+          },
+        },
         choice(
           'fallen-t16-b',
           'Cross the heart roots',
@@ -704,13 +727,24 @@ const underworldTide: QuestArcDefinition = {
           'The trio copied the king’s promise to feed the tide one memory each month. Captain Cael boarded the boat in time to read the final line.',
           fx(1, 0, 0, 0),
         ),
-        choice(
-          'tide-t8-b',
-          'Take the king’s page',
-          'Keep the original proof and wake the dead who guard it.',
-          'The trio tore the king’s page from the ledger. The drowned guards woke below the boat, and Captain Cael arrived as their hands reached the rail.',
-          fx(0, 0, 2, 0),
-        ),
+        {
+          ...choice(
+            'tide-t8-b',
+            'Take the king’s page',
+            'Keep the original proof and wake the dead who guard it.',
+            'The trio took the king’s page and defeated its drowned guards. Captain Cael arrived as the last hand slipped from the rail.',
+            fx(0, 0, 2, 0),
+          ),
+          encounterId: 'secret-awakened-ward',
+          outcomeConsequences: {
+            victory:
+              'The trio took the king’s page and defeated its drowned guards. Captain Cael arrived as the last hand slipped from the rail.',
+            defeat:
+              'The drowned guards forced the trio to abandon the king’s page. Captain Cael hauled them onto his boat before the dead could follow.',
+            roundCap:
+              'The trio held the drowned guards while Captain Cael cut the king’s page free. His boat carried them away before the dead reached the rail.',
+          },
+        },
       ],
     },
     {
@@ -722,7 +756,7 @@ const underworldTide: QuestArcDefinition = {
       title: 'Cael’s Bargain',
       hook: 'Cael lowers his spear and admits that {faction} promised to return his brother’s stolen memories.',
       stakes:
-        'He knows a path to the bell chamber, but he wants the king’s page when the quest is over.',
+        'He knows a path to the bell chamber, but he wants the trio’s evidence when the quest is over.',
       decision: 'Will the trio accept his help or take the flooded gallery without him?',
       choices: [
         choice(
@@ -913,13 +947,24 @@ const underworldTide: QuestArcDefinition = {
         'The rope is tearing, and the guardian will wake before the squad can read the royal marks.',
       decision: 'Will the trio take the bell-rope or climb the frame before it wakes?',
       choices: [
-        choice(
-          'tide-t16-a',
-          'Take the bell-rope',
-          'Gain control of the bell and wake its guardian early.',
-          '{lead} cut the rope free before the guardian woke. A black crown spread across the hero’s arm, and the guardian climbed toward the shore.',
-          fx(1, 0, 2, 0),
-        ),
+        {
+          ...choice(
+            'tide-t16-a',
+            'Take the bell-rope',
+            'Gain control of the bell and wake its guardian early.',
+            '{lead} cut the rope free and the trio defeated the waking guardian. A black crown spread across the hero’s arm.',
+            fx(1, 0, 2, 0),
+          ),
+          encounterId: 'secret-waking-guardian',
+          outcomeConsequences: {
+            victory:
+              '{lead} took the bell-rope and the trio defeated the waking guardian. A black crown spread across the hero’s arm.',
+            defeat:
+              'The guardian drove the trio from the bell. {lead} kept one length of rope, but the black crown had already reached the hero’s arm.',
+            roundCap:
+              'The trio held the guardian while {lead} cut one length of rope free. They withdrew as the black crown reached the hero’s arm.',
+          },
+        },
         choice(
           'tide-t16-b',
           'Climb the bell frame',
@@ -1626,7 +1671,7 @@ export const QUEST_CHAPTER_VARIANTS: Readonly<
 };
 
 const rejectedPlayerLanguage =
-  /Soul Ledger entry left|Turn \d+ (?:operation|personal|discovery|rival|social) decision|becomes a fact that later chapters can recall|live campaign facts|\+\-|\bresolved\b/i;
+  /Book of Deeds entry left|Turn \d+ (?:operation|personal|discovery|rival|social) decision|becomes a fact that later chapters can recall|live campaign facts|\+\-|\bresolved\b/i;
 
 for (const arc of Object.values(QUEST_ARCS)) {
   if (arc.chapters.length !== 17) throw new Error(`${arc.id} must contain Turns 4 through 20.`);

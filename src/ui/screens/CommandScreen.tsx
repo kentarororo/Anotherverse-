@@ -52,7 +52,11 @@ export function CommandScreen() {
   const showingAftermath = turnView === 'aftermath' && aftermath !== undefined;
   const displayedTurn = showingAftermath ? aftermath.turn : game.turn;
   const scenario = game.currentScenario;
-  const isOperation = scenario?.category === 'operation';
+  const selectedChoice = scenario?.choices.find(
+    (choice) => choice.id === game.pendingPlan.situationChoiceId,
+  );
+  const hasBattle = game.currentEncounter !== null;
+  const newDropIds = showingAftermath ? (aftermath.itemIdsGranted ?? []) : [];
   const battleEnemyIds =
     report === undefined
       ? []
@@ -96,11 +100,9 @@ export function CommandScreen() {
     game.pendingPlan.teamPriorityId ?? 'break-threat',
   );
   const battleCausality = report === undefined ? [] : buildBattleCausality(game, report);
-  const selectedChoice = scenario?.choices.find(
-    (choice) => choice.id === game.pendingPlan.situationChoiceId,
-  );
   const selectedChoiceAffordable =
     selectedChoice === undefined || game.supplies + selectedChoice.effects.provisionsDelta >= 0;
+  const alternateChoice = scenario?.choices.find((choice) => choice.id !== selectedChoice?.id);
 
   return (
     <main className="command-screen">
@@ -114,9 +116,9 @@ export function CommandScreen() {
             <dd>{displayedTurn}</dd>
           </div>
           <div>
-            <dt>Path Rank</dt>
+            <dt>Rank</dt>
             <dd>
-              {game.rank} · {game.reputation} Renown
+              {game.rank} · {game.reputation}
             </dd>
           </div>
           <div>
@@ -124,9 +126,31 @@ export function CommandScreen() {
             <dd>{game.threat}</dd>
           </div>
           <div>
-            <dt>Provisions</dt>
+            <dt>Rations</dt>
             <dd>{game.supplies}</dd>
           </div>
+          <div>
+            <dt>Coin</dt>
+            <dd>{game.coins}</dd>
+          </div>
+          <div>
+            <dt>Dust</dt>
+            <dd>{game.relicDust}</dd>
+          </div>
+          <div>
+            <dt>Gear</dt>
+            <dd>{game.inventoryIds.length}</dd>
+          </div>
+          {newDropIds.length > 0 && (
+            <div className="new-drop-metric" data-new-drop-count={newDropIds.length}>
+              <dt>New</dt>
+              <dd>
+                <button type="button" onClick={() => openDrawer({ type: 'equipment' })}>
+                  {newDropIds.length} drop
+                </button>
+              </dd>
+            </div>
+          )}
         </dl>
         <div className="header-actions">
           <button
@@ -281,12 +305,7 @@ export function CommandScreen() {
           aria-labelledby="operation-title"
           data-scenario-category={scenario?.category}
         >
-          <nav className="phase-tabs" aria-label="Turn phases">
-            <span className={!showingAftermath ? 'active' : ''}>Brief</span>
-            <span className={!showingAftermath ? 'active' : ''}>Setup</span>
-            <span className={showingAftermath ? 'active' : ''}>Action</span>
-            <span className={showingAftermath ? 'active' : ''}>Result</span>
-          </nav>
+          <div className="turn-state-label">{showingAftermath ? 'Result' : 'Plan'}</div>
           <div className="operation-content">
             <p className="eyebrow">
               {scenario?.quest.title ?? 'Main Quest'} · Act {scenario?.quest.act ?? 1} of 4 ·
@@ -304,11 +323,11 @@ export function CommandScreen() {
                 <p className="operation-hook">{scenario.sceneBeats.hook}</p>
                 <dl>
                   <div>
-                    <dt>What happened</dt>
+                    <dt>Previously</dt>
                     <dd>{scenario.sceneBeats.cause}</dd>
                   </div>
                   <div>
-                    <dt>If you wait</dt>
+                    <dt>At stake</dt>
                     <dd>{scenario.sceneBeats.stakes}</dd>
                   </div>
                   <div>
@@ -327,7 +346,7 @@ export function CommandScreen() {
                 assetIds={battleAssetIds}
                 arenaId={resolvedArenaId}
               />
-            ) : isOperation && game.currentEncounter !== null ? (
+            ) : hasBattle && game.currentEncounter !== null ? (
               <>
                 <PlanningBattleStage
                   arenaId={game.currentEncounter.id}
@@ -346,10 +365,13 @@ export function CommandScreen() {
                     </p>
                   ))}
                 </div>
+                <p className="reward-preview">
+                  <strong>Reward:</strong> {game.currentEncounter.rewardPreview}
+                </p>
               </>
             ) : (
               <div className="battle-stage" aria-label="Enemy forecast">
-                {!isOperation && scenario !== null && (
+                {!hasBattle && scenario !== null && (
                   <article className="situation-card">
                     <span>{titleCase(scenario.category)}</span>
                     <strong>{scenario.title}</strong>
@@ -370,7 +392,7 @@ export function CommandScreen() {
                   ? report === undefined
                     ? 'Resolved'
                     : titleCase(report.outcome)
-                  : isOperation
+                  : hasBattle
                     ? 'Ready the squad'
                     : 'Choose a response'}
               </h2>
@@ -423,7 +445,7 @@ export function CommandScreen() {
                 </div>
               )}
               <div>
-                <span>Provisions</span>
+                <span>Rations</span>
                 <strong>{signed(aftermath.suppliesDelta)}</strong>
               </div>
               <div>
@@ -453,8 +475,17 @@ export function CommandScreen() {
             </div>
           ) : (
             <>
-              {isOperation ? (
+              {hasBattle ? (
                 <>
+                  {scenario?.category !== 'operation' && alternateChoice !== undefined && (
+                    <button
+                      className="choice-change-button"
+                      type="button"
+                      onClick={() => chooseSituation(alternateChoice.id)}
+                    >
+                      Choose instead: {alternateChoice.label}
+                    </button>
+                  )}
                   <label className="priority-control">
                     Team priority
                     <select
@@ -470,7 +501,7 @@ export function CommandScreen() {
                     </select>
                   </label>
                   <div className="priority-effect" aria-live="polite">
-                    <span>What this order does</span>
+                    <span>Order</span>
                     <strong>{activePriority.effect}</strong>
                   </div>
                   <div className="action-preview" aria-label="Expected opening actions">
@@ -521,7 +552,7 @@ export function CommandScreen() {
                       <span>{choice.description}</span>
                       <small className="choice-effects">
                         Renown {signed(choice.effects.renownDelta)}
-                        {' · '}Provisions {signed(choice.effects.provisionsDelta)}
+                        {' · '}Rations {signed(choice.effects.provisionsDelta)}
                         {' · '}Danger {signed(choice.effects.dangerDelta)}
                         {choice.effects.bondDelta !== 0 &&
                           ` · Bond ${signed(choice.effects.bondDelta)}`}
@@ -530,14 +561,16 @@ export function CommandScreen() {
                   ))}
                 </div>
               )}
-              <div className="forecast-notes">
-                <p>
-                  <b>Advantage:</b> {forecast.advantages[0]}
-                </p>
-                <p>
-                  <b>Risk:</b> {forecast.vulnerabilities[0]}
-                </p>
-              </div>
+              {hasBattle && (
+                <div className="forecast-notes">
+                  <p>
+                    <b>Advantage:</b> {forecast.advantages[0]}
+                  </p>
+                  <p>
+                    <b>Risk:</b> {forecast.vulnerabilities[0]}
+                  </p>
+                </div>
+              )}
             </>
           )}
           <button
@@ -612,13 +645,13 @@ export function CommandScreen() {
                 <li>
                   <time>T{String(game.turn).padStart(2, '0')}</time>
                   <span>
-                    {isOperation ? game.currentEncounter?.signature : scenario?.forecast.likelyRisk}
+                    {hasBattle ? game.currentEncounter?.signature : scenario?.forecast.likelyRisk}
                   </span>
                 </li>
                 <li>
                   <time>T{String(game.turn).padStart(2, '0')}</time>
                   <span>
-                    {isOperation
+                    {hasBattle
                       ? 'Change formation, stances, and priority before taking action.'
                       : 'Choose one response. The result will shape the next chapter.'}
                   </span>

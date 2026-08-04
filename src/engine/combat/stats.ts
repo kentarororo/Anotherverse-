@@ -5,12 +5,23 @@ export function maximumHp(stats: CoreStats): number {
   return 16 + stats.vitality * 2;
 }
 
+export function scaledEnemyStats(stats: CoreStats, turn: number): CoreStats {
+  const tier = Math.floor((turn - 1) / 5);
+  return {
+    vitality: stats.vitality + 5 + tier,
+    power: stats.power + 4 + tier,
+    guard: stats.guard + 1 + Math.floor(tier / 2),
+    speed: stats.speed + tier,
+    focus: stats.focus + tier,
+  };
+}
+
 export function effectiveGuard(
   stats: CoreStats,
   stance: StanceId | null,
   statuses: StatusState[],
 ): number {
-  const stanceModifier = stance === 'guarded' ? 4 : stance === 'aggressive' ? -3 : 0;
+  const stanceModifier = stance === 'guarded' ? 5 : stance === 'aggressive' ? -4 : 0;
   const exposed = statuses.some((status) => status.statusId === 'exposed') ? 4 : 0;
   return Math.max(0, stats.guard + stanceModifier - exposed);
 }

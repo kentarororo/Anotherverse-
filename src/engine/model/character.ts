@@ -31,7 +31,7 @@ export const CharacterBlueprintSchema = z.object({
   callingName: z.string().min(1),
   pathClassId: z.string().min(1),
   pathClassName: z.string().min(1),
-  pathClassSummary: z.string().min(24),
+  pathClassSummary: z.string().min(12),
   backgroundName: z.string().min(1),
   bond: z.string().min(12),
   role: z.enum(['vanguard', 'striker', 'controller', 'support']),
@@ -55,7 +55,7 @@ export const CharacterBlueprintSchema = z.object({
       z.object({
         id: z.string().min(1),
         name: z.string().min(1),
-        storyDescription: z.string().min(40),
+        storyDescription: z.string().min(20),
         mechanicLabel: z.string().min(5),
         resourceCost: z.number().int().nonnegative(),
         cooldownRounds: z.number().int().nonnegative(),

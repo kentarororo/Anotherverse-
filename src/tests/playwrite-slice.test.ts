@@ -41,8 +41,8 @@ describe('canonical mythic playwrite slice', () => {
     expect(previews).toHaveLength(3);
     expect(previews.every((preview) => preview.actionName.length > 3)).toBe(true);
     expect(PRIORITY_RULES.every((rule) => /target|damage|AP|attack/i.test(rule.effect))).toBe(true);
-    expect(STANCE_RULES.map((rule) => rule.effect).join(' ')).toMatch(/\+4 Guard/);
-    expect(STANCE_RULES.map((rule) => rule.effect).join(' ')).toMatch(/\+2 raw attack damage/);
+    expect(STANCE_RULES.map((rule) => rule.effect).join(' ')).toMatch(/\+5 Guard/);
+    expect(STANCE_RULES.map((rule) => rule.effect).join(' ')).toMatch(/\+3 damage/);
   });
 
   it('turns the battle into pressure, plan, turning point, and remembered consequence', () => {

@@ -24,7 +24,7 @@ test('makes the mythic brief, plan, battle cause, and memory legible as one loop
   await page.getByRole('button', { name: 'Start Campaign' }).click();
 
   await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
-  await expect(page.getByText('What this order does')).toBeVisible();
+  await expect(page.getByText('Order', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Expected opening actions').locator('p')).toHaveCount(3);
   const breakThreatActions = await page
     .getByLabel('Expected opening actions')
@@ -34,9 +34,9 @@ test('makes the mythic brief, plan, battle cause, and memory legible as one loop
   await page.getByLabel('Team priority').selectOption('conserve-power');
   await expect(page.getByText(/Heroes reserve AP and use basic attacks/)).toBeVisible();
   await expect(page.getByLabel('Expected opening actions').locator('small')).toHaveText([
-    /builds 1 AP/,
-    /builds 1 AP/,
-    /builds 1 AP/,
+    /restores 1 AP/,
+    /restores 1 AP/,
+    /restores 1 AP/,
   ]);
   const conserveActions = await page
     .getByLabel('Expected opening actions')
@@ -59,8 +59,8 @@ test('makes the mythic brief, plan, battle cause, and memory legible as one loop
   await page.screenshot({ path: 'test-results/playwrite-aftermath.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
-  await expect(page.getByLabel('Story situation')).toContainText('What happened');
-  await expect(page.getByLabel('Story situation')).toContainText('If you wait');
+  await expect(page.getByLabel('Story situation')).toContainText('Previously');
+  await expect(page.getByLabel('Story situation')).toContainText('At stake');
   await expect(page.getByLabel('Story situation')).toContainText('Choose');
   await expect(page.getByLabel('Story situation')).toContainText(
     /The trio (?:defeated|silenced|drove|broke)/i,

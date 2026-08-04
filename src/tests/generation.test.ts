@@ -42,8 +42,9 @@ describe('generated campaigns and trios', () => {
       expect(coverage.has('damage')).toBe(true);
       expect(coverage.has('sustain') || coverage.has('resource')).toBe(true);
       expect(new Set(draft.characters.map((hero) => hero.signatureRuleId)).size).toBe(3);
+      expect(new Set(draft.characters.map((hero) => hero.origin)).size).toBe(3);
       for (const hero of draft.characters) {
-        expect(hero.origin).toBe(draft.bible.city.name);
+        expect(hero.origin).not.toBe(draft.bible.city.name);
         expect(hero.formativeEvent.length).toBeGreaterThan(20);
         expect(hero.drive.length).toBeGreaterThan(20);
         expect(hero.contradiction.length).toBeGreaterThan(20);
@@ -63,9 +64,9 @@ describe('generated campaigns and trios', () => {
         expect(hero.reactionRuleId.length).toBeGreaterThan(3);
         expect(hero.limitation.length).toBeGreaterThan(10);
         for (const technique of hero.techniques) {
-          expect(technique.storyDescription).toContain(hero.name);
-          expect(technique.storyDescription).toContain(hero.callingName);
+          expect(technique.storyDescription).toMatch(/^[A-Z].*[.!?]$/);
           expect(technique.storyDescription).not.toBe(technique.mechanicLabel);
+          expect(technique.storyDescription.length).toBeLessThan(180);
           expect(technique.storyDescription).not.toMatch(
             /(?:[+-]\d+|\b\d+\s*(?:resource|rounds?|vitality|ward)\b)/i,
           );

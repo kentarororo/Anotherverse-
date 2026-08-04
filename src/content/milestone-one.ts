@@ -380,6 +380,46 @@ export const temporaryEnemies: CombatantDefinition[] = [
     scenarioTags: ['faction', 'oracle', 'hexer'],
     threat: 10,
   },
+  {
+    id: 'drowned-lancer',
+    name: 'Drowned Lancer',
+    side: 'enemies',
+    role: 'charger',
+    policyId: 'charger',
+    stats: { vitality: 12, power: 12, guard: 8, speed: 10, focus: 8 },
+    maxResource: 3,
+    basicActionId: 'rending-claw',
+    techniqueIds: ['breach-charge'],
+    signature: 'Undertow Charge strikes the front and leaves it Strained.',
+    signatureRuleId: 'undertow-charge',
+    limitation: 'Its soaked armour opens when Exposed.',
+    limitationRuleId: 'waterlogged-guard',
+    ecology: 'A dead royal guard still marching the stair it failed to defend.',
+    counterplay: 'Hold the front, then break its guard with Exposed.',
+    rewardIdentity: 'A black spearhead that still carries the pull of the tide.',
+    scenarioTags: ['underworld', 'drowned', 'charger'],
+    threat: 11,
+  },
+  {
+    id: 'bell-wraith',
+    name: 'Bell Wraith',
+    side: 'enemies',
+    role: 'hexer',
+    policyId: 'hexer',
+    stats: { vitality: 10, power: 11, guard: 6, speed: 11, focus: 14 },
+    maxResource: 3,
+    basicActionId: 'shard-bolt',
+    techniqueIds: ['rending-hex'],
+    signature: 'Funeral Toll marks the rear hero before the next blow lands.',
+    signatureRuleId: 'funeral-toll',
+    limitation: 'Breaking its lancer leaves the toll without an anchor.',
+    limitationRuleId: 'paired-anchor',
+    ecology: 'A funeral prayer that learned to hunt after its name was scraped from the bell.',
+    counterplay: 'Protect the rear or break the lancer before the next toll.',
+    rewardIdentity: 'A pale bell-clapper that rings near hidden spirits.',
+    scenarioTags: ['underworld', 'bell', 'hexer'],
+    threat: 12,
+  },
 ];
 
 export const temporaryEncounter: EncounterState = {
@@ -387,7 +427,7 @@ export const temporaryEncounter: EncounterState = {
   title: 'The Fourth God Falls',
   brief:
     'A Grave Hound charges whoever holds the front while a Pale Augur marks the rear hero with a funeral omen. Formation and target priority decide which legend controls the opening rounds.',
-  enemyIds: ['rift-hound', 'glass-weaver'],
+  enemyIds: ['rift-hound', 'glass-weaver', 'signal-leech'],
   signature: 'Grave Charge pressures the front; Funeral Omen hunts the rear.',
   rewardPreview: 'Hunter experience, two Provisions, and three Renown on victory.',
 };
@@ -399,7 +439,7 @@ export const operationEncounters: EncounterState[] = [
     title: 'The Storm-God Spring',
     brief:
       'A Storm Jackal crosses the ruined shrine in sudden bursts while an Echo Leech steals its battle cry. The largest threat and the rear line demand different counters.',
-    enemyIds: ['storm-jackal', 'signal-leech'],
+    enemyIds: ['storm-jackal', 'signal-leech', 'rift-hound'],
     signature: 'Surge Pounce pressures the front; Borrowed Voice marks the rear.',
     rewardPreview: 'Hunter experience, Provisions, and Bestiary knowledge.',
   },
@@ -408,7 +448,7 @@ export const operationEncounters: EncounterState[] = [
     title: 'The Split Labyrinth',
     brief:
       'An Ironback Minotaur controls the narrow path while a Name-Eater erases the runes leading home. Breaking guard quickly competes with protecting the rear.',
-    enemyIds: ['ironback-mauler', 'veil-scribe'],
+    enemyIds: ['ironback-mauler', 'veil-scribe', 'storm-jackal'],
     signature: 'Labyrinth Charge holds the front; Erasure Mark attacks the rear hero.',
     rewardPreview: 'Hunter experience, Provisions, and a restored true-name glyph.',
   },
@@ -417,15 +457,45 @@ export const operationEncounters: EncounterState[] = [
     title: 'Trial of the Veiled Court',
     brief:
       'A Crown Beast charges for the Veiled Court while a Mirror Oracle turns the trio’s doubts against the rear line. The plan will also shape public Renown.',
-    enemyIds: ['survey-beast', 'mirror-oracle'],
+    enemyIds: ['survey-beast', 'mirror-oracle', 'ironback-mauler'],
     signature: 'Claimant Rush pressures the front; Reflected Verdict marks the rear.',
     rewardPreview: 'Hunter experience, Provisions, a relic, and Renown.',
+  },
+  {
+    id: 'secret-drowned-stair',
+    title: 'The Drowned Stair',
+    brief: 'A Drowned Lancer holds the front steps while a Bell Wraith hunts whoever stays behind.',
+    enemyIds: ['drowned-lancer', 'bell-wraith', 'veil-scribe'],
+    signature: 'Undertow Charge hits the front; Funeral Toll marks the rear.',
+    rewardPreview: 'Coin, relic dust, and drowned equipment.',
+  },
+  {
+    id: 'secret-awakened-ward',
+    title: 'The Awakened Ward',
+    brief: 'The stolen clue wakes an Ironback Minotaur and a Name-Eater behind it.',
+    enemyIds: ['ironback-mauler', 'veil-scribe', 'glass-weaver'],
+    signature: 'Labyrinth Charge locks the front; Erasure Mark hunts the rear.',
+    rewardPreview: 'Coin, relic dust, and ward equipment.',
+  },
+  {
+    id: 'secret-waking-guardian',
+    title: 'The Waking Guardian',
+    brief: 'Taking the chain wakes a Crown Beast while a Mirror Oracle reads the squad’s escape.',
+    enemyIds: ['survey-beast', 'mirror-oracle', 'bell-wraith'],
+    signature: 'Claimant Rush hits the front; Reflected Verdict marks the rear.',
+    rewardPreview: 'Coin, relic dust, and guardian equipment.',
   },
 ];
 
 export function encounterForOperationTemplate(templateId: string): EncounterState {
   const parsedIndex = Number.parseInt(templateId.split('-').at(-1) ?? '1', 10) - 1;
   return operationEncounters[parsedIndex] ?? temporaryEncounter;
+}
+
+export function encounterForId(encounterId: string): EncounterState {
+  return (
+    operationEncounters.find((encounter) => encounter.id === encounterId) ?? temporaryEncounter
+  );
 }
 
 export const prototypeEquipment: EquipmentDefinition[] = [
@@ -447,7 +517,89 @@ export const prototypeEquipment: EquipmentDefinition[] = [
     guardBonus: 2,
     counterTag: 'hexer',
   },
+  {
+    id: 'stormhook-sabre',
+    name: 'Stormhook Sabre',
+    slot: 'weapon',
+    description: 'A hooked thunder-claw blade. +2 Power and protection against Chargers.',
+    powerBonus: 2,
+    guardBonus: 1,
+    counterTag: 'charger',
+  },
+  {
+    id: 'echo-shell',
+    name: 'Echo Shell',
+    slot: 'support',
+    description: 'A sealed spirit shell. +1 Power and +2 Guard against Hexers.',
+    powerBonus: 1,
+    guardBonus: 2,
+    counterTag: 'hexer',
+  },
+  {
+    id: 'ironback-plate',
+    name: 'Ironback Plate',
+    slot: 'support',
+    description: 'A fitted minotaur plate. +4 Guard and protection against Chargers.',
+    powerBonus: 0,
+    guardBonus: 4,
+    counterTag: 'charger',
+  },
+  {
+    id: 'true-name-knife',
+    name: 'True-Name Knife',
+    slot: 'weapon',
+    description: 'A short blade etched with one surviving name. +3 Power against Hexers.',
+    powerBonus: 3,
+    guardBonus: 0,
+    counterTag: 'hexer',
+  },
+  {
+    id: 'crownchain-blade',
+    name: 'Crownchain Blade',
+    slot: 'weapon',
+    description: 'A royal chain hammered into an edge. +3 Power against Chargers.',
+    powerBonus: 3,
+    guardBonus: 0,
+    counterTag: 'charger',
+  },
+  {
+    id: 'mirror-shard-charm',
+    name: 'Mirror-Shard Charm',
+    slot: 'support',
+    description: 'A silver shard that catches hostile signs. +1 Power and +3 Guard against Hexers.',
+    powerBonus: 1,
+    guardBonus: 3,
+    counterTag: 'hexer',
+  },
+  {
+    id: 'tidebone-spear',
+    name: 'Tidebone Spear',
+    slot: 'weapon',
+    description: 'A black spearhead that pulls toward its mark. +3 Power against Chargers.',
+    powerBonus: 3,
+    guardBonus: 0,
+    counterTag: 'charger',
+  },
+  {
+    id: 'funeral-bell',
+    name: 'Funeral Bell',
+    slot: 'support',
+    description: 'A pale bell that rings before a curse lands. +3 Guard against Hexers.',
+    powerBonus: 0,
+    guardBonus: 3,
+    counterTag: 'hexer',
+  },
 ];
+
+export const rewardPoolByEncounterId: Readonly<Record<string, readonly string[]>> = {
+  'm1-fallen-god-trial': ['houndglass-edge', 'weaver-ward'],
+  'm4-east-junction': ['stormhook-sabre', 'echo-shell'],
+  'm4-split-concourse': ['ironback-plate', 'true-name-knife'],
+  'm4-closure-under-watch': ['crownchain-blade', 'mirror-shard-charm'],
+  'secret-drowned-stair': ['tidebone-spear', 'funeral-bell'],
+  'secret-awakened-ward': ['true-name-knife', 'ironback-plate'],
+  'secret-waking-guardian': ['crownchain-blade', 'mirror-shard-charm'],
+};
 
 export function createMilestoneOneDefinitions(characters = temporaryCharacters) {
   const heroes: CombatantDefinition[] = characters.map((character) => ({

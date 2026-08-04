@@ -8,7 +8,9 @@ import {
 import {
   createDefaultPositions,
   createDefaultStances,
+  encounterForId,
   encounterForOperationTemplate,
+  rewardPoolByEncounterId,
 } from '../../content/milestone-one';
 import { StanceIdSchema, TeamPriorityIdSchema } from '../model/combat';
 import { simulateBattle } from '../combat/simulate';
@@ -40,6 +42,28 @@ function squadRankForReputation(reputation: number, tiers: readonly string[] = [
   return first;
 }
 
+function encounterForSelection(
+  scenario: NonNullable<CanonicalGameState['currentScenario']>,
+  choice: NonNullable<CanonicalGameState['currentScenario']>['choices'][number],
+) {
+  if (choice.encounterId !== undefined) {
+    return { ...encounterForId(choice.encounterId), title: scenario.title };
+  }
+  return scenario.category === 'operation'
+    ? { ...encounterForOperationTemplate(scenario.templateId), title: scenario.title }
+    : null;
+}
+
+function nextBattleReward(state: CanonicalGameState): string | null {
+  const encounterId = state.currentEncounter?.id;
+  if (encounterId === undefined) return null;
+  const pool = rewardPoolByEncounterId[encounterId] ?? [];
+  if (pool.length === 0) return null;
+  const offset = state.turn % pool.length;
+  const ordered = [...pool.slice(offset), ...pool.slice(0, offset)];
+  return ordered.find((itemId) => !state.inventoryIds.includes(itemId)) ?? null;
+}
+
 export function applyGameCommand(
   currentState: CanonicalGameState,
   rawCommand: GameCommand,
@@ -64,6 +88,9 @@ export function applyGameCommand(
       ...nextState,
       phase: 'command',
       rank: squadRankForReputation(0, generated.draft.bible.rankSystem.tiers),
+      supplies: 5,
+      coins: 30,
+      relicDust: 0,
       campaignSeed: command.seed,
       selectedDraftIndex: command.selectedDraftIndex,
       campaignBible: generated.draft.bible,
@@ -146,13 +173,7 @@ export function applyGameCommand(
           ...foundation,
           rngStreams: selected.streams,
           currentScenario: selected.scenario,
-          currentEncounter:
-            selected.scenario.category === 'operation'
-              ? {
-                  ...encounterForOperationTemplate(selected.scenario.templateId),
-                  title: selected.scenario.title,
-                }
-              : null,
+          currentEncounter: encounterForSelection(selected.scenario, selected.scenario.choices[0]!),
           directorDebug: selected.debug,
           pendingPlan: {
             ...foundation.pendingPlan,
@@ -208,13 +229,16 @@ export function applyGameCommand(
   }
 
   if (command.type === 'CHOOSE_SITUATION') {
-    if (!state.currentScenario?.choices.some((choice) => choice.id === command.choiceId)) {
+    const scenario = state.currentScenario;
+    const choice = scenario?.choices.find((candidate) => candidate.id === command.choiceId);
+    if (scenario === null || scenario === undefined || choice === undefined) {
       throw new Error('Choice is not valid for the current situation.');
     }
     return CanonicalGameStateSchema.parse(
       appendCommand(
         {
           ...state,
+          currentEncounter: encounterForSelection(scenario, choice),
           pendingPlan: { ...state.pendingPlan, situationChoiceId: command.choiceId },
         },
         command,
@@ -283,7 +307,7 @@ export function applyGameCommand(
     const choiceId = state.pendingPlan.situationChoiceId;
     const choice = scenario.choices.find((candidate) => candidate.id === choiceId);
     if (choice === undefined) throw new Error('Choose a situation response before committing.');
-    const combatResult = scenario.category === 'operation' ? simulateBattle(state) : null;
+    const combatResult = state.currentEncounter === null ? null : simulateBattle(state);
     const storyConsequence =
       combatResult === null || choice.outcomeConsequences === undefined
         ? choice.consequence
@@ -293,14 +317,14 @@ export function applyGameCommand(
             ? choice.outcomeConsequences.victory
             : choice.outcomeConsequences.defeat;
     const reputationDelta =
-      scenario.category === 'operation'
+      combatResult !== null
         ? (combatResult?.aftermath.reputationDelta ?? 0)
         : choice.effects.renownDelta;
-    if (combatResult === null && state.supplies + choice.effects.provisionsDelta < 0) {
-      throw new Error('This response requires more Provisions than the squad has.');
+    if (state.supplies + choice.effects.provisionsDelta < 0) {
+      throw new Error('This response requires more Rations than the squad has.');
     }
     const factId = `fact-scenario-result-${state.turn}`;
-    const experience = scenario.category === 'operation' ? 25 : 8;
+    const experience = combatResult === null ? 8 : 25;
     const baseAftermath = combatResult?.aftermath ?? {
       id: `aftermath-turn-${state.turn}`,
       turn: state.turn,
@@ -322,12 +346,7 @@ export function applyGameCommand(
       bondDelta: choice.effects.bondDelta,
       summary: storyConsequence,
     };
-    const rewardId =
-      combatResult?.report.outcome === 'victory'
-        ? state.turn % 2 === 1
-          ? 'houndglass-edge'
-          : 'weaver-ward'
-        : null;
+    const rewardId = combatResult?.report.outcome === 'victory' ? nextBattleReward(state) : null;
     const progressedPartyState =
       combatResult?.partyState ??
       Object.fromEntries(
@@ -393,6 +412,12 @@ export function applyGameCommand(
       reputation: nextReputation,
       threat: Math.max(0, Math.min(100, state.threat + aftermath.dangerDelta)),
       supplies: state.supplies + aftermath.suppliesDelta,
+      coins:
+        state.coins +
+        (combatResult?.report.outcome === 'victory'
+          ? 10 + state.turn * 2
+          : Math.max(0, reputationDelta)),
+      relicDust: state.relicDust + (combatResult?.report.outcome === 'victory' ? 1 : 0),
       inventoryIds:
         rewardId === null || state.inventoryIds.includes(rewardId)
           ? state.inventoryIds
@@ -449,10 +474,7 @@ export function applyGameCommand(
           currentScenario: next.scenario,
           currentEncounter:
             next.scenario.category === 'operation'
-              ? {
-                  ...encounterForOperationTemplate(next.scenario.templateId),
-                  title: next.scenario.title,
-                }
+              ? encounterForSelection(next.scenario, next.scenario.choices[0]!)
               : null,
           directorDebug: next.debug,
           pendingPlan: {

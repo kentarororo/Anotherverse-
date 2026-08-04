@@ -661,7 +661,7 @@ h2 {
 
 .command-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 0.82fr) minmax(390px, 1.55fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(245px, 0.72fr) minmax(430px, 1.9fr) minmax(270px, 0.82fr);
   gap: 10px;
   min-height: 0;
 }
@@ -806,8 +806,10 @@ select {
 }
 
 .hero-detail-button {
-  float: right;
-  margin-top: -0.9rem;
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin: 0.25rem 0 0 auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -869,7 +871,51 @@ select {
 
 .operation-panel {
   display: grid;
-  grid-template-rows: 44px 1fr;
+  grid-template-rows: 34px 1fr;
+}
+
+.turn-state-label {
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.new-drop-metric button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+}
+
+.reward-preview {
+  margin-top: 0.35rem !important;
+  color: var(--accent) !important;
+  font-size: 0.62rem !important;
+}
+
+.choice-change-button {
+  margin-bottom: 0.7rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.62rem;
+  text-align: left;
+}
+
+.choice-change-button:hover {
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 .phase-tabs {
@@ -1136,18 +1182,18 @@ select {
 .combat-unit.is-acting {
   border-color: var(--accent);
   box-shadow: 0 0 18px rgba(87, 229, 195, 0.13);
-  animation: unit-lunge 480ms ease both;
+  animation: unit-lunge 720ms ease both;
 }
 
 .combat-unit.is-hit {
   border-color: var(--danger);
-  animation: unit-impact 360ms ease both;
+  animation: unit-impact 640ms ease both;
 }
 
 .combat-unit.is-healed {
   border-color: #64dfad;
   box-shadow: 0 0 18px rgba(100, 223, 173, 0.16);
-  animation: unit-rise 420ms ease both;
+  animation: unit-rise 680ms ease both;
 }
 
 .combat-unit.is-guarded,
@@ -1155,7 +1201,7 @@ select {
 .combat-unit.is-empowered {
   border-color: var(--accent);
   box-shadow: 0 0 16px rgba(87, 229, 195, 0.14);
-  animation: unit-rise 420ms ease both;
+  animation: unit-rise 680ms ease both;
 }
 
 .combat-unit.is-affected {
@@ -2935,8 +2981,8 @@ html[data-reduce-motion='true'] *::after {
 
 .planning-lane-enemies {
   right: 2%;
-  width: 34%;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 42%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .planning-unit {
@@ -3225,7 +3271,7 @@ html[data-reduce-motion='true'] *::after {
 
 .threat-intents {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.35rem;
   margin-top: 0.35rem;
 }
@@ -3504,7 +3550,7 @@ html[data-reduce-motion='true'] *::after {
   border: 2px dashed rgba(255, 107, 118, 0.3);
   border-radius: 50%;
   transform: translate(-50%, -50%) rotate(12deg);
-  animation: vfx-pulse 480ms steps(4, end) both;
+  animation: vfx-pulse 720ms steps(5, end) both;
 }
 
 .stage-event-heal .event-vfx-placeholder,
@@ -3587,7 +3633,7 @@ html[data-reduce-motion='true'] *::after {
 
   .planning-lane-enemies,
   .combat-lane-enemies {
-    width: 36%;
+    width: 42%;
   }
 
   .pixel-sprite-canvas {

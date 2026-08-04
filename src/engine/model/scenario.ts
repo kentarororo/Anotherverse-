@@ -21,6 +21,7 @@ export const ScenarioChoiceSchema = z.object({
       roundCap: z.string().min(1),
     })
     .optional(),
+  encounterId: z.string().min(1).optional(),
   effects: z.object({
     renownDelta: z.number().int(),
     provisionsDelta: z.number().int(),

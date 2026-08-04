@@ -58,6 +58,8 @@ export const contentManifest = ContentManifestSchema.parse({
       'veil-scribe',
       'survey-beast',
       'mirror-oracle',
+      'drowned-lancer',
+      'bell-wraith',
     ]),
     techniques: pack('techniques-m1', [
       'aegis-break',
@@ -67,11 +69,22 @@ export const contentManifest = ContentManifestSchema.parse({
       'restorative-sigil',
       'binding-shot',
     ]),
-    equipment: pack('equipment-mythic-v2', ['houndglass-edge', 'weaver-ward']),
+    equipment: pack('equipment-mythic-v3', [
+      'houndglass-edge',
+      'weaver-ward',
+      'stormhook-sabre',
+      'echo-shell',
+      'ironback-plate',
+      'true-name-knife',
+      'crownchain-blade',
+      'mirror-shard-charm',
+      'tidebone-spear',
+      'funeral-bell',
+    ]),
     combatLanguage: pack(
       'combat-language-m4',
-      ['attack', 'heal', 'guard', 'status', 'interrupt', 'defeat', 'resource'].flatMap(
-        (eventType) => [1, 2, 3, 4].map((index) => `${eventType}-frame-${index}`),
+      ['attack', 'heal', 'guard', 'status', 'interrupt', 'defeat', 'resource'].map(
+        (eventType) => `${eventType}-frame-1`,
       ),
     ),
     story: pack('story-authoring-mythic-v4', [

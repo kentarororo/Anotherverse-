@@ -59,7 +59,9 @@ export function CampaignCreationScreen() {
             <dl>
               <div>
                 <dt>Background</dt>
-                <dd>{hero.backgroundName}</dd>
+                <dd>
+                  {hero.backgroundName} · {hero.origin}
+                </dd>
               </div>
               <div>
                 <dt>Defining choice</dt>
@@ -79,24 +81,15 @@ export function CampaignCreationScreen() {
               </div>
               <div>
                 <dt>Signature</dt>
-                <dd>
-                  <p>{hero.story.signature}</p>
-                  <small>{hero.signature}</small>
-                </dd>
+                <dd>{hero.signature}</dd>
               </div>
               <div>
                 <dt>Reaction</dt>
-                <dd>
-                  <p>{hero.story.reaction}</p>
-                  <small>{hero.reaction}</small>
-                </dd>
+                <dd>{hero.reaction}</dd>
               </div>
               <div>
                 <dt>Limitation</dt>
-                <dd>
-                  <p>{hero.story.limitation}</p>
-                  <small>{hero.limitation}</small>
-                </dd>
+                <dd>{hero.limitation}</dd>
               </div>
               <div>
                 <dt>Techniques</dt>
@@ -112,7 +105,7 @@ export function CampaignCreationScreen() {
               </div>
             </dl>
             <section className="dossier-techniques" aria-label={`${hero.name} technique stories`}>
-              <h3>Techniques in action</h3>
+              <h3>Techniques</h3>
               {hero.techniques.map((technique) => (
                 <article className="technique-story-card" key={technique.id}>
                   <strong>{technique.name}</strong>

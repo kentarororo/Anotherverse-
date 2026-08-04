@@ -4,8 +4,10 @@ import type { CombatantDefinition } from '../engine/model/combat';
 import type { BattleReport, CombatEvent } from '../engine/reports/combat';
 import {
   BattlePlaybackStage,
+  BEAT_DURATION_MS,
   deriveSpriteState,
   formatEventCue,
+  selectBattleBeats,
 } from '../ui/components/BattlePlaybackStage';
 
 function event(overrides: Partial<CombatEvent>): CombatEvent {
@@ -53,6 +55,24 @@ afterEach(() => {
 });
 
 describe('battle playback presentation mapping', () => {
+  it('plays every action in order at normal autobattler speed', () => {
+    const events = Array.from({ length: 24 }, (_, index) =>
+      event({
+        index,
+        actionId: index % 5 === 0 ? 'end-round' : `action-${index}`,
+        eventType: index % 5 === 0 ? 'status' : 'attack',
+      }),
+    );
+    const beats = selectBattleBeats(events);
+    expect(BEAT_DURATION_MS).toBe(800);
+    expect(beats).toHaveLength(19);
+    expect(beats.map((beat) => beat.index)).toEqual(
+      events
+        .filter((candidate) => candidate.eventType === 'attack')
+        .map((candidate) => candidate.index),
+    );
+  });
+
   it('reserves hit for real damage and gives non-damage recipients distinct states', () => {
     expect(
       deriveSpriteState('enemy', event({ eventType: 'attack', finalAmount: 7, tags: ['hit'] }), 20),

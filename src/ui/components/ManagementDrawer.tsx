@@ -69,10 +69,6 @@ export function ManagementDrawer() {
                   <dd>{hero.story.fear}</dd>
                 </div>
                 <div>
-                  <dt>Contradiction</dt>
-                  <dd>{hero.contradiction}</dd>
-                </div>
-                <div>
                   <dt>Bond</dt>
                   <dd>{hero.bond}</dd>
                 </div>
@@ -114,17 +110,16 @@ export function ManagementDrawer() {
                 </dd>
               </div>
             </dl>
-            <h3>Path in the story</h3>
+            <h3>Class features</h3>
             <div className="calling-story-grid">
               {[
-                ['Signature', hero.story.signature, hero.signature],
-                ['Reaction', hero.story.reaction, hero.reaction],
-                ['Limitation', hero.story.limitation, hero.limitation],
-              ].map(([label, story, mechanic]) => (
+                ['Signature', hero.signature],
+                ['Reaction', hero.reaction],
+                ['Limitation', hero.limitation],
+              ].map(([label, mechanic]) => (
                 <article className="calling-story-card" key={label}>
                   <strong>{label}</strong>
-                  <p>{story}</p>
-                  <small>{mechanic}</small>
+                  <p>{mechanic}</p>
                 </article>
               ))}
             </div>
@@ -171,7 +166,7 @@ export function ManagementDrawer() {
 
         {drawer.type === 'equipment' && (
           <div className="drawer-content">
-            <p>Rewards change canonical combat stats and are autosaved when equipped.</p>
+            <p>Equipment changes a hero’s stats as soon as it is equipped.</p>
             {game.inventoryIds.length === 0 && (
               <div className="drawer-empty">No equipment recovered yet.</div>
             )}
@@ -219,7 +214,7 @@ export function ManagementDrawer() {
                         <strong>Counterplay:</strong> {enemy.counterplay}
                       </p>
                     )}
-                    {entry.knowledge < 2 && <p>Counterplay requires a completed encounter.</p>}
+                    {entry.knowledge < 2 && <p>Face this enemy once to reveal its weakness.</p>}
                     {entry.knowledge >= 3 && enemy?.rewardIdentity !== undefined && (
                       <p>
                         <strong>Known reward:</strong> {enemy.rewardIdentity}
@@ -288,7 +283,8 @@ export function ManagementDrawer() {
                     )?.name ?? 'Hero story'}
                   </strong>
                   <p>
-                    Chapter {thread.stage + 1} · {thread.status}
+                    Chapter {thread.stage + 1} ·{' '}
+                    {thread.status === 'resolved' ? 'Complete' : 'Unfinished'}
                   </p>
                 </div>
               </article>
