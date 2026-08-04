@@ -323,7 +323,7 @@ export function BattlePlaybackStage({
             <div className={`battle-result outcome-${report.outcome}`}>
               <span>{report.outcome}</span>
               <strong>{report.rounds} rounds</strong>
-              <small>{report.events.length} actions resolved by the deterministic simulation</small>
+              <small>{report.events.length} actions in the battle record</small>
             </div>
           ) : (
             <>

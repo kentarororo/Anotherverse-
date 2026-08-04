@@ -30,16 +30,16 @@ describe('production content manifest', () => {
     expect(contentManifest.milestone).toBe('M4');
     expect(contentManifest.packs.characters.moduleIds).toContain('lyra-vale');
     expect(contentManifest.packs.characters.moduleIds).toContain('tarin-sol');
-    expect(contentManifest.packs.scenarios.moduleIds).toHaveLength(20);
-    expect(contentManifest.packs.scenarios.moduleIds).toContain('social-4');
+    expect(contentManifest.packs.scenarios.moduleIds).toHaveLength(60);
+    expect(contentManifest.packs.scenarios.moduleIds).toContain('quest-last-bell-turn-20');
     expect(contentManifest.packs.enemies.moduleIds).toHaveLength(8);
     expect(contentManifest.packs.equipment.moduleIds).toEqual(['houndglass-edge', 'weaver-ward']);
     expect(contentManifest.packs.combatLanguage.moduleIds).toHaveLength(28);
     expect(contentManifest.packs.combatLanguage.moduleIds).toContain('resource-frame-4');
-    expect(contentManifest.packs.story.moduleIds).toHaveLength(23);
+    expect(contentManifest.packs.story.moduleIds).toHaveLength(6);
     expect(contentManifest.packs.story.moduleIds).toContain('mythic-opening-turns-1-3');
     expect(contentManifest.packs.story.moduleIds).toContain('causal-scene-beats');
-    expect(contentManifest.packs.story.moduleIds).toContain('social-4');
+    expect(contentManifest.packs.story.moduleIds).toContain('quest-fourth-god');
     expect(
       temporaryEnemies.every(
         (enemy) =>

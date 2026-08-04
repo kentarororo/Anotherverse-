@@ -235,6 +235,20 @@ export function ManagementDrawer() {
 
         {drawer.type === 'world' && (
           <div className="drawer-content">
+            {game.currentScenario !== null && (
+              <>
+                <h3>Main quest</h3>
+                <article className="drawer-item">
+                  <div>
+                    <strong>{game.currentScenario.quest.title}</strong>
+                    <p>
+                      Act {game.currentScenario.quest.act}: {game.currentScenario.quest.actTitle}
+                    </p>
+                    <small>Current goal: {game.currentScenario.quest.objective}</small>
+                  </div>
+                </article>
+              </>
+            )}
             <h3>Trio standing</h3>
             <article className="drawer-item">
               <div>
@@ -259,30 +273,35 @@ export function ManagementDrawer() {
                   </strong>
                   <p>
                     Bond {relationship.value >= 0 ? '+' : ''}
-                    {relationship.value} · {relationship.factIds.length} shared memories
+                    {relationship.value} · {relationship.factIds.length} shared chapters
                   </p>
                 </div>
               </article>
             ))}
-            <h3>Open story threads</h3>
+            <h3>Hero stories</h3>
             {game.storyThreads.map((thread) => (
               <article className="drawer-item" key={thread.id}>
                 <div>
-                  <strong>{thread.arcId}</strong>
+                  <strong>
+                    {game.generatedDefinitions.characters.find((hero) =>
+                      thread.castIds.includes(hero.id),
+                    )?.name ?? 'Hero story'}
+                  </strong>
                   <p>
-                    Stage {thread.stage} · Urgency {thread.urgency} · {thread.status}
+                    Chapter {thread.stage + 1} · {thread.status}
                   </p>
                 </div>
               </article>
             ))}
-            <h3>Recent world facts</h3>
+            <h3>Quest journal</h3>
             {[...game.worldFacts]
+              .filter((fact) => fact.createdTurn > 0)
               .reverse()
               .slice(0, 12)
               .map((fact) => (
                 <article className="drawer-item" key={fact.id}>
                   <div>
-                    <strong>{fact.relation}</strong>
+                    <strong>Chapter {fact.createdTurn}</strong>
                     <p>{String(fact.value ?? fact.objectId ?? fact.subjectId)}</p>
                   </div>
                 </article>
@@ -292,7 +311,7 @@ export function ManagementDrawer() {
 
         {drawer.type === 'logs' && (
           <div className="drawer-content">
-            <h3>Archived turn reports</h3>
+            <h3>Completed chapters</h3>
             {game.aftermathReports.length === 0 && (
               <div className="drawer-empty">No turns have been resolved yet.</div>
             )}
@@ -310,8 +329,8 @@ export function ManagementDrawer() {
                     <p>{aftermath.summary}</p>
                     <small>
                       {battle === undefined
-                        ? `${aftermath.factIdsWritten.length} fact recorded`
-                        : `${battle.rounds} rounds · ${battle.events.length} structured events`}
+                        ? 'Quest choice'
+                        : `${battle.rounds} rounds · ${battle.events.length} actions`}
                     </small>
                   </div>
                 </article>

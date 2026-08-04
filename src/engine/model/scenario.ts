@@ -14,6 +14,13 @@ export const ScenarioChoiceSchema = z.object({
   label: z.string().min(1),
   description: z.string().min(1),
   consequence: z.string().min(1),
+  outcomeConsequences: z
+    .object({
+      victory: z.string().min(1),
+      defeat: z.string().min(1),
+      roundCap: z.string().min(1),
+    })
+    .optional(),
   effects: z.object({
     renownDelta: z.number().int(),
     provisionsDelta: z.number().int(),
@@ -33,6 +40,15 @@ export const ScenarioBlueprintSchema = z.object({
     cause: z.string().min(1),
     stakes: z.string().min(1),
     decision: z.string().min(1),
+  }),
+  quest: z.object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    act: z.number().int().min(1).max(4),
+    actTitle: z.string().min(1),
+    objective: z.string().min(1),
+    chapter: z.number().int().min(1).max(20),
+    totalChapters: z.literal(20),
   }),
   premiseFactIds: z.array(z.string().min(1)).min(2),
   castIds: z.array(z.string().min(1)).min(1),

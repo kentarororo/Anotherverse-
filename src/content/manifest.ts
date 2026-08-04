@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PATH_CLASS_IDS } from './path-classes';
+import { QUEST_ARCS, QUEST_CHAPTER_VARIANTS } from './quest-arcs';
 
 export const ContentPackReferenceSchema = z.object({
   id: z.string().min(1),
@@ -38,12 +39,16 @@ export const contentManifest = ContentManifestSchema.parse({
       'sena-quill',
       'tarin-sol',
     ]),
-    scenarios: pack(
-      'scenarios-m3',
-      ['operation', 'personal', 'discovery', 'rival', 'social'].flatMap((category) =>
-        [1, 2, 3, 4].map((index) => `${category}-${index}`),
+    scenarios: pack('world-quest-arcs-v2', [
+      ...Object.values(QUEST_ARCS).flatMap((arc) =>
+        arc.chapters.map((chapter) => `${arc.id}-turn-${chapter.turn}`),
       ),
-    ),
+      ...Object.entries(QUEST_CHAPTER_VARIANTS).flatMap(([worldId, chapters]) =>
+        Object.entries(chapters).flatMap(([turn, variants]) =>
+          (variants ?? []).map((_, index) => `${worldId}-turn-${turn}-variant-${index + 1}`),
+        ),
+      ),
+    ]),
     enemies: pack('enemies-mythic-v2', [
       'rift-hound',
       'glass-weaver',
@@ -69,13 +74,12 @@ export const contentManifest = ContentManifestSchema.parse({
         (eventType) => [1, 2, 3, 4].map((index) => `${eventType}-frame-${index}`),
       ),
     ),
-    story: pack('story-authoring-mythic-v3', [
+    story: pack('story-authoring-mythic-v4', [
       'mythic-opening-turns-1-3',
       'causal-scene-beats',
       'truthful-choice-effects',
-      ...['operation', 'personal', 'discovery', 'rival', 'social'].flatMap((category) =>
-        [1, 2, 3, 4].map((index) => `${category}-${index}`),
-      ),
+      'authored-scene-variants',
+      ...Object.values(QUEST_ARCS).map((arc) => arc.id),
     ]),
   },
 });

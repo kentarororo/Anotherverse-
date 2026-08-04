@@ -57,8 +57,8 @@ describe('canonical mythic playwrite slice', () => {
     ]);
     expect(beats[1]!.detail).toMatch(/techniques? and triggered \d+ reactions?/);
     const memory = resolved.worldFacts.find((fact) => fact.createdTurn === 1)!;
-    expect(memory.value).toBe('Enter the trial');
-    expect(resolved.currentScenario!.premise).toContain('Enter the trial');
+    expect(memory.value).toBe(state.currentScenario!.choices[0]!.consequence);
+    expect(resolved.currentScenario!.sceneBeats.cause).toBe(memory.value);
     expect(resolved.currentScenario!.premiseFactIds).toContain(memory.id);
   });
 });

@@ -7,7 +7,7 @@ import {
 } from '../engine/model/story-authoring';
 import { EXECUTABLE_TECHNIQUES } from '../engine/model/executable-technique';
 import { VALIDATED_STORY_AUTHORING } from '../narrative/authoring/validated-story';
-import { SCENARIO_CHOICE_MODULES } from '../narrative/corpus/scenario-modules';
+import { QUEST_ARCS } from '../content/quest-arcs';
 import { realiseTechniqueStory } from '../narrative/realiser/story-authoring';
 
 describe('single-source story authoring', () => {
@@ -125,10 +125,14 @@ describe('single-source story authoring', () => {
     ]);
     expect(sceneProse.join(' ')).not.toMatch(/\{publicSignal\}\s+(?:begins|warns)\b/i);
 
-    const recordedChoiceText = Object.values(SCENARIO_CHOICE_MODULES)
-      .flat()
-      .flatMap((choice) => [choice.label, choice.consequence])
+    const recordedChoiceText = Object.values(QUEST_ARCS)
+      .flatMap((arc) => arc.chapters)
+      .flatMap((chapter) => chapter.choices)
+      .flatMap((choice) => [choice.label, choice.description, choice.consequence])
       .join(' ');
     expect(recordedChoiceText).not.toMatch(/Glassline|East Junction|\btram\b/i);
+    expect(recordedChoiceText).not.toMatch(
+      /Soul Ledger entry left|becomes a fact that later chapters can recall|resolved .+\./i,
+    );
   });
 });

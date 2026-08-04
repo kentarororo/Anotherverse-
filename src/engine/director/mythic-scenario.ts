@@ -2,28 +2,10 @@ import { generateMythicReviewDraft } from '../../content/mythic-review';
 import type { CanonicalGameState } from '../model/state';
 import { ScenarioBlueprintSchema, type ScenarioBlueprint } from '../model/scenario';
 import { createSceneBeats } from '../narrative/scene-beats';
+import { QUEST_ARCS, questWorldId } from '../../content/quest-arcs';
 
 function lowerFirst(value: string) {
   return `${value[0]?.toLowerCase() ?? ''}${value.slice(1)}`;
-}
-
-function consequenceFor(
-  category: ScenarioBlueprint['category'],
-  label: string,
-  choiceIndex: number,
-) {
-  const memory = `The decision to ${lowerFirst(label)} becomes a fact that later chapters can recall.`;
-  if (category === 'operation') {
-    return 'Formation, stances, and team priority resolve the battle. Victory grants 25 XP, 2 Provisions, and 3 Renown.';
-  }
-  if (category === 'personal') {
-    return choiceIndex === 0
-      ? `${memory} The hero’s Path thread advances and the trio gains 1 Renown.`
-      : `${memory} The hero’s Path thread advances without a Renown gain.`;
-  }
-  return choiceIndex === 0
-    ? `${memory} The trio gains 1 Renown.`
-    : `${memory} The clue is preserved without a Renown gain.`;
 }
 
 function effectsFor(category: ScenarioBlueprint['category'], choiceIndex: number) {
@@ -75,34 +57,56 @@ export function createMythicOpeningScenario(
           {
             id: `enter-mythic-trial-t${turn}`,
             label: 'Enter the trial',
-            description: consequenceFor('operation', 'enter the trial', 0),
-            consequence: consequenceFor('operation', 'enter the trial', 0),
+            description: 'Set formation, stances, and team priority before the battle begins.',
+            consequence: chapter.choiceResults[0],
+            outcomeConsequences:
+              draft.world.id === 'fallen-heavens'
+                ? {
+                    victory: chapter.choiceResults[0],
+                    defeat:
+                      'The squad escaped the crater after the guardians overwhelmed them. Behind an empty altar, they found a fresh name cut into a god’s rib.',
+                    roundCap:
+                      'The trial ended before either side won. Behind an empty altar, the squad found a fresh name cut into a god’s rib.',
+                  }
+                : {
+                    victory: chapter.choiceResults[0],
+                    defeat:
+                      'The squad escaped the shore in an empty black boat after the drowned broke their line. Below the first landing, they found a ferryman chained beneath the bell.',
+                    roundCap:
+                      'Dawn ended the fight before either side won. Below the first landing, the squad found a ferryman chained beneath the bell.',
+                  },
             effects: effectsFor('operation', 0),
           },
         ]
       : chapter.choices.map((label, choiceIndex) => ({
           id: `${chapter.id}-choice-${choiceIndex + 1}-t${turn}`,
           label,
-          description: consequenceFor(chapter.category, label, choiceIndex),
-          consequence: consequenceFor(chapter.category, label, choiceIndex),
-          effects: effectsFor(chapter.category, choiceIndex),
+          description: chapter.choiceDescriptions[choiceIndex],
+          consequence: chapter.choiceResults[choiceIndex],
+          effects:
+            chapter.choiceEffects?.[choiceIndex] ?? effectsFor(chapter.category, choiceIndex),
         }));
 
-  const setting = `the ${state.campaignBible?.sceneVocabulary.crisisSite ?? 'dungeon threshold'} of ${state.campaignBible?.city.name ?? draft.world.name}, where ${state.campaignBible?.activeFactions[0]?.name ?? 'a hidden faction'} watches the newly awakened Paths`;
+  const setting = `the ${state.campaignBible?.sceneVocabulary.crisisSite ?? 'dungeon threshold'}`;
   const memoryLine =
     priorDecision === undefined
-      ? `This first trial begins in ${setting}.`
-      : `In ${setting}, the Soul Ledger remembers that the trio chose to ${String(priorDecision.value)}.`;
+      ? `The trio came to ${setting} for its first ranked trial.`
+      : String(priorDecision.value);
   const chapterBeats = createSceneBeats(chapter.paragraph);
   const sceneBeats = {
     hook: chapterBeats.hook,
     cause: memoryLine,
     stakes: `${chapterBeats.cause} ${chapterBeats.stakes}`,
-    decision: chapterBeats.decision,
+    decision:
+      chapter.category === 'operation'
+        ? 'Set the formation and choose which threat the squad will stop first.'
+        : `Will the trio ${lowerFirst(chapter.choices[0])} or ${lowerFirst(chapter.choices[1])}?`,
   };
   const premise = [sceneBeats.hook, sceneBeats.cause, sceneBeats.stakes, sceneBeats.decision].join(
     ' ',
   );
+  const arc = QUEST_ARCS[questWorldId(state.campaignBible!.city.id)];
+  const act = arc.acts[0];
 
   return ScenarioBlueprintSchema.parse({
     id: `scenario-turn-${turn}`,
@@ -111,6 +115,15 @@ export function createMythicOpeningScenario(
     title: chapter.title,
     premise,
     sceneBeats,
+    quest: {
+      id: arc.id,
+      title: arc.title,
+      act: 1,
+      actTitle: act.title,
+      objective: act.objective.replace('{faction}', state.campaignBible!.activeFactions[0]!.name),
+      chapter: turn,
+      totalChapters: 20,
+    },
     premiseFactIds,
     castIds: chapter.category === 'operation' ? draft.trio.map((hero) => hero.id) : [lead.id],
     threatIds: chapter.category === 'operation' ? ['rift-hound', 'glass-weaver'] : [],

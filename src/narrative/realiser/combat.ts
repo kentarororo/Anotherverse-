@@ -95,7 +95,7 @@ const resourceFrames: EventFrame[] = [
   ({ actor, action, event }) =>
     `${actor}'s resource became ${event.resourceAfter}, from ${event.resourceBefore}, after ${action}.`,
   ({ actor, action, event }) =>
-    `${actor} resolved ${action} and finished with ${event.resourceAfter} resource instead of ${event.resourceBefore}.`,
+    `${actor} used ${action} and ended with ${event.resourceAfter} resource instead of ${event.resourceBefore}.`,
 ];
 
 function statusSentence(target: string, event: CombatEvent, phrase: string): string {

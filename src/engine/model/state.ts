@@ -13,10 +13,9 @@ import {
   RelationshipStateSchema,
 } from './progression';
 
-// Schema 9 rejects saves created before authored character stories, selected-world scene
-// vocabulary, and typed Calling-development unlocks entered canonical state. Older snapshots
-// cannot be reconstructed faithfully, so they are intentionally incompatible.
-export const GAME_SCHEMA_VERSION = 10 as const;
+// Schema 11 begins the world-specific authored quest model. Older snapshots stored only a choice
+// label and cannot reconstruct the authored outcome required by later chapters.
+export const GAME_SCHEMA_VERSION = 11 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),

@@ -204,8 +204,18 @@ describe('progression and management', () => {
       });
     const publicResult = resolveWith(publicChoice!.id);
     const privateResult = resolveWith(privateChoice!.id);
-    expect(publicResult.reputation).toBe(privateResult.reputation + 1);
-    expect(publicResult.aftermathReports.at(-1)!.reputationDelta).toBe(1);
-    expect(privateResult.aftermathReports.at(-1)!.reputationDelta).toBe(0);
+    expect(publicResult.reputation).toBe(
+      afterOperation.reputation + publicChoice!.effects.renownDelta,
+    );
+    expect(privateResult.reputation).toBe(
+      afterOperation.reputation + privateChoice!.effects.renownDelta,
+    );
+    expect(publicResult.aftermathReports.at(-1)!.reputationDelta).toBe(
+      publicChoice!.effects.renownDelta,
+    );
+    expect(privateResult.aftermathReports.at(-1)!.reputationDelta).toBe(
+      privateChoice!.effects.renownDelta,
+    );
+    expect(publicChoice!.effects).not.toEqual(privateChoice!.effects);
   });
 });

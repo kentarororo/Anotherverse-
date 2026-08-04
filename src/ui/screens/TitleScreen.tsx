@@ -180,7 +180,7 @@ export function TitleScreen() {
           </div>
         )}
 
-        <footer className="version">Mythic Slice v0.8.0 · Save Schema 10</footer>
+        <footer className="version">World Quest v0.9.0 · Save Schema 11</footer>
       </section>
     </main>
   );

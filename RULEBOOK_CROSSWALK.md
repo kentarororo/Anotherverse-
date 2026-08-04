@@ -1,37 +1,34 @@
 # Anotherverse rulebook crosswalk
 
-This is the clean-room contract for adapting structural lessons from the supplied _Player’s Basic Rules_ into Anotherverse. It does not license copying that game’s prose, setting, terminology, characters, formulas, interface, or art.
+This is a clean-room contract for applying high-level information-design lessons from the supplied tabletop basic rules. It does not copy that book's prose, setting, terminology, characters, formulas, interface, or art.
 
 ## Playwrite contract
 
-- Player role: guide a three-person hunter party whose choices become the next chapter of its legend.
-- Canonical loop: **Brief → Plan → Autobattle → Aftermath → Memory**.
-- Canonical promise: every visible choice names its mechanical effect before commitment; every result shows the cause that produced it.
-- Tone: mythology × progression fantasy. Concrete people, monsters, prices, promises, and places take priority over administrative or technological abstraction.
-- Canonical terms: Mythic Path, Path Rank, hunter, trial, descent, relic, AP, HP, Ward, Provisions, Renown, Danger, Soul Ledger.
-- Forbidden drift: licence, telemetry, breach authority, signal network, contract-grade, procedural record, or unexplained invented nouns in player-facing prose.
-- Causal trace: **world law → present danger → player plan → deterministic rule → visible battle event → consequence → campaign fact**.
+- Player role: guide a three-person hunter party through one complete world quest.
+- Campaign loop: **Chapter brief -> choice or plan -> autobattle when needed -> result -> next chapter**.
+- Player promise: every choice names its likely mechanical effect before commitment; every result says what the party did and what changed.
+- Tone: mythology x progression fantasy, written in simple modern English.
+- Preferred nouns: people, monsters, prices, promises, places, relics, ranks, and Paths.
+- Rejected language: administrative systems, telemetry, protocols, records that "remember," unexplained invented nouns, and sentences that describe engine bookkeeping.
+- Causal trace: **world law -> present danger -> player action -> deterministic rule -> visible result -> next problem**.
 
-## Adopt / adapt / replace / omit
+## Structural adaptation
 
-| Source pages    | Structural lesson                                                  | Decision | Anotherverse owner                           | Visible proof                                           | Test                                    |
-| --------------- | ------------------------------------------------------------------ | -------- | -------------------------------------------- | ------------------------------------------------------- | --------------------------------------- |
-| 2–3, 63         | Describe situation, choose an action, resolve it, state the result | Adapt    | Scenario director, Command screen, Aftermath | Brief, exact plan rules, battle, causal recap           | First-contact player can explain Turn 1 |
-| 3–4             | Specific rules override general rules                              | Adapt    | Technique contracts and combat policy        | Technique card names its legal condition and effect     | Policy unit tests                       |
-| 4, 57–62        | One readable core resolution                                       | Replace  | Deterministic five-stat combat engine        | Forecast and structured combat events                   | Seed replay equality                    |
-| 6–10, 20, 33–36 | Identity, role, ideal, bond, and flaw reinforce play               | Adapt    | Background → Path Class → Mythic Path        | Defining choice, Bond, Flaw, class feature, unique Path | Generated trio schema test              |
-| 9, 64–65        | Party order changes exposure                                       | Adapt    | Position target rules                        | Front/centre/rear show exact enemy behaviour            | Combat target tests                     |
-| 43–47           | Equipment properties create counterplay                            | Adapt    | Relic/equipment definitions                  | Relic states stat and enemy counter tag                 | Equipment tests                         |
-| 67–68           | Recovery creates resource decisions                                | Adapt    | HP, readiness, Provisions                    | Aftermath shows carryover and recovery cost             | Multi-turn tests                        |
-| 69–73           | Ordered combat and bounded actions                                 | Adapt    | Autobattle initiative and policy             | Rounds, AP, techniques, reactions                       | Combat report tests                     |
-| 73–75           | Show target, modifier, resolution, damage/status                   | Adapt    | Structured combat events                     | Playback plus exact battle log                          | Report schema tests                     |
-| 75–76, 106      | HP, temporary protection, and non-stacking conditions              | Adapt    | HP, Ward, status engine                      | HP/Ward/status changes in events                        | Combat rule tests                       |
-| 78–81           | Abilities need a consistent data block                             | Adapt    | Character technique schema                   | Action, purpose, AP, cooldown, condition                | Authoring validation                    |
-| 10              | Rank changes capability and story scope                            | Adapt    | Path progression                             | Rank names and Path mastery hooks                       | Progression tests                       |
-| 107–111         | Gods and factions need domain, goal, method, and flaw              | Adapt    | Campaign bible                               | Myth law, progression law, active faction motive        | Campaign generation test                |
-| 112–114         | Combat truth and personality belong together                       | Adapt    | Character dossier                            | Stats, Path, desire, flaw, rules in one view            | Browser accessibility test              |
-| 115             | Play matters more than prolonged character assembly                | Adopt    | Campaign creation                            | One review screen, then immediate Turn 1                | First-action timing gate                |
+| Structural lesson                                       | Anotherverse adaptation                                                                          | Visible proof                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| State the situation, ask for an action, then resolve it | Four-beat chapter brief followed by two short actions and an authored result                     | Command screen and aftermath       |
+| Specific rules override general rules                   | Technique conditions and combat policies own their exceptions                                    | Technique cards and battle record  |
+| Identity and role should reinforce play                 | Background -> class -> Mythic Path -> techniques -> awakening                                    | Hero dossier                       |
+| Party order changes exposure                            | Front, centre, and rear positions change targeting and mitigation                                | Formation controls and forecast    |
+| Equipment should create counterplay                     | Relics name a stat and an enemy counter tag                                                      | Inventory and battle events        |
+| Recovery creates resource decisions                     | HP, readiness, and Provisions carry between chapters                                             | Aftermath and next-chapter state   |
+| Combat needs a readable order                           | Initiative, AP, techniques, reactions, HP, Ward, and conditions resolve deterministically        | Playback and battle record         |
+| Rules content benefits from consistent data blocks      | Techniques use the same action, purpose, cost, cooldown, and condition fields                    | Character sheet                    |
+| Gods and factions need clear goals and methods          | Each quest establishes one world law, active faction, recurring opposition, and central question | Campaign creation and quest header |
+| Play should begin quickly                               | One campaign review screen leads directly to Chapter 1                                           | New Campaign flow                  |
 
-## Current implementation slice
+## Current implementation
 
-The clean-room structure now covers the full first 20 turns. The three opening chapters establish the selected realm and trio; every later module remains mythology-first and binds two live campaign facts. Every brief exposes Hook → Why now → Stakes → Decision, every response declares exact Renown, Provisions, Danger, and Bond deltas, and every resolved choice becomes Soul Ledger memory. Oathward, Doomseeker, and Fateweaver are Anotherverse's original base classes; each hero then carries a distinct Mythic Path, biography, techniques, flaw, bond, and awakening requirement.
+The clean-room structure covers two complete 20-chapter quests. The opening establishes the realm, the party, and the first threat. Chapters 4-20 then follow one world-specific four-act arc with recurring named characters and ordered goals.
+
+Every brief exposes a hook, the exact previous result, present stakes, and a decision. Each choice has its own forecast, authored result, and exact Renown, Provisions, Danger, and Bond deltas. The next chapter repeats the result without changing its meaning. Battles remain authoritative simulations; story text may explain the outcome but cannot invent a different one.

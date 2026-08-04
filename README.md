@@ -1,7 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **v0.8: Mythic Slice**.
+The project is a clean-room implementation and currently contains **v0.9: World Quest**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -15,13 +15,14 @@ The project is a clean-room implementation and currently contains **v0.8: Mythic
 - Original Oathward, Doomseeker, and Fateweaver classes beneath each hero's unique Mythic Path, with executable signatures, limitations,
   reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
   conditions.
-- A deterministic scenario director covering operation, personal, discovery, rival, and social
-  situations with choice-specific consequences.
-- Twenty typed scene modules that bind valid causal fact roles before rendering original,
-  four-sentence scene arcs with decisions authored for that exact dilemma.
-- Persistent WorldFacts, three-stage personal StoryThreads, semantic cooldowns, causal premise
-  references, and visible director score reasons in canonical state.
-- Typed grammar helpers and complete authored scenario frames with unresolved-slot validation.
+- Two complete, world-specific four-act quests covering all 20 chapters, with recurring allies,
+  enemies, locations, objectives, and chapter payoffs.
+- A deterministic quest director that selects whole authored chapters and binds only safe names,
+  locations, enemies, and prior results. It never assembles plots from random sentence fragments.
+- Persistent WorldFacts that store the authored result of a choice, so the next chapter can quote
+  what actually happened instead of reinterpreting a button label.
+- Build-time validation for unresolved slots, chapter order, choice count, forbidden meta language,
+  and unsupported procedural substitutions.
 - Levels, experience, training points, Path ranks, Renown, Provisions, Path
   mastery, equipment rewards, and relationship bonds that affect later situations.
 - Bestiary intelligence that raises forecast confidence and equipment counter tags that resolve in
@@ -55,16 +56,15 @@ The project is a clean-room implementation and currently contains **v0.8: Mythic
   combat/aftermath reports, content manifest, and save envelopes.
 - One LocalStorage autosave behind a replaceable `SaveRepository` interface, including explicit
   corrupt and incompatible-save results.
-- Save schema 10 deliberately rejects older campaigns that predate Path classes, structured scene
-  beats, and canonical choice effects.
+- Save schema 11 deliberately rejects older campaigns whose label-only history cannot reconstruct
+  the authored outcomes used by the new quest arcs.
 - A corpus renderer contract that can later be joined by an optional LLM renderer without changing
   authoritative mechanics.
 
 ## Deliberately stubbed
 
-The director supplies 20 non-repeating causal turns before its first content cycle. The current
-equipment and growth corpus is intentionally compact so playtesting can validate decisions before
-more modules are authored.
+The current slice contains two complete 20-chapter quests. Equipment and growth content remains
+intentionally compact while the quest and autobattle loop is validated.
 
 ## Setup and verification
 

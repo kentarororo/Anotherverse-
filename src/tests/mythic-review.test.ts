@@ -80,9 +80,31 @@ describe('Mythic Narrative v2 controlled generation', () => {
         expect(chapter.paragraph).not.toMatch(TECHNO_JARGON);
         expect(sentenceCount).toBeGreaterThanOrEqual(4);
         expect(chapter.choices).toHaveLength(2);
-        expect(chapter.consequenceHint.length).toBeGreaterThan(50);
+        expect(chapter.choiceDescriptions).toHaveLength(2);
+        expect(chapter.choiceDescriptions.every((description) => description.length > 20)).toBe(
+          true,
+        );
+        expect([...chapter.choiceDescriptions, ...chapter.choiceResults].join(' ')).not.toMatch(
+          UNRESOLVED_SLOT,
+        );
       });
     }
+  });
+
+  it('keeps opening identities and promised choice effects truthful', () => {
+    const drafts = MYTHIC_REVIEW_SEEDS.map(generateMythicReviewDraft);
+    const fallen = drafts.find((draft) => draft.world.id === 'fallen-heavens')!;
+    const striker = fallen.trio.find((hero) => hero.role === 'striker')!;
+    expect(fallen.chapters[1]!.choiceResults.every((result) => result.includes(striker.name))).toBe(
+      true,
+    );
+    expect(fallen.chapters[1]!.choiceResults[1]).toContain('returned the bone');
+
+    const tide = drafts.find((draft) => draft.world.id === 'underworld-tide')!;
+    expect(tide.chapters[1]!.choiceEffects).toEqual([
+      { renownDelta: 0, provisionsDelta: 0, dangerDelta: -1, bondDelta: -2 },
+      { renownDelta: 0, provisionsDelta: 0, dangerDelta: 2, bondDelta: 1 },
+    ]);
   });
 
   it('varies presentation while preserving the canonical combat rules for each role', () => {

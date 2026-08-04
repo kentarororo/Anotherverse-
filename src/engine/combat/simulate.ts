@@ -691,10 +691,10 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
     bondDelta: 0,
     summary:
       outcome === 'victory'
-        ? `The trio conquered ${state.currentEncounter.title} in ${completedRounds} rounds.`
+        ? `The trio won the battle in ${completedRounds} rounds.`
         : outcome === 'defeat'
-          ? 'The trio fell inside the trial and returned carrying the wounds of that defeat.'
-          : 'The trio withdrew when the twelve-round limit was reached.',
+          ? 'The enemy broke the formation and forced the trio to retreat.'
+          : 'Neither side won before the trio withdrew at the twelve-round limit.',
   };
   return { report, aftermath, partyState, streams };
 }

@@ -3,7 +3,6 @@ import type { Position } from '../../engine/model/commands';
 import { useAppStore } from '../../app/store';
 import { renderCombatEvent } from '../../narrative/realiser/combat';
 import { ManagementDrawer } from '../components/ManagementDrawer';
-import { renderWorldFact } from '../../narrative/realiser/facts';
 import { BattlePlaybackStage } from '../components/BattlePlaybackStage';
 import { PlanningBattleStage } from '../components/PlanningBattleStage';
 import { operationEncounters } from '../../content/milestone-one';
@@ -20,6 +19,12 @@ const positions: Position[] = POSITION_RULES.map((rule) => rule.id);
 
 function titleCase(value: string) {
   return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function signed(value: number) {
+  if (value > 0) return `+${value}`;
+  if (value < 0) return `−${Math.abs(value)}`;
+  return '0';
 }
 
 function encounterIdForEnemies(enemyIds: string[]) {
@@ -85,11 +90,6 @@ export function CommandScreen() {
       return hero === undefined ? titleCase(position) : `${titleCase(position)} ${hero.name}`;
     })
     .join(' / ');
-  const causalFacts =
-    scenario?.premiseFactIds.flatMap((factId) => {
-      const fact = game.worldFacts.find((candidate) => candidate.id === factId && candidate.active);
-      return fact === undefined ? [] : [renderWorldFact(game, fact)];
-    }) ?? [];
   const actionPreview = buildHeroActionPreview(game);
   const activePriority = planningRule(
     PRIORITY_RULES,
@@ -276,7 +276,11 @@ export function CommandScreen() {
           </div>
         </section>
 
-        <section className="panel operation-panel" aria-labelledby="operation-title">
+        <section
+          className="panel operation-panel"
+          aria-labelledby="operation-title"
+          data-scenario-category={scenario?.category}
+        >
           <nav className="phase-tabs" aria-label="Turn phases">
             <span className={!showingAftermath ? 'active' : ''}>Brief</span>
             <span className={!showingAftermath ? 'active' : ''}>Setup</span>
@@ -285,41 +289,35 @@ export function CommandScreen() {
           </nav>
           <div className="operation-content">
             <p className="eyebrow">
-              {showingAftermath
-                ? 'Resolved situation'
-                : titleCase(scenario?.category ?? 'situation')}{' '}
-              {String(displayedTurn).padStart(2, '0')} · {game.campaignBible?.city.name}
+              {scenario?.quest.title ?? 'Main Quest'} · Act {scenario?.quest.act ?? 1} of 4 ·
+              Chapter {displayedTurn} of 20
             </p>
             <h2 id="operation-title">{showingAftermath ? 'Aftermath' : scenario?.title}</h2>
             {showingAftermath ? (
               <p className="operation-hook">{aftermath.summary}</p>
             ) : scenario !== null ? (
               <div className="storybook-brief" aria-label="Story situation">
+                <div className="quest-objective">
+                  <span>{scenario.quest.actTitle}</span>
+                  <strong>Current goal: {scenario.quest.objective}</strong>
+                </div>
                 <p className="operation-hook">{scenario.sceneBeats.hook}</p>
                 <dl>
                   <div>
-                    <dt>Why now</dt>
+                    <dt>What happened</dt>
                     <dd>{scenario.sceneBeats.cause}</dd>
                   </div>
                   <div>
-                    <dt>What is at stake</dt>
+                    <dt>If you wait</dt>
                     <dd>{scenario.sceneBeats.stakes}</dd>
                   </div>
                   <div>
-                    <dt>Your decision</dt>
+                    <dt>Choose</dt>
                     <dd>{scenario.sceneBeats.decision}</dd>
                   </div>
                 </dl>
               </div>
             ) : null}
-            {!showingAftermath && causalFacts.length > 0 && (
-              <aside className="causal-record" aria-label="Why this situation is happening">
-                <strong>Soul Ledger remembers</strong>
-                {causalFacts.map((fact) => (
-                  <span key={fact}>{fact}</span>
-                ))}
-              </aside>
-            )}
             {showingAftermath && report !== undefined ? (
               <BattlePlaybackStage
                 report={report}
@@ -356,14 +354,7 @@ export function CommandScreen() {
                     <span>{titleCase(scenario.category)}</span>
                     <strong>{scenario.title}</strong>
                     <p>{scenario.forecast.likelyBenefit}</p>
-                    <small>References {scenario.premiseFactIds.length} live campaign facts.</small>
                   </article>
-                )}
-                {showingAftermath && (
-                  <div className="resolution-stamp">
-                    <span>Resolved</span>
-                    <strong>Memory written</strong>
-                  </div>
                 )}
               </div>
             )}
@@ -373,7 +364,7 @@ export function CommandScreen() {
         <section className="panel decision-panel" aria-labelledby="decision-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">{showingAftermath ? 'Consequences' : 'Decision / Forecast'}</p>
+              <p className="eyebrow">{showingAftermath ? 'Result' : 'Choose your approach'}</p>
               <h2 id="decision-title">
                 {showingAftermath
                   ? report === undefined
@@ -433,34 +424,25 @@ export function CommandScreen() {
               )}
               <div>
                 <span>Provisions</span>
-                <strong>+{aftermath.suppliesDelta}</strong>
+                <strong>{signed(aftermath.suppliesDelta)}</strong>
               </div>
               <div>
                 <span>Renown</span>
-                <strong>
-                  {aftermath.reputationDelta >= 0 ? '+' : ''}
-                  {aftermath.reputationDelta}
-                </strong>
+                <strong>{signed(aftermath.reputationDelta)}</strong>
               </div>
               <div>
                 <span>Danger</span>
-                <strong>
-                  {aftermath.dangerDelta >= 0 ? '+' : ''}
-                  {aftermath.dangerDelta}
-                </strong>
+                <strong>{signed(aftermath.dangerDelta)}</strong>
               </div>
               {aftermath.bondDelta !== 0 && (
                 <div>
                   <span>Bond</span>
-                  <strong>
-                    {aftermath.bondDelta >= 0 ? '+' : ''}
-                    {aftermath.bondDelta}
-                  </strong>
+                  <strong>{signed(aftermath.bondDelta)}</strong>
                 </div>
               )}
               <div>
-                <span>Memory</span>
-                <strong>{aftermath.factIdsWritten.length} campaign fact recorded</strong>
+                <span>Chapter {aftermath.turn} complete</span>
+                <strong>{aftermath.summary.split(/(?<=[.!?])\s+/)[0]}</strong>
               </div>
               {aftermath.itemIdsGranted.map((itemId) => (
                 <div key={itemId}>
@@ -488,7 +470,7 @@ export function CommandScreen() {
                     </select>
                   </label>
                   <div className="priority-effect" aria-live="polite">
-                    <span>Exact priority rule</span>
+                    <span>What this order does</span>
                     <strong>{activePriority.effect}</strong>
                   </div>
                   <div className="action-preview" aria-label="Expected opening actions">
@@ -504,7 +486,7 @@ export function CommandScreen() {
                   </div>
                   <div className="forecast-list">
                     <div>
-                      <span>Victory band</span>
+                      <span>Chance of victory</span>
                       <strong>{titleCase(forecast.victoryBand)}</strong>
                     </div>
                     <div>
@@ -514,7 +496,7 @@ export function CommandScreen() {
                       </strong>
                     </div>
                     <div>
-                      <span>Scouting confidence</span>
+                      <span>Scout report</span>
                       <strong>{titleCase(forecast.confidence)}</strong>
                     </div>
                   </div>
@@ -538,14 +520,11 @@ export function CommandScreen() {
                       <strong>{choice.label}</strong>
                       <span>{choice.description}</span>
                       <small className="choice-effects">
-                        Renown {choice.effects.renownDelta >= 0 ? '+' : ''}
-                        {choice.effects.renownDelta}
-                        {' · '}Provisions {choice.effects.provisionsDelta >= 0 ? '+' : ''}
-                        {choice.effects.provisionsDelta}
-                        {' · '}Danger {choice.effects.dangerDelta >= 0 ? '+' : ''}
-                        {choice.effects.dangerDelta}
+                        Renown {signed(choice.effects.renownDelta)}
+                        {' · '}Provisions {signed(choice.effects.provisionsDelta)}
+                        {' · '}Danger {signed(choice.effects.dangerDelta)}
                         {choice.effects.bondDelta !== 0 &&
-                          ` · Bond ${choice.effects.bondDelta >= 0 ? '+' : ''}${choice.effects.bondDelta}`}
+                          ` · Bond ${signed(choice.effects.bondDelta)}`}
                       </small>
                     </button>
                   ))}
@@ -564,13 +543,23 @@ export function CommandScreen() {
           <button
             className="button button-primary commit-button"
             type="button"
-            onClick={showingAftermath ? continueToPlanning : commitTurn}
+            onClick={
+              showingAftermath
+                ? aftermath.turn >= 20
+                  ? returnToTitle
+                  : continueToPlanning
+                : commitTurn
+            }
             disabled={
               !showingAftermath &&
               (game.pendingPlan.situationChoiceId === null || !selectedChoiceAffordable)
             }
           >
-            {showingAftermath ? `Continue to Turn ${game.turn}` : 'Take Action'}
+            {showingAftermath
+              ? aftermath.turn >= 20
+                ? 'Finish Campaign'
+                : `Continue to Turn ${game.turn}`
+              : 'Take Action'}
           </button>
         </section>
       </div>
@@ -579,17 +568,17 @@ export function CommandScreen() {
         <details className="exact-battle-log">
           <summary>
             <strong id="event-feed-title">
-              {showingAftermath && report !== undefined ? 'Exact battle log' : 'Turn intel'}
+              {showingAftermath && report !== undefined ? 'Battle details' : 'Chapter notes'}
             </strong>
             <span>
               {showingAftermath && report !== undefined
-                ? `${report.events.length} structured events`
-                : 'Forecast and tactical notes'}
+                ? `${report.events.length} actions`
+                : 'Story and tactical notes'}
             </span>
           </summary>
           <div className="event-feed-heading">
-            <p className="eyebrow">Chronology</p>
-            <h2>Event Feed</h2>
+            <p className="eyebrow">In order</p>
+            <h2>What happened</h2>
           </div>
           <ol>
             {showingAftermath && report !== undefined ? (
@@ -618,7 +607,7 @@ export function CommandScreen() {
               <>
                 <li>
                   <time>T{String(game.turn).padStart(2, '0')}</time>
-                  <span>Threat forecast locked without consuming the combat stream.</span>
+                  <span>The squad has reviewed the danger. No resources have been spent.</span>
                 </li>
                 <li>
                   <time>T{String(game.turn).padStart(2, '0')}</time>
@@ -631,7 +620,7 @@ export function CommandScreen() {
                   <span>
                     {isOperation
                       ? 'Change formation, stances, and priority before taking action.'
-                      : 'Choose one response; its consequence becomes campaign memory.'}
+                      : 'Choose one response. The result will shape the next chapter.'}
                   </span>
                 </li>
               </>

@@ -18,12 +18,11 @@ test('plays twenty consecutive turns with progression, equipment, and a mid-run 
 
   for (let turn = 1; turn <= 20; turn += 1) {
     await expect(page.locator('.campaign-metrics dd').first()).toHaveText(String(turn));
-    const phaseLabel = (await page.locator('.operation-content .eyebrow').textContent()) ?? '';
-    const category = phaseLabel.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+    const category =
+      (await page.locator('.operation-panel').getAttribute('data-scenario-category')) ?? '';
     encounteredCategories.add(category);
-    const causalRecord = page.getByLabel('Why this situation is happening');
-    await expect(causalRecord.locator('span')).toHaveCount(2);
-    if (turn > 1) await expect(causalRecord).toContainText(/Turn [1-9][0-9]?:/);
+    await expect(page.getByLabel('Story situation')).toContainText('Current goal:');
+    await expect(page.getByLabel('Story situation')).not.toContainText(/live campaign facts/i);
 
     if (category !== 'operation') {
       await page.getByRole('radio').first().click();
@@ -31,7 +30,7 @@ test('plays twenty consecutive turns with progression, equipment, and a mid-run 
 
     await page.getByRole('button', { name: 'Take Action' }).click();
     await expect(page.getByRole('heading', { name: 'Aftermath' })).toBeVisible();
-    await expect(page.getByText('1 campaign fact recorded')).toBeVisible();
+    await expect(page.getByText(`Chapter ${turn} complete`)).toBeVisible();
 
     if (turn === 1 || turn === 6) {
       await page.getByRole('button', { name: 'Inventory' }).click();

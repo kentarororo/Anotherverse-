@@ -284,6 +284,14 @@ export function applyGameCommand(
     const choice = scenario.choices.find((candidate) => candidate.id === choiceId);
     if (choice === undefined) throw new Error('Choose a situation response before committing.');
     const combatResult = scenario.category === 'operation' ? simulateBattle(state) : null;
+    const storyConsequence =
+      combatResult === null || choice.outcomeConsequences === undefined
+        ? choice.consequence
+        : combatResult.report.outcome === 'round-cap'
+          ? choice.outcomeConsequences.roundCap
+          : combatResult.report.outcome === 'victory'
+            ? choice.outcomeConsequences.victory
+            : choice.outcomeConsequences.defeat;
     const reputationDelta =
       scenario.category === 'operation'
         ? (combatResult?.aftermath.reputationDelta ?? 0)
@@ -312,7 +320,7 @@ export function applyGameCommand(
       reputationDelta,
       dangerDelta: choice.effects.dangerDelta,
       bondDelta: choice.effects.bondDelta,
-      summary: `${choice.label} resolved ${scenario.title}. ${choice.consequence}`,
+      summary: storyConsequence,
     };
     const rewardId =
       combatResult?.report.outcome === 'victory'
@@ -349,7 +357,10 @@ export function applyGameCommand(
       ),
       suppliesDelta: baseAftermath.suppliesDelta,
       reputationDelta,
-      summary: baseAftermath.summary,
+      summary:
+        combatResult === null
+          ? baseAftermath.summary
+          : `${baseAftermath.summary} ${storyConsequence}`,
     };
     const updatedThreads = state.storyThreads.map((thread) => {
       if (thread.id !== scenario.advancesThreadId) return thread;
@@ -368,7 +379,7 @@ export function applyGameCommand(
       kind: `${scenario.category}-result`,
       subjectId: scenario.castIds[0] ?? 'hunter-trio',
       relation: `chose-${choice.id}`,
-      value: choice.label,
+      value: storyConsequence,
       createdTurn: state.turn,
       sourceEventId: combatResult?.report.id ?? `resolution-turn-${state.turn}`,
       tags: [scenario.category, choice.id],

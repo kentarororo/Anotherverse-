@@ -6,6 +6,7 @@ import {
 } from '../../content/milestone-one';
 import { generateMythicReviewDraft, type MythicHero } from '../../content/mythic-review';
 import { PATH_CLASSES } from '../../content/path-classes';
+import { QUEST_ARCS, questWorldId } from '../../content/quest-arcs';
 import type { CharacterBlueprint } from '../model/character';
 import { CharacterBlueprintSchema } from '../model/character';
 import type { CampaignBible } from '../model/world';
@@ -94,6 +95,9 @@ export interface CampaignDraft {
   bible: CampaignBible;
   premise: string;
   campaignQuestion: string;
+  questTitle: string;
+  questObjective: string;
+  questActs: string[];
   characters: CharacterBlueprint[];
   semanticFingerprint: string;
   rngStreams: RngStreamsState;
@@ -212,12 +216,16 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
   const characters = mythic.trio.map((hero) =>
     createCharacter(hero, campaignRealmName, mythic.world.progressionLaw),
   );
+  const quest = QUEST_ARCS[questWorldId(bible.city.id)];
 
   return {
     seed,
     bible,
     premise: `${campaignRealmName}: ${openingLaw}\n\n${openingDisruption}`,
     campaignQuestion: `What awakened these three Mythic Paths, and what price will the realm demand when their legend outgrows its gods?`,
+    questTitle: quest.title,
+    questObjective: quest.acts[0].objective.replace('{faction}', faction.name),
+    questActs: quest.acts.map((act) => act.title),
     characters,
     semanticFingerprint: `${mythic.fingerprint}|seed:${seed}`,
     rngStreams,
@@ -239,6 +247,9 @@ export const CampaignDraftSchema = z.object({
   bible: CampaignBibleSchema,
   premise: z.string().min(1),
   campaignQuestion: z.string().min(1),
+  questTitle: z.string().min(1),
+  questObjective: z.string().min(1),
+  questActs: z.array(z.string().min(1)).length(4),
   characters: z.array(CharacterBlueprintSchema).length(3),
   semanticFingerprint: z.string().min(1),
 });

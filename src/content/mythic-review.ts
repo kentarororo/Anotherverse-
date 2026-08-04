@@ -49,7 +49,16 @@ export interface MythicChapter {
   category: 'operation' | 'personal' | 'discovery';
   paragraph: string;
   choices: readonly [string, string];
-  consequenceHint: string;
+  choiceDescriptions: readonly [string, string];
+  choiceResults: readonly [string, string];
+  choiceEffects?: readonly [MythicChoiceEffects, MythicChoiceEffects];
+}
+
+export interface MythicChoiceEffects {
+  renownDelta: number;
+  provisionsDelta: number;
+  dangerDelta: number;
+  bondDelta: number;
 }
 
 interface WorldTemplate {
@@ -89,7 +98,9 @@ interface ChapterTemplate {
   leadRole: MythicRole;
   variants: readonly [string, string];
   choices: readonly [string, string];
-  consequenceHint: string;
+  choiceDescriptions: readonly [string, string];
+  choiceResults: readonly [string, string];
+  choiceEffects?: readonly [MythicChoiceEffects, MythicChoiceEffects];
 }
 
 const WORLDS: readonly WorldTemplate[] = [
@@ -125,8 +136,14 @@ const WORLDS: readonly WorldTemplate[] = [
           "The fourth Godgrave opens before it has finished falling. A bronze giant lands on the trial road, and a moth-winged seer begins whispering each hunter's next mistake before they make it. {lead} recognises {path} in the giant's shattered shield. The squad can crush the seer before its prophecy settles, but doing so leaves the giant a clear charge at the weaker candidates. Their first ranked battle begins with a choice about who stands in front.",
         ],
         choices: ['Break the horned guardian', 'Silence the pale oracle'],
-        consequenceHint:
-          'Target priority changes which enemy controls the opening rounds and who carries the first wound forward.',
+        choiceDescriptions: [
+          'Hold the cliff and stop the guardian from reaching the other candidates.',
+          'Rush the oracle before it can mark another hunter for death.',
+        ],
+        choiceResults: [
+          'The trio defeated the first guardians and entered the new Godgrave. Inside, someone was breathing behind an altar that should have been empty.',
+          'The trio silenced the oracle and drove the guardian from the cliff. Inside the Godgrave, someone was breathing behind an altar that should have been empty.',
+        ],
       },
       {
         id: 'name-in-the-bone',
@@ -137,9 +154,15 @@ const WORLDS: readonly WorldTemplate[] = [
           "After the battle, {lead} finds a human name cut into the inside of the god's rib. The letters are fresh, and {path} reacts as though the writer is still nearby. The guild examiner orders the squad to surrender the bone before the other candidates notice it. Keeping it may cost them their new rank; handing it over may erase the first proof that someone entered the grave before it fell. {lead} has until sunrise to choose which loss can still be repaired.",
           "The Godgrave should be empty once its guardians die, yet {lead} hears someone breathing behind the altar. There is no person there, only a rib carved with a hunter's name and tomorrow's date. {path} can preserve the echo long enough to question it, but the rank examiner is already coming down the passage. The squad can hide the relic and risk expulsion, or report it and trust a guild that has lied about every earlier grave. Either choice gives the unknown hunter a different future.",
         ],
-        choices: ['Hide the carved bone', 'Give it to the examiner'],
-        consequenceHint:
-          'The decision determines whether the squad gains a forbidden clue or safer access to ranked trials.',
+        choices: ['Hide the carved bone', 'Register the carved bone'],
+        choiceDescriptions: [
+          "Keep the only clue, but lose the examiner's protection.",
+          'Gain lawful access, but let the guild copy the only clue.',
+        ],
+        choiceResults: [
+          'The trio hid the carved bone beneath a cloak. At the grave mouth, a Gold-rank hunter waited with a knife from {nextLead}’s childhood.',
+          'The examiner copied the name, sealed the copy, and returned the bone. At the grave mouth, a Gold-rank hunter waited with a knife from {nextLead}’s childhood.',
+        ],
       },
       {
         id: 'hunter-who-came-back',
@@ -151,8 +174,14 @@ const WORLDS: readonly WorldTemplate[] = [
           "The stranger waiting at the grave mouth knows the private name {lead} gave {path} as a child. He wears a dead guild's Gold-rank cloak and carries a weapon that vanished eight years ago. One duel would reveal whether {lead} is ready for the Path's second form. Winning, however, requires staking the carved bone as the prize. {lead} must decide whether power is still progress when someone else chooses its price.",
         ],
         choices: ["Accept the hunter's lesson", 'Keep the bone and refuse'],
-        consequenceHint:
-          'One branch accelerates Path mastery; the other preserves the central mystery and strengthens squad trust.',
+        choiceDescriptions: [
+          "Learn the Path's next form, but let the stranger set the price.",
+          "Keep the clue and refuse power offered on someone else's terms.",
+        ],
+        choiceResults: [
+          "{lead} accepted the hunter's lesson but kept hold of the clue. Serin Kest saw the exchange at the grave gate and followed the trio home.",
+          '{lead} refused the lesson and kept the clue. Serin Kest saw the argument at the grave gate and followed the trio home.',
+        ],
       },
     ],
   },
@@ -188,8 +217,14 @@ const WORLDS: readonly WorldTemplate[] = [
           'The sea parts without wind, exposing a stair crowded with hunters who should have died last month. A bone-armoured beast charges the shore while a drowned augur points at the weakest member of every party. The bell beneath the waves rings when {lead} raises {path}. Protecting the crowd gives the augur time to finish its omen; hunting the augur leaves the beast a path to the village. Dawn is six rounds away.',
         ],
         choices: ['Hold back the grave-hound', 'Break the drowned augur'],
-        consequenceHint:
-          'The chosen threat changes incoming pressure, Bestiary knowledge, and which enemy relic can drop.',
+        choiceDescriptions: [
+          'Shield the families and keep the grave-hound away from the shore.',
+          'Break the omen before the drowned augur can steal another name.',
+        ],
+        choiceResults: [
+          'The trio drove the drowned hunters back from the shore and entered the black stair. Below the first landing, a ferryman was chained beneath the bell.',
+          'The trio broke the augur’s omen and forced the grave-hound into the sea. Below the first landing, a ferryman was chained beneath the bell.',
+        ],
       },
       {
         id: 'ferrymans-price',
@@ -197,12 +232,22 @@ const WORLDS: readonly WorldTemplate[] = [
         category: 'discovery',
         leadRole: 'support',
         variants: [
-          'Beyond the first landing, {lead} finds a ferryman chained to an empty boat. He offers safe passage to the bell in exchange for one memory from each hero. {path} reveals the trick: the memories will not vanish, but the people inside them will forget the heroes instead. Refusing means taking the stair through an army of drowned hunters. Accepting means returning to a world where someone beloved no longer knows their face.',
-          "The ferryman has three coins on his tongue, each stamped with one hero's face. He promises to carry the squad past the drowned army if {lead} chooses which coin he may keep. {path} can tell that the chosen hero will lose no memory; someone waiting on shore will lose it for them. The safer route therefore costs no stats and no blood, only a relationship the player has already seen. The boat will leave when the funeral bell rings again.",
+          'Beyond the first landing, {lead} finds a ferryman chained to an empty boat. He offers safe passage to the bell in exchange for one memory from each hero. {path} reveals the memory he wants from {lead}: the face of the teacher who first believed in them. Refusing means taking the stair through an army of drowned hunters. Accepting means reaching the bell safely but losing a real piece of the past.',
+          "The ferryman has three coins on his tongue, each stamped with one hero's face. He promises to carry the squad past the drowned army if {lead} gives him the coin bearing their own face. {path} reveals the memory inside it: the first teacher who believed in {lead}. The safer route costs no blood, but that teacher's face will vanish from the hero's memory. The boat will leave when the funeral bell rings again.",
         ],
         choices: ['Pay with a shared memory', 'Take the drowned stair'],
-        consequenceHint:
-          'The price trades relationship progress for safety, while refusal preserves bonds and creates a harder operation.',
+        choiceDescriptions: [
+          'Cross safely; {lead} will forget the face of their first teacher.',
+          'Keep every memory; face the drowned without the ferryman.',
+        ],
+        choiceResults: [
+          "The ferryman took {lead}'s memory of their first teacher and gave the trio the royal seal from his chain. At the bell chamber, the king's shadow waited with a cold crown.",
+          "The trio kept its memories and fought down the drowned stair. They found the royal seal nailed to the bell-room door, where the king's shadow waited with a cold crown.",
+        ],
+        choiceEffects: [
+          { renownDelta: 0, provisionsDelta: 0, dangerDelta: -1, bondDelta: -2 },
+          { renownDelta: 0, provisionsDelta: 0, dangerDelta: 2, bondDelta: 1 },
+        ],
       },
       {
         id: 'crown-for-drowned',
@@ -214,8 +259,14 @@ const WORLDS: readonly WorldTemplate[] = [
           "At the bottom of the stair, {lead} meets a child wearing the king's shadow like a cloak. The child claims {path} once guarded the Underworld throne and can reclaim its lost rank by drawing one ceremonial blade. The blade is harmless today; the vision it creates ends with Morcant's king dead at {lead}'s feet. Refusing leaves the Path unchanged, while accepting turns every future royal hunter into an enemy. The choice is powerful because both consequences will survive the chapter.",
         ],
         choices: ['Claim the Underworld title', "Refuse the crown's prophecy"],
-        consequenceHint:
-          'The title grants an early offensive breakpoint but opens a royal pursuit thread for later turns.',
+        choiceDescriptions: [
+          'Awaken the crown mark; royal hunters will pursue the squad.',
+          "Keep the crown dormant and remain free of the king's prophecy.",
+        ],
+        choiceResults: [
+          '{lead} claimed the Underworld title. Captain Cael saw the crown mark on the shore and followed the trio to the guild.',
+          '{lead} refused the crown. Captain Cael saw the royal seal in the trio’s hands and followed them to the guild.',
+        ],
       },
     ],
   },
@@ -619,8 +670,13 @@ export function generateMythicReviewDraft(seed: string): MythicReviewDraft {
     };
   });
 
-  const chapters = world.chapters.map((chapter) => {
+  const chapters = world.chapters.map((chapter, chapterIndex) => {
     const lead = trio.find((hero) => hero.role === chapter.leadRole)!;
+    const nextTemplate = world.chapters[chapterIndex + 1];
+    const nextLead =
+      nextTemplate === undefined
+        ? lead
+        : (trio.find((hero) => hero.role === nextTemplate.leadRole) ?? lead);
     const variantPick = pick(streams, 'scenarios', chapter.variants);
     streams = variantPick.streams;
     return {
@@ -629,7 +685,13 @@ export function generateMythicReviewDraft(seed: string): MythicReviewDraft {
       category: chapter.category,
       paragraph: bind(variantPick.value, { lead: lead.name, path: lead.pathName }),
       choices: chapter.choices,
-      consequenceHint: chapter.consequenceHint,
+      choiceDescriptions: chapter.choiceDescriptions.map((description) =>
+        bind(description, { lead: lead.name, path: lead.pathName, nextLead: nextLead.name }),
+      ) as unknown as readonly [string, string],
+      choiceResults: chapter.choiceResults.map((result) =>
+        bind(result, { lead: lead.name, path: lead.pathName, nextLead: nextLead.name }),
+      ) as unknown as readonly [string, string],
+      ...(chapter.choiceEffects === undefined ? {} : { choiceEffects: chapter.choiceEffects }),
     };
   });
 

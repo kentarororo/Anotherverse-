@@ -25,6 +25,12 @@ export function CampaignCreationScreen() {
         <h2 id="premise-title">The opening chapter</h2>
         <div className="campaign-storybook">
           <p>{draft.premise}</p>
+          <div className="campaign-main-quest">
+            <span>Main quest</span>
+            <h3>{draft.questTitle}</h3>
+            <p>{draft.questObjective}</p>
+            <small>{draft.questActs.join(' → ')}</small>
+          </div>
           <p className="campaign-question">
             <strong>The question at the heart of this campaign:</strong> {draft.campaignQuestion}
           </p>

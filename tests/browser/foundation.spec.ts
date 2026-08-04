@@ -222,8 +222,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   const authoredOperationTitle = page.locator('.operation-content h2');
   await expect(authoredOperationTitle).toBeVisible();
   await expect(authoredOperationTitle).not.toHaveText('');
-  await expect(page.getByLabel('Why this situation is happening')).toBeVisible();
-  await expect(page.getByLabel('Why this situation is happening').locator('span')).toHaveCount(2);
+  await expect(page.getByLabel('Story situation')).toBeVisible();
+  await expect(page.getByLabel('Story situation').locator('dt')).toHaveCount(3);
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
   await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
   await expect(page.getByLabel(`${strikerName} position`)).toHaveValue('centre');
@@ -239,7 +239,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await page.getByRole('button', { name: 'Take Action' }).click();
   await expect(page.getByRole('heading', { name: /Victory|Defeat|Round Cap/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue to Turn 2' })).toBeVisible();
-  await expect(page.getByText('1 campaign fact recorded')).toBeVisible();
+  await expect(page.getByText('Chapter 1 complete')).toBeVisible();
   await expect(page.getByLabel('Battle playback', { exact: true })).toBeVisible();
   await expect(page.locator('.combat-unit')).toHaveCount(5);
   await expect(page.locator('.battle-playback-stage [data-art-slot^="unit:"]')).toHaveCount(5);
@@ -250,7 +250,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   if (await skipPlayback.isVisible()) await skipPlayback.click();
   await expect(page.locator('.battle-result')).toBeVisible();
   const exactLog = page.locator('.exact-battle-log');
-  await expect(exactLog.getByText('Exact battle log')).toBeVisible();
+  await expect(exactLog.getByText('Battle details')).toBeVisible();
   await exactLog.locator(':scope > summary').click();
   await expect(exactLog.locator('.exact-event').first()).toBeVisible();
   const savedTotals = await page.evaluate(() => {
@@ -319,7 +319,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   const logsButton = page.getByRole('button', { name: 'Logs' });
   await logsButton.focus();
   await logsButton.click();
-  await expect(page.getByRole('heading', { name: 'Archived turn reports' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Completed chapters' })).toBeVisible();
   await expect(page.getByText(/Turn 1 · Battle/)).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);

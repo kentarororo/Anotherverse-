@@ -236,13 +236,13 @@ export function MythicReviewScreen() {
               </header>
               <p>{chapter.paragraph}</p>
               <div className="mythic-choices">
-                {chapter.choices.map((choice) => (
+                {chapter.choices.map((choice, choiceIndex) => (
                   <button type="button" disabled key={choice}>
-                    {choice}
+                    <strong>{choice}</strong>
+                    <span>{chapter.choiceDescriptions[choiceIndex]}</span>
                   </button>
                 ))}
               </div>
-              <small>Mechanical promise: {chapter.consequenceHint}</small>
             </li>
           ))}
         </ol>

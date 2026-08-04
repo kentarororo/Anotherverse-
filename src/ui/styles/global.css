@@ -362,6 +362,29 @@ h2 {
   color: #d6dfea;
 }
 
+.campaign-main-quest {
+  margin: 0.9rem 0;
+  padding: 0.8rem;
+  border: 1px solid rgba(87, 229, 195, 0.28);
+  border-radius: 8px;
+  background: rgba(87, 229, 195, 0.045);
+}
+
+.campaign-main-quest span,
+.campaign-main-quest small {
+  color: var(--accent);
+  font-size: 0.63rem;
+}
+
+.campaign-main-quest h3 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.campaign-main-quest p {
+  margin: 0 0 0.4rem;
+}
+
 .campaign-question strong {
   color: var(--accent);
 }
@@ -2767,6 +2790,29 @@ html[data-reduce-motion='true'] *::after {
   display: grid;
   gap: 0.42rem;
   margin: 0.55rem 0 0;
+}
+
+.quest-objective {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 0.55rem;
+  padding: 0.58rem 0.65rem;
+  border-left: 3px solid var(--accent);
+  background: rgba(87, 229, 195, 0.055);
+}
+
+.quest-objective span {
+  color: var(--accent);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quest-objective strong {
+  color: #dbe4ef;
+  font-size: 0.68rem;
+  line-height: 1.45;
 }
 
 .storybook-brief dl > div {
