@@ -1961,6 +1961,503 @@ select {
   font-size: 0.68rem;
 }
 
+.mythic-review-screen {
+  --mythic-gold: #e2b766;
+  --mythic-red: #c96a65;
+  min-height: 100vh;
+  padding: 1rem clamp(1rem, 4vw, 4.5rem) 4rem;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(133, 94, 53, 0.16), transparent 30rem),
+    linear-gradient(180deg, #0e0d12 0%, var(--page) 36rem);
+}
+
+.mythic-review-header {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto auto;
+  align-items: center;
+  max-width: 1240px;
+  gap: 1.2rem;
+  margin: 0 auto;
+  padding: 1.2rem 0 1.4rem;
+  border-bottom: 1px solid rgba(226, 183, 102, 0.35);
+}
+
+.mythic-review-header h1,
+.mythic-section-heading h2,
+.mythic-generation-contract h2 {
+  margin: 0.18rem 0 0;
+  color: #f4e9d5;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.02em;
+}
+
+.mythic-review-header h1 {
+  font-size: clamp(1.8rem, 4vw, 3.2rem);
+}
+
+.mythic-review-header > div:first-child > p:last-child,
+.mythic-section-heading > p,
+.mythic-subtitle {
+  max-width: 760px;
+  margin: 0.45rem 0 0;
+  color: #a99f94;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.mythic-review-score {
+  display: grid;
+  min-width: 112px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(226, 183, 102, 0.3);
+  border-radius: 8px;
+  background: rgba(14, 13, 18, 0.72);
+}
+
+.mythic-review-score strong {
+  color: var(--mythic-gold);
+  font-size: 1.15rem;
+}
+
+.mythic-review-score span {
+  color: #8f877e;
+  font-size: 0.52rem;
+}
+
+.mythic-seed-picker {
+  position: sticky;
+  z-index: 8;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 1240px;
+  gap: 0.45rem;
+  margin: 0 auto 1.2rem;
+  padding: 0.75rem 0;
+  background: rgba(14, 13, 18, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.mythic-seed-picker span {
+  margin-right: 0.5rem;
+  color: #8f877e;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+}
+
+.mythic-seed-picker button,
+.mythic-choices button {
+  padding: 0.48rem 0.68rem;
+  border: 1px solid rgba(226, 183, 102, 0.25);
+  border-radius: 5px;
+  color: #c8bca9;
+  background: rgba(31, 27, 30, 0.86);
+  font: inherit;
+  font-size: 0.62rem;
+}
+
+.mythic-seed-picker button.is-active {
+  border-color: var(--mythic-gold);
+  color: #171214;
+  background: var(--mythic-gold);
+}
+
+.mythic-world-card,
+.mythic-review-section,
+.mythic-generation-contract,
+.mythic-review-judgment,
+.mythic-review-footer {
+  max-width: 1240px;
+  margin: 0 auto 1.2rem;
+}
+
+.mythic-world-card,
+.mythic-generation-contract {
+  padding: clamp(1rem, 3vw, 1.8rem);
+  border: 1px solid rgba(226, 183, 102, 0.3);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(39, 30, 30, 0.88), rgba(15, 16, 22, 0.94));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+}
+
+.mythic-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mythic-section-heading h2,
+.mythic-generation-contract h2 {
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+}
+
+.mythic-ranks {
+  color: var(--mythic-gold);
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+
+.mythic-opening {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1rem, 3vw, 2rem);
+  padding: 1.15rem 0;
+  border-top: 1px solid rgba(226, 183, 102, 0.16);
+  border-bottom: 1px solid rgba(226, 183, 102, 0.16);
+}
+
+.mythic-opening p,
+.mythic-hero-introduction,
+.mythic-chapter-card > p {
+  margin: 0;
+  color: #d8d0c5;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.83rem;
+  line-height: 1.78;
+}
+
+.mythic-laws {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0 0;
+}
+
+.mythic-laws div,
+.mythic-character-drives div {
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba(226, 183, 102, 0.55);
+}
+
+.mythic-laws dt,
+.mythic-character-drives dt,
+.mythic-stat-row dt,
+.mythic-generation-contract dt {
+  color: var(--mythic-gold);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+}
+
+.mythic-laws dd,
+.mythic-character-drives dd,
+.mythic-stat-row dd,
+.mythic-generation-contract dd {
+  margin: 0.3rem 0 0;
+  color: #bbb1a5;
+  font-size: 0.69rem;
+  line-height: 1.55;
+}
+
+.mythic-review-section {
+  padding-top: 1.2rem;
+}
+
+.mythic-hero-grid,
+.mythic-relic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.mythic-hero-card,
+.mythic-relic-card,
+.mythic-chapter-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(226, 183, 102, 0.18);
+  border-radius: 8px;
+  background: rgba(20, 20, 27, 0.92);
+}
+
+.mythic-hero-card > header > span,
+.mythic-relic-card > span,
+.mythic-chapter-card header span {
+  color: var(--mythic-gold);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+}
+
+.mythic-hero-card h3,
+.mythic-relic-card h3,
+.mythic-chapter-card h3 {
+  margin: 0.25rem 0;
+  color: #f0e6d5;
+  font-size: 0.95rem;
+}
+
+.mythic-hero-card > header > strong {
+  color: #b6a89a;
+  font-size: 0.63rem;
+  font-weight: 500;
+}
+
+.mythic-portrait-placeholder {
+  display: grid;
+  min-height: 120px;
+  place-content: center;
+  gap: 0.35rem;
+  margin: 0.8rem 0;
+  border: 1px dashed rgba(226, 183, 102, 0.28);
+  color: rgba(226, 183, 102, 0.58);
+  background:
+    linear-gradient(135deg, transparent 48%, rgba(226, 183, 102, 0.08) 49% 51%, transparent 52%),
+    rgba(8, 9, 13, 0.62);
+  text-align: center;
+}
+
+.mythic-portrait-placeholder span {
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+}
+
+.mythic-portrait-placeholder small {
+  color: #746c66;
+  font-size: 0.5rem;
+}
+
+.mythic-character-drives {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.9rem 0;
+}
+
+.mythic-hero-card blockquote {
+  margin: 0.9rem 0;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  color: #e2cba7;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.76rem;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.mythic-stat-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.25rem;
+  margin: 0 0 0.8rem;
+}
+
+.mythic-stat-row div {
+  padding: 0.38rem 0.2rem;
+  border: 1px solid var(--line-soft);
+  text-align: center;
+}
+
+.mythic-stat-row dd {
+  color: #f0e6d5;
+  font-size: 0.76rem;
+}
+
+.mythic-technique-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.mythic-technique-card {
+  padding: 0.7rem;
+  border-left: 2px solid var(--mythic-red);
+  background: rgba(8, 9, 13, 0.62);
+}
+
+.mythic-technique-card > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.mythic-technique-card h4 {
+  margin: 0;
+  color: #e8ddca;
+  font-size: 0.7rem;
+}
+
+.mythic-technique-card span,
+.mythic-technique-card code,
+.mythic-relic-card code {
+  color: #c9a667;
+  font-size: 0.52rem;
+}
+
+.mythic-technique-card p,
+.mythic-relic-card p {
+  margin: 0.48rem 0;
+  color: #aaa198;
+  font-size: 0.64rem;
+  line-height: 1.55;
+}
+
+.mythic-technique-card code,
+.mythic-relic-card code {
+  display: block;
+  white-space: normal;
+  line-height: 1.45;
+}
+
+.mythic-relic-card {
+  border-top: 2px solid rgba(226, 183, 102, 0.58);
+}
+
+.mythic-chapter-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mythic-chapter-card {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.28fr) minmax(300px, 1fr) minmax(190px, 0.35fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.mythic-choices {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.mythic-choices button {
+  text-align: left;
+  opacity: 0.82;
+}
+
+.mythic-chapter-card > small {
+  grid-column: 2 / -1;
+  color: #8f877e;
+  font-size: 0.56rem;
+}
+
+.mythic-generation-contract {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.35fr) 1fr;
+  gap: 1.5rem;
+}
+
+.mythic-generation-contract dl {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.mythic-generation-contract dd {
+  margin-left: 0;
+}
+
+.mythic-review-judgment {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(226, 183, 102, 0.3);
+}
+
+.mythic-review-judgment legend {
+  padding: 0 0.5rem;
+  color: #e7d8bf;
+  font-size: 0.64rem;
+}
+
+.mythic-review-judgment label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #bcb1a4;
+  font-size: 0.62rem;
+}
+
+.mythic-review-judgment small {
+  margin-left: auto;
+  color: #786f68;
+  font-size: 0.52rem;
+}
+
+.mythic-review-footer {
+  display: flex;
+  gap: 0.6rem;
+  color: #6f6863;
+  font-size: 0.5rem;
+}
+
+.mythic-review-footer code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .mythic-review-header,
+  .mythic-generation-contract {
+    grid-template-columns: 1fr;
+  }
+
+  .mythic-review-header {
+    align-items: start;
+  }
+
+  .mythic-review-score {
+    width: fit-content;
+  }
+
+  .mythic-hero-grid,
+  .mythic-relic-grid,
+  .mythic-generation-contract dl {
+    grid-template-columns: 1fr;
+  }
+
+  .mythic-chapter-card {
+    grid-template-columns: 1fr;
+  }
+
+  .mythic-chapter-card > small {
+    grid-column: 1;
+  }
+
+  .mythic-review-judgment {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .mythic-review-judgment small {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .mythic-review-screen {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .mythic-seed-picker {
+    justify-content: start;
+    overflow-x: auto;
+  }
+
+  .mythic-seed-picker span {
+    display: none;
+  }
+
+  .mythic-section-heading,
+  .mythic-opening,
+  .mythic-laws {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .mythic-ranks {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 900px) {
   .title-screen {
     grid-template-columns: 1fr;

@@ -99,6 +99,10 @@ npm run check
 The final human quality gate is documented in [`PLAYTEST.md`](./PLAYTEST.md).
 The fixed 100-paragraph read-aloud harness is available at `/?review=corpus` without adding
 anything to the normal title screen.
+The controlled Mythic Narrative v2 prototype is available at `/?review=mythic-v2`. It compares
+deterministic mythology × progression-fantasy drafts built from complete authored worlds, fixed
+hero identities, role-compatible relics, whole chapter variants, and immutable combat rules. Its
+four review judgments are stored locally per seed and do not change a campaign save.
 The requirement-by-requirement evidence ledger is in [`ACCEPTANCE.md`](./ACCEPTANCE.md).
 The single editable story source, authoring worksheet, and validation rules are documented in
 [`STORY_AUTHORING.md`](./STORY_AUTHORING.md).
