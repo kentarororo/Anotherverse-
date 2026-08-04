@@ -180,7 +180,7 @@ export function TitleScreen() {
           </div>
         )}
 
-        <footer className="version">Prototype v0.6.0 · Authored Worlds</footer>
+        <footer className="version">Prototype v0.7.0 · Tactical Arena</footer>
       </section>
     </main>
   );

@@ -11,6 +11,8 @@ Turn 20. Record the seed and any turn where the cause, choice, or result is uncl
 
 - Can you explain what makes each hero mechanically distinct?
 - Before each operation, can you identify one useful formation, stance, or priority change?
+- Can you identify all five combatants, the active actor and target, HP change or status, and the
+  selected plan without opening the exact battle log?
 - Can you identify which earlier fact or choice caused each personal, discovery, rival, or social
   situation?
 - Can you explain what each hero is progressing toward and spend at least one training point per

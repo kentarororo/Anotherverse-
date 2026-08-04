@@ -29,8 +29,9 @@ as proof unless a named test exercises the requirement.
 | Autosave on creation/action/equip/learn; corrupt/schema-7 recovery; confirmation before replacement                        | `persistence.test.ts`; `foundation.spec.ts`                                                     | Pass                     |
 | Title Settings, 1365×768 loop, sticky Take Action, 125% text, reduced motion, keyboard focus return                        | `foundation.spec.ts`                                                                            | Pass                     |
 | Playback waits for visibility; units remain mobile-contained; canonical HP, cues, and recipient states match events        | `battle-playback.test.tsx`; `foundation.spec.ts`                                                | Pass                     |
+| Planning and battle stages expose five stable unit art slots, an arena slot, VFX slots, and reduced-motion action review   | `battle-playback.test.tsx`; `foundation.spec.ts`; `ART_PIPELINE.md`                             | Pass (CSS placeholders)  |
 | Real UI completes 20 turns, equips both rewards, develops all heroes, reloads, and archives all reports                    | `full-campaign.spec.ts`                                                                         | Pass                     |
-| GitHub Pages build uses `/Anotherverse-/` and deploys `dist` from `main`                                                   | `vite.config.ts`; `.github/workflows/pages.yml`                                                 | Pass; v0.5 awaiting push |
+| GitHub Pages build uses `/Anotherverse-/` and deploys `dist` from `main`                                                   | `vite.config.ts`; `.github/workflows/pages.yml`                                                 | Pass; deploys after push |
 
 ## Human gates
 

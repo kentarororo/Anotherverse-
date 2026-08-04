@@ -119,6 +119,8 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.getByRole('heading', { name: 'The Trio' })).toBeVisible();
   await expect(page.locator('.operation-content h2')).toBeVisible();
+  await expect(page.getByLabel('Planned battle formation')).toBeVisible();
+  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
   const commit = page.getByRole('button', { name: 'Take Action' });
   await commit.scrollIntoViewIfNeeded();
   await expect(commit).toBeVisible();
@@ -151,13 +153,13 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
       });
     }),
   ).toBe(true);
-  await expect(page.locator('.battle-result')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Skip to result' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Replay' }).click();
+  await expect(page.locator('.battle-result')).toHaveCount(0);
   const nextHighlight = page.getByRole('button', { name: 'Next highlight' });
   await expect(nextHighlight).toBeVisible();
   await nextHighlight.click();
   await expect(page.locator('.battle-beat .round-label')).toBeVisible();
+  await page.getByRole('button', { name: 'Skip to result' }).click();
+  await expect(page.locator('.battle-result')).toBeVisible();
 });
 
 test('waits to consume mobile highlights until the battlefield is visible', async ({ page }) => {
@@ -222,11 +224,14 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(authoredOperationTitle).not.toHaveText('');
   await expect(page.getByLabel('Why this situation is happening')).toBeVisible();
   await expect(page.getByLabel('Why this situation is happening').locator('span')).toHaveCount(2);
+  await expect(page.getByLabel('Planned battle formation')).toBeVisible();
+  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
   await expect(page.getByLabel(`${strikerName} position`)).toHaveValue('centre');
   await page.getByLabel(`${strikerName} position`).selectOption('front');
   await expect(page.getByLabel(`${vanguardName} position`)).toHaveValue('centre');
   await page.getByLabel(`${strikerName} stance`).selectOption('guarded');
   await page.getByLabel('Team priority').selectOption('focus-weakest');
+  await expect(page.getByLabel('Planned battle formation')).toContainText('Focus Weakest');
   expect(
     await page.evaluate(() => document.documentElement.scrollHeight <= globalThis.innerHeight),
   ).toBe(true);
@@ -237,6 +242,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByText('1 campaign fact recorded')).toBeVisible();
   await expect(page.getByLabel('Battle playback', { exact: true })).toBeVisible();
   await expect(page.locator('.combat-unit')).toHaveCount(5);
+  await expect(page.locator('.battle-playback-stage [data-art-slot^="unit:"]')).toHaveCount(5);
+  await expect(page.locator('.battle-playback-stage [data-art-slot^="vfx:"]')).toHaveCount(1);
   await expect(page.locator('.combat-unit.is-actor')).toHaveCount(1);
   await expect(page.locator('.combat-unit.is-target')).toHaveCount(1);
   const skipPlayback = page.getByRole('button', { name: 'Skip to result' });
@@ -267,7 +274,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
     };
   });
   for (const hero of savedTotals.heroes) {
-    const row = page.locator('.aftermath-list > div').filter({ hasText: hero.name });
+    const row = page.locator('.aftermath-hero-row').filter({ hasText: hero.name });
     await expect(row).toContainText(`${hero.hp} HP`);
     await expect(row).toContainText(`+${hero.xp} XP`);
   }

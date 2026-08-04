@@ -1,6 +1,6 @@
 # Anotherverse Pixel-Art Production Contract
 
-Status: implementation-ready proposal for the post-v0.4 visual pass  
+Status: v0.7 placeholder integration is live; production PNG asset resolution is the next pass
 Audience: asset creator, gameplay/UI engineer, content designer, and playtest lead  
 Scope: the three-hero management screen, compact auto-battle playback, dossiers, Bestiary, and
 current four-operation slice
@@ -21,10 +21,11 @@ This is the shortest robust route because it preserves:
 - CSS reduced-motion handling;
 - graceful play when individual art files are missing.
 
-The current gameplay direction exposes `.unit-sprite`, `data-combatant-id`, `data-role`,
-`data-sprite-state`, `data-event-type`, and event classes such as `.stage-event-attack`. Those are
-the integration seam. Animation timers only control presentation. They must never dispatch engine
-commands or modify a `BattleReport`.
+The v0.7 placeholder renderer exposes `.pixel-art-slot`, `data-art-slot`, `data-asset-id`,
+`data-combatant-id`, `data-role`, `data-sprite-state`, `data-event-type`, and event classes such as
+`.stage-event-attack`. `PlanningBattleStage` and `BattlePlaybackStage` already resolve the same
+stable IDs. Those are the integration seam. Animation timers only control presentation. They must
+never dispatch engine commands or modify a `BattleReport`.
 
 Use stable Calling IDs for generated heroes, not their generated character IDs. A hero named
 `Rhea Sol` can be generated as any Calling, so `rhea-sol-1.png` would be an unstable asset key.
@@ -578,8 +579,8 @@ to named titles or artists. Output separated key frames for manual pixel cleanup
 1. Add and validate `public/assets/art/v1/manifest.json` without touching canonical state.
 2. Add an `ArtResolver` that accepts a character definition or enemy ID and returns a resolved
    state strip with role/CSS fallbacks.
-3. Render an inner sprite-strip element inside the existing `.unit-sprite`; keep the name, role, HP,
-   action cue, and controls as DOM text.
+3. Replace the inner CSS silhouette in `PixelArtSlot`; keep the name, role, HP, action cue, and
+   controls as DOM text.
 4. Derive the visual state from the current structured event and HP. Never parse narration.
 5. Apply the current encounter background by `currentEncounter.id`.
 6. Preload only resolved current-operation assets.
@@ -592,7 +593,8 @@ Recommended code boundaries when implementation begins:
 ```text
 src/ui/art/ArtResolver.ts
 src/ui/art/art-manifest.ts
-src/ui/components/PixelSprite.tsx
+src/ui/components/PixelArtSlot.tsx
+src/ui/components/PlanningBattleStage.tsx
 src/ui/components/BattlePlaybackStage.tsx
 public/assets/art/v1/...
 ```

@@ -153,16 +153,26 @@ describe('battle playback presentation mapping', () => {
       hpAtEnd: { hero: 7, enemy: 31 },
     };
 
-    render(
+    const { container } = render(
       <BattlePlaybackStage
         report={report}
         combatants={{ hero, enemy }}
         heroIds={['hero']}
         enemyIds={['enemy']}
+        assetIds={{ hero: 'storm-bastion', enemy: 'rift-hound' }}
+        arenaId="m1-glassline-breach"
       />,
     );
 
     expect(screen.getByText('7/40')).toBeInTheDocument();
     expect(screen.queryByText('7/7')).not.toBeInTheDocument();
+    expect(screen.getByText('Test Action')).toBeInTheDocument();
+    expect(container.querySelector('[data-playback-state="paused"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-art-slot="arena:m1-glassline-breach"]'),
+    ).toBeInTheDocument();
+    expect(container.querySelector('[data-art-slot="unit:storm-bastion"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-art-slot="unit:rift-hound"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-art-slot="vfx:event-attack"]')).toBeInTheDocument();
   });
 });

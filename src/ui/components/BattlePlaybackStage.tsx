@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CombatantDefinition } from '../../engine/model/combat';
 import type { BattleReport, CombatEvent } from '../../engine/reports/combat';
 import { maximumHp } from '../../engine/combat/stats';
+import { PixelArtSlot } from './PixelArtSlot';
 
 const MAX_VISIBLE_BEATS = 16;
 const BEAT_DURATION_MS = 520;
@@ -11,6 +12,8 @@ interface BattlePlaybackStageProps {
   combatants: Record<string, CombatantDefinition>;
   heroIds: string[];
   enemyIds: string[];
+  assetIds?: Record<string, string>;
+  arenaId?: string;
 }
 
 function titleCase(value: string) {
@@ -166,18 +169,21 @@ export function BattlePlaybackStage({
   combatants,
   heroIds,
   enemyIds,
+  assetIds = {},
+  arenaId = 'unassigned-arena',
 }: BattlePlaybackStageProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const beats = useMemo(() => selectBattleBeats(report.events), [report.events]);
   const reducedMotion = reducedMotionIsActive();
   const [beatIndex, setBeatIndex] = useState(0);
   const [playback, setPlayback] = useState<'waiting' | 'playing' | 'paused' | 'result'>(() =>
-    reducedMotion ? 'result' : 'waiting',
+    reducedMotion ? 'paused' : 'waiting',
   );
+  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 2>(1);
 
   useEffect(() => {
     setBeatIndex(0);
-    setPlayback(reducedMotion ? 'result' : 'waiting');
+    setPlayback(reducedMotion ? 'paused' : 'waiting');
   }, [reducedMotion, report.id]);
 
   useEffect(() => {
@@ -213,15 +219,18 @@ export function BattlePlaybackStage({
   useEffect(() => {
     if (playback !== 'playing') return;
     if (beatIndex >= beats.length - 1) {
-      const timer = globalThis.setTimeout(() => setPlayback('result'), BEAT_DURATION_MS);
+      const timer = globalThis.setTimeout(
+        () => setPlayback('result'),
+        BEAT_DURATION_MS / playbackSpeed,
+      );
       return () => globalThis.clearTimeout(timer);
     }
     const timer = globalThis.setTimeout(
       () => setBeatIndex((current) => current + 1),
-      BEAT_DURATION_MS,
+      BEAT_DURATION_MS / playbackSpeed,
     );
     return () => globalThis.clearTimeout(timer);
-  }, [beatIndex, beats.length, playback]);
+  }, [beatIndex, beats.length, playback, playbackSpeed]);
 
   const event = playback === 'result' ? null : (beats[beatIndex] ?? null);
   const visibleEventIndex = event?.index ?? null;
@@ -268,9 +277,12 @@ export function BattlePlaybackStage({
             data-sprite-state={state}
             key={`${id}-${visibleEventIndex ?? 'result'}`}
           >
-            <div className="unit-sprite" aria-hidden="true">
-              <span />
-            </div>
+            <PixelArtSlot
+              assetId={assetIds[id] ?? id}
+              role={definition.role}
+              side={side}
+              state={state}
+            />
             <div className="unit-readout">
               <span>{titleCase(definition.role)}</span>
               <strong>{definition.name}</strong>
@@ -282,6 +294,9 @@ export function BattlePlaybackStage({
                   {current}/{maximum}
                 </b>
               </div>
+              {event?.targetIds.includes(id) === true && statusCue(event).length > 0 && (
+                <span className="unit-status-cue">{statusCue(event).join(' / ')}</span>
+              )}
             </div>
           </article>
         );
@@ -296,10 +311,12 @@ export function BattlePlaybackStage({
       data-event-type={event?.eventType ?? 'result'}
       data-highlight-index={visibleEventIndex ?? 'result'}
       data-playback-state={playback}
+      data-art-slot={`arena:${arenaId}`}
       aria-label="Battle playback"
       tabIndex={-1}
     >
       <div className="battlefield">
+        <span className="arena-art-label">ARENA ART SLOT / {arenaId}</span>
         {renderLane('heroes', heroIds)}
         <div className="battle-beat" key={visibleEventIndex ?? 'result'} aria-live="polite">
           {event === null ? (
@@ -310,6 +327,11 @@ export function BattlePlaybackStage({
             </div>
           ) : (
             <>
+              <span
+                className={`event-vfx-placeholder vfx-${event.eventType}`}
+                data-art-slot={`vfx:event-${event.eventType}`}
+                aria-hidden="true"
+              />
               <span className="round-label">Round {event.round}</span>
               <strong>{actionName}</strong>
               <p>
@@ -338,6 +360,15 @@ export function BattlePlaybackStage({
               ? `Ready · ${beats.length} highlights`
               : `${beatIndex + 1}/${beats.length} highlights`}
         </span>
+        {!reducedMotion && playback !== 'result' && (
+          <button
+            className="playback-button"
+            type="button"
+            onClick={() => setPlaybackSpeed((current) => (current === 1 ? 2 : 1))}
+          >
+            Speed {playbackSpeed}x
+          </button>
+        )}
         {playback !== 'result' && (
           <button className="playback-button" type="button" onClick={toggleOrAdvance}>
             {playback === 'waiting'

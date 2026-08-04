@@ -1,11 +1,12 @@
 import { calculateForecast } from '../../engine/combat/forecast';
 import type { Position } from '../../engine/model/commands';
-import { maximumHp } from '../../engine/combat/stats';
 import { useAppStore } from '../../app/store';
 import { renderCombatEvent } from '../../narrative/realiser/combat';
 import { ManagementDrawer } from '../components/ManagementDrawer';
 import { renderWorldFact } from '../../narrative/realiser/facts';
 import { BattlePlaybackStage } from '../components/BattlePlaybackStage';
+import { PlanningBattleStage } from '../components/PlanningBattleStage';
+import { operationEncounters } from '../../content/milestone-one';
 
 const positions: Position[] = ['front', 'centre', 'rear'];
 const stances = ['aggressive', 'guarded', 'tactical', 'supportive'] as const;
@@ -18,6 +19,22 @@ const priorities = [
 
 function titleCase(value: string) {
   return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function briefLead(text: string | undefined) {
+  if (text === undefined) return '';
+  return (text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [text])
+    .slice(0, 1)
+    .map((sentence) => sentence.trim())
+    .join(' ');
+}
+
+function encounterIdForEnemies(enemyIds: string[]) {
+  const signature = [...enemyIds].sort().join('|');
+  return (
+    operationEncounters.find((encounter) => [...encounter.enemyIds].sort().join('|') === signature)
+      ?.id ?? 'unassigned-arena'
+  );
 }
 
 export function CommandScreen() {
@@ -44,6 +61,37 @@ export function CommandScreen() {
       : Object.keys(report.hpAtStart).filter(
           (id) => game.generatedDefinitions.enemies[id] !== undefined,
         );
+  const currentEnemies = (game.currentEncounter?.enemyIds ?? []).flatMap((enemyId) => {
+    const enemy = game.generatedDefinitions.enemies[enemyId];
+    return enemy === undefined ? [] : [enemy];
+  });
+  const battleAssetIds = Object.fromEntries([
+    ...game.generatedDefinitions.characters.map((hero) => [hero.id, hero.callingId] as const),
+    ...battleEnemyIds.map((enemyId) => [enemyId, enemyId] as const),
+  ]);
+  const resolvedArenaId = encounterIdForEnemies(battleEnemyIds);
+  const totalBattleHpStart =
+    report === undefined
+      ? 0
+      : game.generatedDefinitions.characters.reduce(
+          (total, hero) => total + (report.hpAtStart[hero.id] ?? 0),
+          0,
+        );
+  const totalBattleHpEnd =
+    report === undefined
+      ? 0
+      : game.generatedDefinitions.characters.reduce(
+          (total, hero) => total + (report.hpAtEnd[hero.id] ?? 0),
+          0,
+        );
+  const formationSummary = positions
+    .map((position) => {
+      const hero = game.generatedDefinitions.characters.find(
+        (candidate) => game.pendingPlan.positions[candidate.id] === position,
+      );
+      return hero === undefined ? titleCase(position) : `${titleCase(position)} ${hero.name}`;
+    })
+    .join(' / ');
   const causalFacts =
     scenario?.premiseFactIds.flatMap((factId) => {
       const fact = game.worldFacts.find((candidate) => candidate.id === factId && candidate.active);
@@ -153,6 +201,21 @@ export function CommandScreen() {
                   >
                     <span style={{ width: `${hpPercent}%` }} />
                   </div>
+                  <dl className="hero-stat-strip" aria-label={`${hero.name} combat stats`}>
+                    {[
+                      ['VIT', hero.stats.vitality],
+                      ['POW', hero.stats.power],
+                      ['GRD', hero.stats.guard],
+                      ['SPD', hero.stats.speed],
+                      ['FOC', hero.stats.focus],
+                      ['AP', `${member.resource}/${member.maxResource}`],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
                   <div className="hero-controls">
                     <label>
                       Position
@@ -218,7 +281,17 @@ export function CommandScreen() {
               {String(displayedTurn).padStart(2, '0')} · {game.campaignBible?.city.name}
             </p>
             <h2 id="operation-title">{showingAftermath ? 'Aftermath' : scenario?.title}</h2>
-            <p>{showingAftermath ? aftermath.summary : scenario?.premise}</p>
+            <p className="operation-hook">
+              {showingAftermath ? aftermath.summary : briefLead(scenario?.premise)}
+            </p>
+            {!showingAftermath &&
+              scenario !== null &&
+              briefLead(scenario.premise) !== scenario.premise && (
+                <details className="full-brief">
+                  <summary>Read full story brief</summary>
+                  <p>{scenario.premise}</p>
+                </details>
+              )}
             {!showingAftermath && causalFacts.length > 0 && (
               <aside className="causal-record" aria-label="Why this situation is happening">
                 <strong>Why now</strong>
@@ -233,27 +306,31 @@ export function CommandScreen() {
                 combatants={game.generatedDefinitions.combatants}
                 heroIds={game.generatedDefinitions.characters.map((hero) => hero.id)}
                 enemyIds={battleEnemyIds}
+                assetIds={battleAssetIds}
+                arenaId={resolvedArenaId}
               />
+            ) : isOperation && game.currentEncounter !== null ? (
+              <>
+                <PlanningBattleStage
+                  arenaId={game.currentEncounter.id}
+                  heroes={game.generatedDefinitions.characters}
+                  enemies={currentEnemies}
+                  partyState={game.partyState}
+                  positions={game.pendingPlan.positions}
+                  stanceIds={game.pendingPlan.stanceIds}
+                  priorityId={game.pendingPlan.teamPriorityId}
+                />
+                <div className="threat-intents" aria-label="Enemy intent summary">
+                  {currentEnemies.map((enemy) => (
+                    <p key={enemy.id}>
+                      <strong>{enemy.name}</strong>
+                      <span>{enemy.signature}</span>
+                    </p>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="battle-stage" aria-label="Enemy forecast">
-                {(game.currentEncounter?.enemyIds ?? []).map((enemyId) => {
-                  const enemy = game.generatedDefinitions.enemies[enemyId];
-                  if (enemy === undefined) return null;
-                  const maxHp = maximumHp(enemy.stats);
-                  return (
-                    <article className="enemy-card" key={enemyId}>
-                      <span>{enemy.role.toUpperCase()}</span>
-                      <strong>{enemy.name}</strong>
-                      <div className="meter enemy-meter">
-                        <span style={{ width: '100%' }} />
-                      </div>
-                      <b>
-                        {maxHp}/{maxHp} HP
-                      </b>
-                      <p>{enemy.signature}</p>
-                    </article>
-                  );
-                })}
                 {!isOperation && scenario !== null && (
                   <article className="situation-card">
                     <span>{titleCase(scenario.category)}</span>
@@ -291,7 +368,7 @@ export function CommandScreen() {
           {showingAftermath ? (
             <div className="aftermath-list">
               {game.generatedDefinitions.characters.map((hero) => (
-                <div key={hero.id}>
+                <div className="aftermath-hero-row" key={hero.id}>
                   <span>{hero.name}</span>
                   <strong>
                     {aftermath.hpByCharacter[hero.id]} HP · +
@@ -299,6 +376,30 @@ export function CommandScreen() {
                   </strong>
                 </div>
               ))}
+              <div className="progression-summary">
+                <span>Level progress</span>
+                <strong>
+                  {game.generatedDefinitions.characters
+                    .map((hero) => {
+                      const member = game.partyState[hero.id];
+                      return `${hero.name} ${member === undefined ? 0 : member.experience % 50}/50`;
+                    })
+                    .join(' / ')}
+                </strong>
+              </div>
+              {report !== undefined && (
+                <div className="aftermath-battle-review">
+                  <span>Plan result</span>
+                  <strong>
+                    {totalBattleHpEnd}/{totalBattleHpStart} squad HP retained / {report.rounds}{' '}
+                    rounds
+                  </strong>
+                  <small>
+                    {titleCase(game.pendingPlan.teamPriorityId ?? 'unassigned')} /{' '}
+                    {formationSummary}
+                  </small>
+                </div>
+              )}
               <div>
                 <span>Supplies</span>
                 <strong>+{aftermath.suppliesDelta}</strong>
@@ -339,6 +440,10 @@ export function CommandScreen() {
                       ))}
                     </select>
                   </label>
+                  <div className="priority-effect" aria-live="polite">
+                    <span>Plan effect</span>
+                    <strong>{forecast.advantages[0]}</strong>
+                  </div>
                   <div className="forecast-list">
                     <div>
                       <span>Victory band</span>

@@ -1,7 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **v0.6: Authored Worlds**.
+The project is a clean-room implementation and currently contains **v0.7: Tactical Arena**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -38,6 +38,12 @@ The project is a clean-room implementation and currently contains **v0.6: Author
   defeat, and twelve-round-cap events.
 - A compact two-lane battle playback with canonical HP, actor/target highlights, composed
   damage/status cues, pause/replay/skip controls, and visibility-gated mobile playback.
+- A 2D formation preview and five-combatant arena presentation with distinct role/enemy
+  silhouettes, event VFX placeholders, stable Calling/enemy/arena asset IDs, and safe CSS fallbacks.
+- Visible VIT, POW, GRD, SPD, FOC, and AP numbers on the command screen, plus plan effect,
+  post-battle squad HP retention, level progress, and formation review.
+- Reduced-motion battle review that starts on the first stable action frame and advances manually
+  instead of skipping the battle entirely.
 - A plan-sensitive forecast that never consumes the authoritative combat RNG stream.
 - A readable battle chronology with expandable exact mechanics and a persistent Aftermath report.
 - Four complete deterministic narration frames for every structured combat event type; rendering
