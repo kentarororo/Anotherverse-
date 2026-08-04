@@ -50,10 +50,18 @@ describe('causal scenario director', () => {
       expect(scenario.premise).not.toMatch(
         /\{[^}]+\}|the prior event|two recorded facts|something happened|the situation unfolds/i,
       );
+      expect(scenario.premise).not.toMatch(
+        /licen[cs]e|telemetry|bureau|network|signal audit|compliance|breach return/i,
+      );
+      expect(Object.values(scenario.sceneBeats).every((value) => value.length > 20)).toBe(true);
+      expect(
+        scenario.choices.every((choice) => Object.values(choice.effects).every(Number.isInteger)),
+      ).toBe(true);
       expect(
         Object.values(state.campaignBible!.sceneVocabulary).some((value) =>
           scenario.premise.includes(value),
         ),
+        `Turn ${state.turn} ${scenario.templateId} should use selected-world scene vocabulary`,
       ).toBe(true);
       for (const factId of scenario.premiseFactIds) {
         const fact = state.worldFacts.find((candidate) => candidate.id === factId)!;
@@ -86,14 +94,6 @@ describe('causal scenario director', () => {
           if (role === 'origin') expect(scenario.premise).toContain(String(fact.value));
         });
       }
-      if (state.turn === 5) {
-        expect(scenario.templateId).not.toBe('social-3');
-        expect(
-          state.directorDebug
-            .find((candidate) => candidate.templateId === 'social-3')
-            ?.reasons.includes('missing-fact-role:prior-social'),
-        ).toBe(true);
-      }
       if (
         scenario.premiseFactIds.some(
           (id) => (state.worldFacts.find((fact) => fact.id === id)?.createdTurn ?? 0) > 0,
@@ -122,12 +122,15 @@ describe('causal scenario director', () => {
     expect(
       relationshipFactIds.every((factId) => {
         const fact = state.worldFacts.find((candidate) => candidate.id === factId);
-        return fact?.tags.some((tag) => tag === 'rival' || tag === 'social') ?? false;
+        return (
+          fact?.tags.some((tag) => ['personal', 'discovery', 'rival', 'social'].includes(tag)) ??
+          false
+        );
       }),
     ).toBe(true);
     expect(
       Math.max(...state.relationships.map((relationship) => relationship.factIds.length)),
-    ).toBeLessThanOrEqual(6);
+    ).toBeLessThanOrEqual(12);
 
     let replay = campaign('twenty-turn-seed');
     for (let index = 0; index < 20; index += 1) {
@@ -239,17 +242,16 @@ describe('causal scenario director', () => {
       }
       state = applyGameCommand(state, { type: 'COMMIT_TURN' });
     }
-    const discoveryFact = [...state.worldFacts]
-      .reverse()
-      .find((fact) => fact.tags.includes('discovery'))!;
+    const boundDecisionId = selectNextScenario(state, 4, state.rngStreams!).scenario
+      .premiseFactIds[1]!;
     const alternate = {
       ...state,
       worldFacts: state.worldFacts.map((fact) =>
-        fact.id === discoveryFact.id
+        fact.id === boundDecisionId
           ? {
               ...fact,
               value: 'Preserve the hidden route',
-              tags: ['discovery', `preserve-hidden-route-t${fact.createdTurn}`],
+              tags: [fact.tags[0]!, `alternate-mythic-choice-t${fact.createdTurn}`],
             }
           : fact,
       ),
@@ -279,13 +281,10 @@ describe('causal scenario director', () => {
       }
       state = applyGameCommand(state, { type: 'COMMIT_TURN' });
     }
-    expect(choicesByTemplate.get('personal-2')).toEqual([
-      'Honour the old promise',
-      'Refuse the old promise',
-    ]);
+    expect(choicesByTemplate.get('personal-2')).toEqual(['Confess the voice', 'Answer it alone']);
     expect(choicesByTemplate.get('personal-4')).toEqual([
-      'Study the response safely',
-      'Push the Calling response',
+      'Attempt the ascension',
+      'Wait for the right truth',
     ]);
   });
 

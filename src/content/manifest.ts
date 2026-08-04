@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VALIDATED_STORY_AUTHORING } from '../narrative/authoring/validated-story';
+import { PATH_CLASS_IDS } from './path-classes';
 
 export const ContentPackReferenceSchema = z.object({
   id: z.string().min(1),
@@ -30,6 +30,7 @@ export const contentManifest = ContentManifestSchema.parse({
   packs: {
     campaign: pack('campaign-mythic-v2', ['fallen-heavens', 'underworld-tide']),
     characters: pack('characters-mythic-v2', [
+      ...PATH_CLASS_IDS,
       'lyra-vale',
       'doran-vey',
       'mira-rook',
@@ -68,11 +69,13 @@ export const contentManifest = ContentManifestSchema.parse({
         (eventType) => [1, 2, 3, 4].map((index) => `${eventType}-frame-${index}`),
       ),
     ),
-    story: pack('story-authoring-mythic-v2', [
+    story: pack('story-authoring-mythic-v3', [
       'mythic-opening-turns-1-3',
-      ...VALIDATED_STORY_AUTHORING.worlds.map((world) => world.id),
-      ...VALIDATED_STORY_AUTHORING.characterKits.map((kit) => kit.id),
-      ...VALIDATED_STORY_AUTHORING.sceneModules.map((scene) => scene.id),
+      'causal-scene-beats',
+      'truthful-choice-effects',
+      ...['operation', 'personal', 'discovery', 'rival', 'social'].flatMap((category) =>
+        [1, 2, 3, 4].map((index) => `${category}-${index}`),
+      ),
     ]),
   },
 });
@@ -86,6 +89,4 @@ function hashManifest(serialisedManifest: string): string {
   return `fnv1a-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }
 
-export const CONTENT_MANIFEST_HASH = hashManifest(
-  JSON.stringify({ manifest: contentManifest, story: VALIDATED_STORY_AUTHORING }),
-);
+export const CONTENT_MANIFEST_HASH = hashManifest(JSON.stringify(contentManifest));

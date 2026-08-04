@@ -1531,6 +1531,16 @@ select {
   font-size: 0.65rem;
   line-height: 1.4;
 }
+.choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+.choice-effects {
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.56rem;
+  line-height: 1.45;
+}
 
 .aftermath-list {
   display: grid;
@@ -2751,6 +2761,56 @@ html[data-reduce-motion='true'] *::after {
 
 .operation-hook {
   color: #b4bdca !important;
+}
+
+.storybook-brief dl {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0.55rem 0 0;
+}
+
+.storybook-brief dl > div {
+  display: grid;
+  grid-template-columns: 6.1rem 1fr;
+  gap: 0.65rem;
+  padding-top: 0.42rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.storybook-brief dt {
+  color: var(--accent);
+  font-size: 0.57rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.storybook-brief dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.class-path-line {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.75rem 0;
+  padding: 0.7rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.class-path-line > span,
+.class-path-line > small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.class-path-line > small {
+  color: var(--accent);
 }
 
 .full-brief {

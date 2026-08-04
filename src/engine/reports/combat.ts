@@ -60,6 +60,8 @@ export const AftermathReportSchema = z.object({
   readinessByCharacter: z.record(z.string(), z.number().int().min(0).max(100)),
   suppliesDelta: z.number().int(),
   reputationDelta: z.number().int(),
+  dangerDelta: z.number().int(),
+  bondDelta: z.number().int(),
   summary: z.string().min(1),
 });
 

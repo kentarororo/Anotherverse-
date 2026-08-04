@@ -41,11 +41,24 @@ export function CampaignCreationScreen() {
               </div>
               <strong>{hero.callingName} Path</strong>
             </div>
+            <div className="class-path-line">
+              <strong>{hero.pathClassName}</strong>
+              <span>{hero.pathClassSummary}</span>
+              <small>Unique Path: {hero.callingName}</small>
+            </div>
             <section className="dossier-story" aria-label={`${hero.name} story`}>
               <p>{hero.story.portrait}</p>
               <blockquote>&ldquo;{hero.story.interiorVoice}&rdquo;</blockquote>
             </section>
             <dl>
+              <div>
+                <dt>Background</dt>
+                <dd>{hero.backgroundName}</dd>
+              </div>
+              <div>
+                <dt>Defining choice</dt>
+                <dd>{hero.formativeEvent}</dd>
+              </div>
               <div>
                 <dt>Wants</dt>
                 <dd>{hero.drive}</dd>
@@ -53,6 +66,10 @@ export function CampaignCreationScreen() {
               <div>
                 <dt>Fatal flaw</dt>
                 <dd>{hero.story.fear}</dd>
+              </div>
+              <div>
+                <dt>Bond</dt>
+                <dd>{hero.bond}</dd>
               </div>
               <div>
                 <dt>Signature</dt>

@@ -22,14 +22,6 @@ function titleCase(value: string) {
   return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function briefLead(text: string | undefined) {
-  if (text === undefined) return '';
-  return (text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [text])
-    .slice(0, 1)
-    .map((sentence) => sentence.trim())
-    .join(' ');
-}
-
 function encounterIdForEnemies(enemyIds: string[]) {
   const signature = [...enemyIds].sort().join('|');
   return (
@@ -104,6 +96,11 @@ export function CommandScreen() {
     game.pendingPlan.teamPriorityId ?? 'break-threat',
   );
   const battleCausality = report === undefined ? [] : buildBattleCausality(game, report);
+  const selectedChoice = scenario?.choices.find(
+    (choice) => choice.id === game.pendingPlan.situationChoiceId,
+  );
+  const selectedChoiceAffordable =
+    selectedChoice === undefined || game.supplies + selectedChoice.effects.provisionsDelta >= 0;
 
   return (
     <main className="command-screen">
@@ -195,7 +192,7 @@ export function CommandScreen() {
                     <div>
                       <strong>{hero.name}</strong>
                       <span>
-                        {hero.callingName} · {titleCase(hero.role)} · Ready {member.readiness}%
+                        {hero.pathClassName} · {hero.callingName} Path · Ready {member.readiness}%
                       </span>
                     </div>
                     <b>
@@ -294,20 +291,30 @@ export function CommandScreen() {
               {String(displayedTurn).padStart(2, '0')} · {game.campaignBible?.city.name}
             </p>
             <h2 id="operation-title">{showingAftermath ? 'Aftermath' : scenario?.title}</h2>
-            <p className="operation-hook">
-              {showingAftermath ? aftermath.summary : briefLead(scenario?.premise)}
-            </p>
-            {!showingAftermath &&
-              scenario !== null &&
-              briefLead(scenario.premise) !== scenario.premise && (
-                <details className="full-brief">
-                  <summary>Read full story brief</summary>
-                  <p>{scenario.premise}</p>
-                </details>
-              )}
+            {showingAftermath ? (
+              <p className="operation-hook">{aftermath.summary}</p>
+            ) : scenario !== null ? (
+              <div className="storybook-brief" aria-label="Story situation">
+                <p className="operation-hook">{scenario.sceneBeats.hook}</p>
+                <dl>
+                  <div>
+                    <dt>Why now</dt>
+                    <dd>{scenario.sceneBeats.cause}</dd>
+                  </div>
+                  <div>
+                    <dt>What is at stake</dt>
+                    <dd>{scenario.sceneBeats.stakes}</dd>
+                  </div>
+                  <div>
+                    <dt>Your decision</dt>
+                    <dd>{scenario.sceneBeats.decision}</dd>
+                  </div>
+                </dl>
+              </div>
+            ) : null}
             {!showingAftermath && causalFacts.length > 0 && (
               <aside className="causal-record" aria-label="Why this situation is happening">
-                <strong>Why now</strong>
+                <strong>Soul Ledger remembers</strong>
                 {causalFacts.map((fact) => (
                   <span key={fact}>{fact}</span>
                 ))}
@@ -436,6 +443,22 @@ export function CommandScreen() {
                 </strong>
               </div>
               <div>
+                <span>Danger</span>
+                <strong>
+                  {aftermath.dangerDelta >= 0 ? '+' : ''}
+                  {aftermath.dangerDelta}
+                </strong>
+              </div>
+              {aftermath.bondDelta !== 0 && (
+                <div>
+                  <span>Bond</span>
+                  <strong>
+                    {aftermath.bondDelta >= 0 ? '+' : ''}
+                    {aftermath.bondDelta}
+                  </strong>
+                </div>
+              )}
+              <div>
                 <span>Memory</span>
                 <strong>{aftermath.factIdsWritten.length} campaign fact recorded</strong>
               </div>
@@ -509,10 +532,21 @@ export function CommandScreen() {
                       role="radio"
                       aria-checked={game.pendingPlan.situationChoiceId === choice.id}
                       onClick={() => chooseSituation(choice.id)}
+                      disabled={game.supplies + choice.effects.provisionsDelta < 0}
                       key={choice.id}
                     >
                       <strong>{choice.label}</strong>
                       <span>{choice.description}</span>
+                      <small className="choice-effects">
+                        Renown {choice.effects.renownDelta >= 0 ? '+' : ''}
+                        {choice.effects.renownDelta}
+                        {' · '}Provisions {choice.effects.provisionsDelta >= 0 ? '+' : ''}
+                        {choice.effects.provisionsDelta}
+                        {' · '}Danger {choice.effects.dangerDelta >= 0 ? '+' : ''}
+                        {choice.effects.dangerDelta}
+                        {choice.effects.bondDelta !== 0 &&
+                          ` · Bond ${choice.effects.bondDelta >= 0 ? '+' : ''}${choice.effects.bondDelta}`}
+                      </small>
                     </button>
                   ))}
                 </div>
@@ -531,7 +565,10 @@ export function CommandScreen() {
             className="button button-primary commit-button"
             type="button"
             onClick={showingAftermath ? continueToPlanning : commitTurn}
-            disabled={!showingAftermath && game.pendingPlan.situationChoiceId === null}
+            disabled={
+              !showingAftermath &&
+              (game.pendingPlan.situationChoiceId === null || !selectedChoiceAffordable)
+            }
           >
             {showingAftermath ? `Continue to Turn ${game.turn}` : 'Take Action'}
           </button>

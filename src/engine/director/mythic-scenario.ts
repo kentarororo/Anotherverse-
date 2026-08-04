@@ -1,6 +1,7 @@
 import { generateMythicReviewDraft } from '../../content/mythic-review';
 import type { CanonicalGameState } from '../model/state';
 import { ScenarioBlueprintSchema, type ScenarioBlueprint } from '../model/scenario';
+import { createSceneBeats } from '../narrative/scene-beats';
 
 function lowerFirst(value: string) {
   return `${value[0]?.toLowerCase() ?? ''}${value.slice(1)}`;
@@ -23,6 +24,19 @@ function consequenceFor(
   return choiceIndex === 0
     ? `${memory} The trio gains 1 Renown.`
     : `${memory} The clue is preserved without a Renown gain.`;
+}
+
+function effectsFor(category: ScenarioBlueprint['category'], choiceIndex: number) {
+  if (category === 'operation')
+    return { renownDelta: 0, provisionsDelta: 0, dangerDelta: 0, bondDelta: 0 };
+  if (category === 'personal') {
+    return choiceIndex === 0
+      ? { renownDelta: 1, provisionsDelta: 0, dangerDelta: 1, bondDelta: 2 }
+      : { renownDelta: 0, provisionsDelta: 0, dangerDelta: 0, bondDelta: 1 };
+  }
+  return choiceIndex === 0
+    ? { renownDelta: 1, provisionsDelta: 0, dangerDelta: 2, bondDelta: 0 }
+    : { renownDelta: 0, provisionsDelta: 1, dangerDelta: -1, bondDelta: 0 };
 }
 
 /**
@@ -63,6 +77,7 @@ export function createMythicOpeningScenario(
             label: 'Enter the trial',
             description: consequenceFor('operation', 'enter the trial', 0),
             consequence: consequenceFor('operation', 'enter the trial', 0),
+            effects: effectsFor('operation', 0),
           },
         ]
       : chapter.choices.map((label, choiceIndex) => ({
@@ -70,14 +85,32 @@ export function createMythicOpeningScenario(
           label,
           description: consequenceFor(chapter.category, label, choiceIndex),
           consequence: consequenceFor(chapter.category, label, choiceIndex),
+          effects: effectsFor(chapter.category, choiceIndex),
         }));
+
+  const setting = `the ${state.campaignBible?.sceneVocabulary.crisisSite ?? 'dungeon threshold'} of ${state.campaignBible?.city.name ?? draft.world.name}, where ${state.campaignBible?.activeFactions[0]?.name ?? 'a hidden faction'} watches the newly awakened Paths`;
+  const memoryLine =
+    priorDecision === undefined
+      ? `This first trial begins in ${setting}.`
+      : `In ${setting}, the Soul Ledger remembers that the trio chose to ${String(priorDecision.value)}.`;
+  const chapterBeats = createSceneBeats(chapter.paragraph);
+  const sceneBeats = {
+    hook: chapterBeats.hook,
+    cause: memoryLine,
+    stakes: `${chapterBeats.cause} ${chapterBeats.stakes}`,
+    decision: chapterBeats.decision,
+  };
+  const premise = [sceneBeats.hook, sceneBeats.cause, sceneBeats.stakes, sceneBeats.decision].join(
+    ' ',
+  );
 
   return ScenarioBlueprintSchema.parse({
     id: `scenario-turn-${turn}`,
     templateId: chapter.category === 'operation' ? 'operation-1' : `mythic-${chapter.id}`,
     category: chapter.category,
     title: chapter.title,
-    premise: `${chapter.paragraph} ${priorDecision === undefined ? '' : `The Soul Ledger remembers that the trio chose to ${String(priorDecision.value)}. `}At the ${state.campaignBible?.sceneVocabulary.crisisSite ?? 'dungeon threshold'} of ${state.campaignBible?.city.name ?? draft.world.name}, ${state.campaignBible?.activeFactions[0]?.name ?? 'a hidden faction'} watches for the newly awakened Paths.`,
+    premise,
+    sceneBeats,
     premiseFactIds,
     castIds: chapter.category === 'operation' ? draft.trio.map((hero) => hero.id) : [lead.id],
     threatIds: chapter.category === 'operation' ? ['rift-hound', 'glass-weaver'] : [],

@@ -115,5 +115,21 @@ export function renderScenarioScene(plan: ScenarioScenePlan, state: CanonicalGam
     rank: plan.rank,
     relationshipLine: relationshipLine(plan),
   };
-  return realiseStoryBeat(beat, slots);
+  const paragraph = realiseStoryBeat(beat, slots);
+  const grounding: string[] = [];
+  const roles = plan.facts.map((binding) => binding.role);
+  if (roles.includes('city') && !paragraph.includes(state.campaignBible!.city.name)) {
+    grounding.push(`In ${state.campaignBible!.city.name}`);
+  }
+  if (
+    roles.includes('faction') &&
+    !paragraph.includes(state.campaignBible!.activeFactions[0]!.name)
+  ) {
+    grounding.push(`with ${state.campaignBible!.activeFactions[0]!.name} watching`);
+  }
+  if (roles.includes('origin') && !paragraph.includes(originValue(plan))) {
+    grounding.push(`remembering ${originValue(plan)}`);
+  }
+  if (grounding.length === 0) return paragraph;
+  return `${grounding.join(', ')}, ${paragraph[0]!.toLowerCase()}${paragraph.slice(1)}`;
 }

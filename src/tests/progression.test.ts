@@ -61,7 +61,7 @@ describe('progression and management', () => {
     const relationshipAfter = pairedResult.relationships.find(
       (relationship) => relationship.pairId === relationshipBefore.pairId,
     )!;
-    expect(relationshipAfter.value).toBe(relationshipBefore.value + 4);
+    expect(relationshipAfter.value).toBe(relationshipBefore.value + pairedChoice.effects.bondDelta);
     expect(relationshipAfter.factIds).toContain(`fact-scenario-result-${pairedScene.turn}`);
   });
 

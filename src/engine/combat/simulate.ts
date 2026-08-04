@@ -687,6 +687,8 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
     ),
     suppliesDelta: outcome === 'victory' ? 2 : 0,
     reputationDelta: outcome === 'victory' ? 3 : outcome === 'defeat' ? -2 : 0,
+    dangerDelta: outcome === 'victory' ? 3 : outcome === 'defeat' ? 8 : 5,
+    bondDelta: 0,
     summary:
       outcome === 'victory'
         ? `The trio conquered ${state.currentEncounter.title} in ${completedRounds} rounds.`

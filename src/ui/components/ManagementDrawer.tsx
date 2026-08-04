@@ -50,12 +50,16 @@ export function ManagementDrawer() {
         {drawer.type === 'character' && hero !== undefined && member !== undefined && (
           <div className="drawer-content">
             <h3>
-              {hero.name} — {hero.callingName}
+              {hero.name} — {hero.pathClassName} / {hero.callingName}
             </h3>
             <section className="character-story" aria-label={`${hero.name} story`}>
               <p>{hero.story.portrait}</p>
               <blockquote>&ldquo;{hero.story.interiorVoice}&rdquo;</blockquote>
               <dl className="story-motives">
+                <div>
+                  <dt>Background</dt>
+                  <dd>{hero.backgroundName}</dd>
+                </div>
                 <div>
                   <dt>Wants</dt>
                   <dd>{hero.drive}</dd>
@@ -67,6 +71,10 @@ export function ManagementDrawer() {
                 <div>
                   <dt>Contradiction</dt>
                   <dd>{hero.contradiction}</dd>
+                </div>
+                <div>
+                  <dt>Bond</dt>
+                  <dd>{hero.bond}</dd>
                 </div>
               </dl>
             </section>

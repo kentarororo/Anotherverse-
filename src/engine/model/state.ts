@@ -16,7 +16,7 @@ import {
 // Schema 9 rejects saves created before authored character stories, selected-world scene
 // vocabulary, and typed Calling-development unlocks entered canonical state. Older snapshots
 // cannot be reconstructed faithfully, so they are intentionally incompatible.
-export const GAME_SCHEMA_VERSION = 9 as const;
+export const GAME_SCHEMA_VERSION = 10 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),

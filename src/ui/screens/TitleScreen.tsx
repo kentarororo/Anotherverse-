@@ -180,7 +180,7 @@ export function TitleScreen() {
           </div>
         )}
 
-        <footer className="version">Prototype v0.7.0 · Tactical Arena</footer>
+        <footer className="version">Mythic Slice v0.8.0 · Save Schema 10</footer>
       </section>
     </main>
   );

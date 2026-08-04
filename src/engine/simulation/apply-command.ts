@@ -40,15 +40,6 @@ function squadRankForReputation(reputation: number, tiers: readonly string[] = [
   return first;
 }
 
-function nonCombatReputationDelta(
-  category: 'personal' | 'discovery' | 'rival' | 'social',
-  choiceIndex: number,
-): number {
-  if (category === 'personal' || category === 'discovery') return choiceIndex === 0 ? 1 : 0;
-  if (category === 'rival') return choiceIndex === 0 ? 2 : 1;
-  return choiceIndex === 0 ? 1 : 2;
-}
-
 export function applyGameCommand(
   currentState: CanonicalGameState,
   rawCommand: GameCommand,
@@ -293,14 +284,13 @@ export function applyGameCommand(
     const choice = scenario.choices.find((candidate) => candidate.id === choiceId);
     if (choice === undefined) throw new Error('Choose a situation response before committing.');
     const combatResult = scenario.category === 'operation' ? simulateBattle(state) : null;
-    const choiceIndex = Math.max(
-      0,
-      scenario.choices.findIndex((candidate) => candidate.id === choice.id),
-    );
     const reputationDelta =
       scenario.category === 'operation'
         ? (combatResult?.aftermath.reputationDelta ?? 0)
-        : nonCombatReputationDelta(scenario.category, choiceIndex);
+        : choice.effects.renownDelta;
+    if (combatResult === null && state.supplies + choice.effects.provisionsDelta < 0) {
+      throw new Error('This response requires more Provisions than the squad has.');
+    }
     const factId = `fact-scenario-result-${state.turn}`;
     const experience = scenario.category === 'operation' ? 25 : 8;
     const baseAftermath = combatResult?.aftermath ?? {
@@ -318,8 +308,10 @@ export function applyGameCommand(
       readinessByCharacter: Object.fromEntries(
         Object.values(state.partyState).map((member) => [member.characterId, member.readiness]),
       ),
-      suppliesDelta: choice === scenario.choices[0] ? 1 : 0,
+      suppliesDelta: choice.effects.provisionsDelta,
       reputationDelta,
+      dangerDelta: choice.effects.dangerDelta,
+      bondDelta: choice.effects.bondDelta,
       summary: `${choice.label} resolved ${scenario.title}. ${choice.consequence}`,
     };
     const rewardId =
@@ -345,20 +337,7 @@ export function applyGameCommand(
           },
         ]),
       );
-    const supplySpent = combatResult === null && state.supplies > 0 ? 1 : 0;
-    const partyState =
-      supplySpent === 0
-        ? progressedPartyState
-        : Object.fromEntries(
-            Object.values(progressedPartyState).map((member) => [
-              member.characterId,
-              {
-                ...member,
-                hp: Math.min(member.maxHp, member.hp + 4),
-                readiness: Math.min(100, member.readiness + 8),
-              },
-            ]),
-          );
+    const partyState = progressedPartyState;
     const aftermath = {
       ...baseAftermath,
       itemIdsGranted: rewardId === null ? baseAftermath.itemIdsGranted : [rewardId],
@@ -368,12 +347,9 @@ export function applyGameCommand(
       readinessByCharacter: Object.fromEntries(
         Object.values(partyState).map((member) => [member.characterId, member.readiness]),
       ),
-      suppliesDelta: baseAftermath.suppliesDelta - supplySpent,
+      suppliesDelta: baseAftermath.suppliesDelta,
       reputationDelta,
-      summary:
-        supplySpent === 0
-          ? baseAftermath.summary
-          : `${baseAftermath.summary} The squad spent one supply to recover 4 HP and 8 readiness each.`,
+      summary: baseAftermath.summary,
     };
     const updatedThreads = state.storyThreads.map((thread) => {
       if (thread.id !== scenario.advancesThreadId) return thread;
@@ -404,11 +380,7 @@ export function applyGameCommand(
       turn: state.turn + 1,
       rank: squadRankForReputation(nextReputation, state.campaignBible?.rankSystem.tiers ?? []),
       reputation: nextReputation,
-      threat: Math.min(
-        100,
-        state.threat +
-          (combatResult === null ? 1 : combatResult.report.outcome === 'victory' ? 3 : 8),
-      ),
+      threat: Math.max(0, Math.min(100, state.threat + aftermath.dangerDelta)),
       supplies: state.supplies + aftermath.suppliesDelta,
       inventoryIds:
         rewardId === null || state.inventoryIds.includes(rewardId)
@@ -422,12 +394,12 @@ export function applyGameCommand(
       worldFacts: [...state.worldFacts, resolutionFact],
       storyThreads: updatedThreads,
       relationships: state.relationships.map((relationship) =>
-        (scenario.category === 'rival' || scenario.category === 'social') &&
-        scenario.castIds.length === 2 &&
+        aftermath.bondDelta !== 0 &&
+        scenario.castIds.length > 0 &&
         scenario.castIds.every((id) => relationship.characterIds.includes(id))
           ? {
               ...relationship,
-              value: Math.min(100, relationship.value + (choice === scenario.choices[0] ? 4 : -1)),
+              value: Math.max(-100, Math.min(100, relationship.value + aftermath.bondDelta)),
               factIds: [...relationship.factIds, factId],
             }
           : relationship,

@@ -5,59 +5,13 @@ import {
   temporaryEncounter,
 } from '../../content/milestone-one';
 import { generateMythicReviewDraft, type MythicHero } from '../../content/mythic-review';
+import { PATH_CLASSES } from '../../content/path-classes';
 import type { CharacterBlueprint } from '../model/character';
 import { CharacterBlueprintSchema } from '../model/character';
 import type { CampaignBible } from '../model/world';
 import { CampaignBibleSchema } from '../model/world';
 import type { RngStreamsState } from '../rng/streams';
 import { createRngStreams, drawInteger } from '../rng/streams';
-
-const roleRules = {
-  vanguard: {
-    signatureRuleId: 'rear-intercept',
-    signature: 'Once each round, intercept the first attack aimed at an ally in the rear.',
-    signatureStory:
-      'The Path answers danger before thought, carrying its bearer between the enemy and the person who would have been struck.',
-    reactionRuleId: 'intercept-brace',
-    reaction: 'After intercepting, gain 3 Ward for the rest of the round.',
-    reactionStory:
-      'The same oath that draws the blow hardens into a brief shield around the bearer.',
-    limitationRuleId: 'measured-strikes',
-    limitation: 'Direct attacks deal 1 less raw damage.',
-    limitationStory:
-      'A guardian who spends strength sheltering others cannot strike with an executioner’s full force.',
-    coverageTags: ['defence', 'control'] as const,
-  },
-  striker: {
-    signatureRuleId: 'exploit-exposed',
-    signature: 'Deal +3 raw damage when attacking an Exposed enemy.',
-    signatureStory:
-      'The Path recognises the instant a monster’s legend falters and turns that opening into a killing line.',
-    reactionRuleId: 'finisher-surge',
-    reaction: 'After committing a finisher, gain Inspired for 2 rounds.',
-    reactionStory:
-      'A decisive strike wakes the hunter’s legend, sharpening the next heartbeat into momentum.',
-    limitationRuleId: 'open-guard',
-    limitation: 'Aggressive stance reduces effective Guard by 2.',
-    limitationStory:
-      'Power bought through pursuit leaves no room to hide behind a perfect defence.',
-    coverageTags: ['damage', 'resource'] as const,
-  },
-  support: {
-    signatureRuleId: 'mending-ward',
-    signature: 'Recovery techniques also grant a 3-point Ward.',
-    signatureStory:
-      'The Path does more than close a wound; it leaves a visible promise that the next blow will not reopen it.',
-    reactionRuleId: 'recovery-loop',
-    reaction: 'The first recovery each battle refunds 1 AP.',
-    reactionStory:
-      'When a life answers the Path and steadies, some of the power spent to save it returns.',
-    limitationRuleId: 'low-direct-output',
-    limitation: 'Direct attacks deal 2 less raw damage.',
-    limitationStory: 'A gift shaped to preserve life resists being reduced to a weapon.',
-    coverageTags: ['sustain', 'control', 'resource'] as const,
-  },
-} satisfies Record<MythicHero['role'], object>;
 
 function firstSentence(value: string) {
   return value.match(/^[^.!?]+[.!?]/)?.[0] ?? value;
@@ -71,7 +25,7 @@ function asClause(value: string) {
 }
 
 function createCharacter(hero: MythicHero, worldName: string, progressionLaw: string) {
-  const rules = roleRules[hero.role];
+  const rules = PATH_CLASSES[hero.role];
   const techniques = hero.techniques.map((technique) => ({
     id: technique.id,
     name: technique.name,
@@ -93,6 +47,16 @@ function createCharacter(hero: MythicHero, worldName: string, progressionLaw: st
           : { subject: 'they', object: 'them', possessive: 'their' },
     callingId: hero.pathName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     callingName: hero.pathName,
+    pathClassId: rules.id,
+    pathClassName: rules.name,
+    pathClassSummary: rules.summary,
+    backgroundName:
+      hero.role === 'vanguard'
+        ? 'Survivor of the Broken Shrine'
+        : hero.role === 'striker'
+          ? 'Heir to a Vanished Hunter'
+          : 'Keeper of the Unanswered Prayer',
+    bond: hero.desire,
     role: hero.role,
     ageBand: 'young-adult',
     origin: worldName,

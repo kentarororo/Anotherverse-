@@ -59,8 +59,10 @@ test('makes the mythic brief, plan, battle cause, and memory legible as one loop
   await page.screenshot({ path: 'test-results/playwrite-aftermath.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
-  await page.locator('.full-brief summary').click();
-  await expect(page.locator('.full-brief')).toContainText(
-    'The Soul Ledger remembers that the trio chose to Enter the trial.',
+  await expect(page.getByLabel('Story situation')).toContainText('Why now');
+  await expect(page.getByLabel('Story situation')).toContainText('What is at stake');
+  await expect(page.getByLabel('Story situation')).toContainText('Your decision');
+  await expect(page.getByLabel('Story situation')).toContainText(
+    /Soul Ledger remembers that the trio chose to Enter the trial/i,
   );
 });

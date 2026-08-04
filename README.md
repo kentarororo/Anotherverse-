@@ -1,7 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **v0.7: Tactical Arena**.
+The project is a clean-room implementation and currently contains **v0.8: Mythic Slice**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -9,10 +9,10 @@ The project is a clean-room implementation and currently contains **v0.7: Tactic
 
 - A clean title screen with New Campaign, Continue, accessible display settings, version, and an
   advanced seed input.
-- A deterministic campaign generator with four whole world packs, nine whole character/Calling
-  kits, and coherent seeded Campaign Bibles.
+- A deterministic campaign generator with two whole mythology-first realms, varied regions, six
+  fixed hero archetypes, and coherent seeded Campaign Bibles.
 - A whole-campaign creation and regeneration screen with three complete generated hero dossiers.
-- Generated vanguard, striker, and support Callings with executable signatures, limitations,
+- Original Oathward, Doomseeker, and Fateweaver classes beneath each hero's unique Mythic Path, with executable signatures, limitations,
   reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
   conditions.
 - A deterministic scenario director covering operation, personal, discovery, rival, and social
@@ -22,7 +22,7 @@ The project is a clean-room implementation and currently contains **v0.7: Tactic
 - Persistent WorldFacts, three-stage personal StoryThreads, semantic cooldowns, causal premise
   references, and visible director score reasons in canonical state.
 - Typed grammar helpers and complete authored scenario frames with unresolved-slot validation.
-- Levels, experience, training points, Calling ranks, licence ranks, supply recovery, Calling
+- Levels, experience, training points, Path ranks, Renown, Provisions, Path
   mastery, equipment rewards, and relationship bonds that affect later situations.
 - Bestiary intelligence that raises forecast confidence and equipment counter tags that resolve in
   authoritative combat events.
@@ -55,8 +55,8 @@ The project is a clean-room implementation and currently contains **v0.7: Tactic
   combat/aftermath reports, content manifest, and save envelopes.
 - One LocalStorage autosave behind a replaceable `SaveRepository` interface, including explicit
   corrupt and incompatible-save results.
-- Save schema 9 deliberately rejects older campaigns whose generated characters predate the
-  story/mechanic split and validated authored-world content hash.
+- Save schema 10 deliberately rejects older campaigns that predate Path classes, structured scene
+  beats, and canonical choice effects.
 - A corpus renderer contract that can later be joined by an optional LLM renderer without changing
   authoritative mechanics.
 

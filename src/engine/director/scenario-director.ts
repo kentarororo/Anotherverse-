@@ -20,6 +20,7 @@ import type { WorldFact } from '../model/world';
 import type { RngStreamsState } from '../rng/streams';
 import { drawInteger } from '../rng/streams';
 import { createMythicOpeningScenario } from './mythic-scenario';
+import { createSceneBeats } from '../narrative/scene-beats';
 
 const categories: ScenarioCategory[] = ['operation', 'personal', 'discovery', 'rival', 'social'];
 
@@ -265,11 +266,12 @@ export function selectNextScenario(
   const choiceModules = SCENARIO_CHOICE_MODULES[selected.module.choiceSetId];
   if (choiceModules === undefined)
     throw new Error(`Missing choice module for ${selected.module.choiceSetId}.`);
-  const templateChoices = choiceModules.map(({ id, label, consequence }) => ({
+  const templateChoices = choiceModules.map(({ id, label, consequence, effects }) => ({
     id: `${id}-t${turn}`,
     label,
     description: consequence,
     consequence,
+    effects,
   }));
   const castIds =
     category === 'personal' || category === 'discovery'
@@ -280,12 +282,14 @@ export function selectNextScenario(
   const factFingerprint = facts
     .map((binding) => `${binding.role}=${semanticFactKey(binding.fact)}`)
     .join('|');
+  const premise = renderScenarioScene(scenePlan, state);
   const scenario = ScenarioBlueprintSchema.parse({
     id: `scenario-turn-${turn}`,
     templateId: selected.module.id,
     category,
     title: selected.module.title,
-    premise: renderScenarioScene(scenePlan, state),
+    premise,
+    sceneBeats: createSceneBeats(premise),
     premiseFactIds,
     castIds,
     threatIds: encounter?.enemyIds ?? [],
