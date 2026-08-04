@@ -28,17 +28,14 @@ export const contentManifest = ContentManifestSchema.parse({
   schemaVersion: 1,
   milestone: 'M4',
   packs: {
-    campaign: pack('campaign-m2', ['lumen-port', 'vanta-cross', 'halcyon-ward', 'cinder-bay']),
-    characters: pack('characters-m2', [
-      'iron-echo',
-      'anchor-saint',
-      'storm-bastion',
-      'vector-edge',
-      'red-interval',
-      'comet-thread',
-      'quiet-lattice',
-      'mercy-engine',
-      'spirit-switchboard',
+    campaign: pack('campaign-mythic-v2', ['fallen-heavens', 'underworld-tide']),
+    characters: pack('characters-mythic-v2', [
+      'lyra-vale',
+      'doran-vey',
+      'mira-rook',
+      'ren-ash',
+      'sena-quill',
+      'tarin-sol',
     ]),
     scenarios: pack(
       'scenarios-m3',
@@ -46,7 +43,7 @@ export const contentManifest = ContentManifestSchema.parse({
         [1, 2, 3, 4].map((index) => `${category}-${index}`),
       ),
     ),
-    enemies: pack('enemies-m4', [
+    enemies: pack('enemies-mythic-v2', [
       'rift-hound',
       'glass-weaver',
       'storm-jackal',
@@ -64,14 +61,15 @@ export const contentManifest = ContentManifestSchema.parse({
       'restorative-sigil',
       'binding-shot',
     ]),
-    equipment: pack('equipment-m4', ['houndglass-edge', 'weaver-ward']),
+    equipment: pack('equipment-mythic-v2', ['houndglass-edge', 'weaver-ward']),
     combatLanguage: pack(
       'combat-language-m4',
       ['attack', 'heal', 'guard', 'status', 'interrupt', 'defeat', 'resource'].flatMap(
         (eventType) => [1, 2, 3, 4].map((index) => `${eventType}-frame-${index}`),
       ),
     ),
-    story: pack('story-authoring-v1', [
+    story: pack('story-authoring-mythic-v2', [
+      'mythic-opening-turns-1-3',
       ...VALIDATED_STORY_AUTHORING.worlds.map((world) => world.id),
       ...VALIDATED_STORY_AUTHORING.characterKits.map((kit) => kit.id),
       ...VALIDATED_STORY_AUTHORING.sceneModules.map((scene) => scene.id),

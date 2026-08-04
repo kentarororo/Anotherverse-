@@ -4,7 +4,6 @@ import { generateCampaignDraft } from '../engine/generation/campaign';
 import { createEmptyGameState } from '../engine/model/state';
 import { EXECUTABLE_TECHNIQUES } from '../engine/model/executable-technique';
 import { applyGameCommand } from '../engine/simulation/apply-command';
-import { VALIDATED_STORY_AUTHORING } from '../narrative/authoring/validated-story';
 
 const seeds = Array.from({ length: 100 }, (_, index) => `generation-fixture-${index}`);
 
@@ -31,9 +30,9 @@ describe('generated campaigns and trios', () => {
           `${draft.bible.city.id}|${draft.characters.map((hero) => hero.callingId).join('|')}`,
       ),
     );
-    expect(worldIds.size).toBe(4);
-    expect(kitCombinations.size).toBeGreaterThanOrEqual(20);
-    expect(worldKitCombinations.size).toBeGreaterThanOrEqual(50);
+    expect(worldIds.size).toBe(2);
+    expect(kitCombinations.size).toBe(8);
+    expect(worldKitCombinations.size).toBeGreaterThanOrEqual(14);
 
     for (const draft of drafts) {
       const names = draft.characters.map((hero) => hero.name);
@@ -44,18 +43,18 @@ describe('generated campaigns and trios', () => {
       expect(coverage.has('sustain') || coverage.has('resource')).toBe(true);
       expect(new Set(draft.characters.map((hero) => hero.signatureRuleId)).size).toBe(3);
       for (const hero of draft.characters) {
-        const sourceKit = VALIDATED_STORY_AUTHORING.characterKits.find(
-          (kit) => kit.calling.id === hero.callingId,
-        )!;
-        expect(hero.origin).toBe(sourceKit.origin);
-        expect(hero.formativeEvent).toBe(sourceKit.formativeEvent);
-        expect(hero.drive).toBe(sourceKit.drive);
-        expect(hero.contradiction).toBe(sourceKit.contradiction);
-        expect(hero.story.fear).toBe(sourceKit.fear);
+        expect(hero.origin).toBe(draft.bible.city.name);
+        expect(hero.formativeEvent.length).toBeGreaterThan(20);
+        expect(hero.drive.length).toBeGreaterThan(20);
+        expect(hero.contradiction.length).toBeGreaterThan(20);
+        expect(hero.story.fear).toBe(hero.contradiction);
         expect(hero.story.portrait).toContain(hero.name);
         expect(hero.story.portrait).toContain(hero.callingName);
         expect(hero.story.portrait).toContain(hero.origin);
         expect(hero.story.portrait).not.toMatch(/\{[^}]+\}|the prior event|two recorded facts/i);
+        expect(hero.story.portrait).not.toMatch(
+          /telemetry|licen[cs]e|bureau|network|contract squad/i,
+        );
         expect(hero.techniques).toHaveLength(2);
         expect(hero.personalHooks.length).toBeGreaterThanOrEqual(2);
         expect(hero.awakeningCondition.length).toBeGreaterThan(10);

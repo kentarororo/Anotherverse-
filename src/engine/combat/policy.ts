@@ -55,6 +55,7 @@ export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroAction
       candidate(context.firstTechniqueId, 'heal', 100, [
         [context.resource >= context.firstTechniqueCost, 'Insufficient action resource.'],
         [context.firstTechniqueReady, 'Technique is cooling down.'],
+        [!conserve, 'Conserve Path Power reserves this resource.'],
         [
           context.woundedAllyRatio < threshold,
           `No ally is below the ${threshold * 100}% threshold.`,

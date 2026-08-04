@@ -32,11 +32,12 @@ function appendCommand(state: CanonicalGameState, command: GameCommand): Canonic
   };
 }
 
-function squadRankForReputation(reputation: number): string {
-  if (reputation >= 24) return 'Gold';
-  if (reputation >= 14) return 'Silver';
-  if (reputation >= 6) return 'Bronze';
-  return 'Provisional';
+function squadRankForReputation(reputation: number, tiers: readonly string[] = []): string {
+  const [first = 'Ash', second = 'Bronze', third = 'Silver', fourth = 'Gold'] = tiers;
+  if (reputation >= 24) return fourth;
+  if (reputation >= 14) return third;
+  if (reputation >= 6) return second;
+  return first;
 }
 
 function nonCombatReputationDelta(
@@ -71,7 +72,7 @@ export function applyGameCommand(
     const foundation = CanonicalGameStateSchema.parse({
       ...nextState,
       phase: 'command',
-      rank: squadRankForReputation(0),
+      rank: squadRankForReputation(0, generated.draft.bible.rankSystem.tiers),
       campaignSeed: command.seed,
       selectedDraftIndex: command.selectedDraftIndex,
       campaignBible: generated.draft.bible,
@@ -116,7 +117,7 @@ export function applyGameCommand(
       ],
       storyThreads: characters.map((character) => ({
         id: `thread-personal-${character.id}`,
-        arcId: 'calling-record-arc',
+        arcId: 'mythic-path-arc',
         stage: 0,
         castIds: [character.id],
         factIds: [`fact-origin-${character.id}`],
@@ -389,7 +390,7 @@ export function applyGameCommand(
     const resolutionFact = {
       id: factId,
       kind: `${scenario.category}-result`,
-      subjectId: scenario.castIds[0] ?? 'licensed-squad',
+      subjectId: scenario.castIds[0] ?? 'hunter-trio',
       relation: `chose-${choice.id}`,
       value: choice.label,
       createdTurn: state.turn,
@@ -401,7 +402,7 @@ export function applyGameCommand(
     const resolvedBase = CanonicalGameStateSchema.parse({
       ...state,
       turn: state.turn + 1,
-      rank: squadRankForReputation(nextReputation),
+      rank: squadRankForReputation(nextReputation, state.campaignBible?.rankSystem.tiers ?? []),
       reputation: nextReputation,
       threat: Math.min(
         100,

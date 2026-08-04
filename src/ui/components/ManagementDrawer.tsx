@@ -61,7 +61,7 @@ export function ManagementDrawer() {
                   <dd>{hero.drive}</dd>
                 </div>
                 <div>
-                  <dt>Fears</dt>
+                  <dt>Fatal flaw</dt>
                   <dd>{hero.story.fear}</dd>
                 </div>
                 <div>
@@ -78,7 +78,7 @@ export function ManagementDrawer() {
                 </dd>
               </div>
               <div>
-                <dt>Calling rank</dt>
+                <dt>Path rank</dt>
                 <dd>{member.callingRank}</dd>
               </div>
               <div>
@@ -106,7 +106,7 @@ export function ManagementDrawer() {
                 </dd>
               </div>
             </dl>
-            <h3>Calling in the story</h3>
+            <h3>Path in the story</h3>
             <div className="calling-story-grid">
               {[
                 ['Signature', hero.story.signature, hero.signature],
@@ -135,7 +135,7 @@ export function ManagementDrawer() {
                 </div>
               </article>
             ))}
-            <h3>Calling development</h3>
+            <h3>Path development</h3>
             {developmentUnlocks
               .filter((unlock) => unlock.id.startsWith(hero.callingId))
               .map((unlock) => {
@@ -227,13 +227,13 @@ export function ManagementDrawer() {
 
         {drawer.type === 'world' && (
           <div className="drawer-content">
-            <h3>Squad standing</h3>
+            <h3>Trio standing</h3>
             <article className="drawer-item">
               <div>
-                <strong>{game.rank} licence</strong>
+                <strong>{game.rank} Path Rank</strong>
                 <p>
-                  Reputation {game.reputation >= 0 ? '+' : ''}
-                  {game.reputation} · contracts and rival reactions use this standing
+                  Renown {game.reputation >= 0 ? '+' : ''}
+                  {game.reputation} · guilds and rivals react to this standing
                 </p>
               </div>
             </article>

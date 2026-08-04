@@ -38,7 +38,7 @@ export function decisionReference(fact: WorldFact): string {
   if (fact.createdTurn === 0) {
     if (fact.relation === 'comes-from')
       return `the origin evidence from ${lowerFirst(factValue(fact))}`;
-    if (fact.relation === 'is-squad-city') return `the first licence in ${factValue(fact)}`;
+    if (fact.relation === 'is-squad-city') return `the trio’s first oath in ${factValue(fact)}`;
     if (fact.relation === 'pursues-motive')
       return `the faction's attempt to ${lowerFirst(factValue(fact))}`;
     return `the founding evidence concerning ${lowerFirst(factValue(fact))}`;
@@ -51,11 +51,12 @@ export function decisionArtifact(fact: WorldFact): string {
   if (fact.createdTurn === 0) {
     if (fact.relation === 'comes-from')
       return `the surviving record from ${lowerFirst(factValue(fact))}`;
-    if (fact.relation === 'is-squad-city') return `the original ${factValue(fact)} licence record`;
+    if (fact.relation === 'is-squad-city')
+      return `the first Soul Ledger page from ${factValue(fact)}`;
     if (fact.relation === 'pursues-motive')
       return `the evidence of the plan to ${lowerFirst(factValue(fact))}`;
   }
-  return `the record left when the squad chose to ${lowerFirst(factValue(fact))}`;
+  return `the Soul Ledger entry left when the trio chose to ${lowerFirst(factValue(fact))}`;
 }
 
 function relationshipLine(plan: ScenarioScenePlan): string {
@@ -65,7 +66,7 @@ function relationshipLine(plan: ScenarioScenePlan): string {
   if (plan.relationshipBand === 'strained') {
     return `${plan.lead.name} and ${plan.partner.name} are already divided, making any public disagreement dangerous.`;
   }
-  return `${plan.lead.name} and ${plan.partner.name} must decide which of them can speak for the squad.`;
+  return `${plan.lead.name} and ${plan.partner.name} must decide which of them can speak for the trio.`;
 }
 
 function worldSlots(state: CanonicalGameState): StorySlotValues {
@@ -109,8 +110,8 @@ export function renderScenarioScene(plan: ScenarioScenePlan, state: CanonicalGam
     awakening: lowerFirst(plan.lead.awakeningCondition),
     priorReference: decisionReference(firstFact),
     priorArtifact: decisionArtifact(secondFact),
-    enemyOne: plan.threatNames[0] ?? 'a breach predator',
-    enemyTwo: plan.threatNames[1] ?? 'a second breach threat',
+    enemyOne: plan.threatNames[0] ?? 'a dungeon predator',
+    enemyTwo: plan.threatNames[1] ?? 'a second dungeon threat',
     rank: plan.rank,
     relationshipLine: relationshipLine(plan),
   };

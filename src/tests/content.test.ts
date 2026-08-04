@@ -12,15 +12,16 @@ describe('production content manifest', () => {
     const packs = Object.values(contentManifest.packs);
     expect(packs).toHaveLength(8);
     expect(contentManifest.milestone).toBe('M4');
-    expect(contentManifest.packs.characters.moduleIds).toContain('iron-echo');
-    expect(contentManifest.packs.characters.moduleIds).toContain('spirit-switchboard');
+    expect(contentManifest.packs.characters.moduleIds).toContain('lyra-vale');
+    expect(contentManifest.packs.characters.moduleIds).toContain('tarin-sol');
     expect(contentManifest.packs.scenarios.moduleIds).toHaveLength(20);
     expect(contentManifest.packs.scenarios.moduleIds).toContain('social-4');
     expect(contentManifest.packs.enemies.moduleIds).toHaveLength(8);
     expect(contentManifest.packs.equipment.moduleIds).toEqual(['houndglass-edge', 'weaver-ward']);
     expect(contentManifest.packs.combatLanguage.moduleIds).toHaveLength(28);
     expect(contentManifest.packs.combatLanguage.moduleIds).toContain('resource-frame-4');
-    expect(contentManifest.packs.story.moduleIds).toHaveLength(33);
+    expect(contentManifest.packs.story.moduleIds).toHaveLength(34);
+    expect(contentManifest.packs.story.moduleIds).toContain('mythic-opening-turns-1-3');
     expect(contentManifest.packs.story.moduleIds).toContain('vanta-cross');
     expect(contentManifest.packs.story.moduleIds).toContain('social-4');
     expect(

@@ -4,67 +4,125 @@ import {
   createMilestoneOnePartyState,
   temporaryEncounter,
 } from '../../content/milestone-one';
-import { VALIDATED_STORY_AUTHORING } from '../../narrative/authoring/validated-story';
-import {
-  realiseCampaignPremise,
-  realiseCharacterPortrait,
-  realiseTechniqueStory,
-} from '../../narrative/realiser/story-authoring';
+import { generateMythicReviewDraft, type MythicHero } from '../../content/mythic-review';
 import type { CharacterBlueprint } from '../model/character';
 import { CharacterBlueprintSchema } from '../model/character';
 import type { CampaignBible } from '../model/world';
 import { CampaignBibleSchema } from '../model/world';
-import type { RngStreamName, RngStreamsState } from '../rng/streams';
+import type { RngStreamsState } from '../rng/streams';
 import { createRngStreams, drawInteger } from '../rng/streams';
 
-const names = [
-  'Mira Vale',
-  'Dax Ren',
-  'Sorrel Voss',
-  'Ilya Sorn',
-  'Tarin Quill',
-  'Nessa Rook',
-  'Ari Kest',
-  'Juno Mire',
-  'Cato Wynn',
-  'Rhea Sol',
-  'Orin Vey',
-  'Lina Crest',
-  'Bram Nox',
-  'Edda Rain',
-  'Kiran Ash',
-  'Vera Thorn',
-  'Noa Flint',
-  'Sable Hart',
-] as const;
+const roleRules = {
+  vanguard: {
+    signatureRuleId: 'rear-intercept',
+    signature: 'Once each round, intercept the first attack aimed at an ally in the rear.',
+    signatureStory:
+      'The Path answers danger before thought, carrying its bearer between the enemy and the person who would have been struck.',
+    reactionRuleId: 'intercept-brace',
+    reaction: 'After intercepting, gain 3 Ward for the rest of the round.',
+    reactionStory:
+      'The same oath that draws the blow hardens into a brief shield around the bearer.',
+    limitationRuleId: 'measured-strikes',
+    limitation: 'Direct attacks deal 1 less raw damage.',
+    limitationStory:
+      'A guardian who spends strength sheltering others cannot strike with an executioner’s full force.',
+    coverageTags: ['defence', 'control'] as const,
+  },
+  striker: {
+    signatureRuleId: 'exploit-exposed',
+    signature: 'Deal +3 raw damage when attacking an Exposed enemy.',
+    signatureStory:
+      'The Path recognises the instant a monster’s legend falters and turns that opening into a killing line.',
+    reactionRuleId: 'finisher-surge',
+    reaction: 'After committing a finisher, gain Inspired for 2 rounds.',
+    reactionStory:
+      'A decisive strike wakes the hunter’s legend, sharpening the next heartbeat into momentum.',
+    limitationRuleId: 'open-guard',
+    limitation: 'Aggressive stance reduces effective Guard by 2.',
+    limitationStory:
+      'Power bought through pursuit leaves no room to hide behind a perfect defence.',
+    coverageTags: ['damage', 'resource'] as const,
+  },
+  support: {
+    signatureRuleId: 'mending-ward',
+    signature: 'Recovery techniques also grant a 3-point Ward.',
+    signatureStory:
+      'The Path does more than close a wound; it leaves a visible promise that the next blow will not reopen it.',
+    reactionRuleId: 'recovery-loop',
+    reaction: 'The first recovery each battle refunds 1 AP.',
+    reactionStory:
+      'When a life answers the Path and steadies, some of the power spent to save it returns.',
+    limitationRuleId: 'low-direct-output',
+    limitation: 'Direct attacks deal 2 less raw damage.',
+    limitationStory: 'A gift shaped to preserve life resists being reduced to a weapon.',
+    coverageTags: ['sustain', 'control', 'resource'] as const,
+  },
+} satisfies Record<MythicHero['role'], object>;
 
-const roles = ['vanguard', 'striker', 'support'] as const;
-
-function pick<T>(
-  streams: RngStreamsState,
-  stream: RngStreamName,
-  values: readonly T[],
-): { value: T; streams: RngStreamsState; index: number } {
-  const draw = drawInteger(streams, stream, 0, values.length - 1);
-  return { value: values[draw.value]!, streams: draw.streams, index: draw.value };
+function firstSentence(value: string) {
+  return value.match(/^[^.!?]+[.!?]/)?.[0] ?? value;
 }
 
-function shuffle<T>(streams: RngStreamsState, stream: RngStreamName, values: readonly T[]) {
-  const result = [...values];
-  let nextStreams = streams;
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const draw = drawInteger(nextStreams, stream, 0, index);
-    nextStreams = draw.streams;
-    [result[index], result[draw.value]] = [result[draw.value]!, result[index]!];
-  }
-  return { values: result, streams: nextStreams };
-}
-
-function slug(value: string) {
+function asClause(value: string) {
   return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+    .trim()
+    .replace(/[.!?]+/g, ',')
+    .replace(/,+$/g, '');
+}
+
+function createCharacter(hero: MythicHero, worldName: string, progressionLaw: string) {
+  const rules = roleRules[hero.role];
+  const techniques = hero.techniques.map((technique) => ({
+    id: technique.id,
+    name: technique.name,
+    storyDescription: `${hero.name} calls on ${hero.pathName}. ${technique.visibleAction} ${technique.tacticalPurpose}`,
+    mechanicLabel: technique.mechanicRule,
+    resourceCost: technique.cost,
+    cooldownRounds: technique.cooldown,
+    condition: technique.tacticalPurpose,
+  }));
+
+  return CharacterBlueprintSchema.parse({
+    id: hero.id,
+    name: hero.name,
+    pronouns:
+      hero.role === 'vanguard'
+        ? { subject: 'she', object: 'her', possessive: 'her' }
+        : hero.role === 'striker'
+          ? { subject: 'he', object: 'him', possessive: 'his' }
+          : { subject: 'they', object: 'them', possessive: 'their' },
+    callingId: hero.pathName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    callingName: hero.pathName,
+    role: hero.role,
+    ageBand: 'young-adult',
+    origin: worldName,
+    formativeEvent: firstSentence(hero.introduction),
+    drive: hero.desire,
+    contradiction: hero.flaw,
+    temperament: hero.voiceLine,
+    story: {
+      portrait: `${hero.name} lives in ${worldName}. ${hero.introduction}`,
+      fear: hero.flaw,
+      interiorVoice: hero.voiceLine,
+      signature: rules.signatureStory,
+      reaction: rules.reactionStory,
+      limitation: rules.limitationStory,
+    },
+    stats: hero.stats,
+    signatureRuleId: rules.signatureRuleId,
+    signature: rules.signature,
+    reactionRuleId: rules.reactionRuleId,
+    reaction: rules.reaction,
+    limitationRuleId: rules.limitationRuleId,
+    limitation: rules.limitation,
+    techniqueIds: techniques.map((technique) => technique.id),
+    techniques,
+    personalHookIds: [`hook-${hero.id}-desire`, `hook-${hero.id}-flaw`],
+    personalHooks: [hero.desire, hero.flaw],
+    awakeningCondition: `${asClause(progressionLaw)}; ${hero.name} must confront this flaw: ${asClause(hero.flaw)}`,
+    coverageTags: rules.coverageTags,
+    semanticFingerprint: `mythic:${hero.role}:${hero.id}`,
+  });
 }
 
 export interface CampaignDraft {
@@ -78,129 +136,127 @@ export interface CampaignDraft {
 }
 
 export function generateCampaignDraft(seed: string): CampaignDraft {
-  let streams = createRngStreams(seed);
-  const worldPick = pick(streams, 'world', VALIDATED_STORY_AUTHORING.worlds);
-  streams = worldPick.streams;
-  const world = worldPick.value;
+  const mythic = generateMythicReviewDraft(seed);
+  let rngStreams = createRngStreams(seed);
+  const factionDraw = drawInteger(rngStreams, 'world', 0, 3);
+  rngStreams = factionDraw.streams;
+  const regionDraw = drawInteger(rngStreams, 'world', 0, 7);
+  rngStreams = regionDraw.streams;
+  for (let index = 0; index < 6; index += 1) {
+    rngStreams = drawInteger(rngStreams, 'characters', 0, 1).streams;
+  }
+  const [openingLaw, openingDisruption] = mythic.world.opening;
+  const regionNames =
+    mythic.world.id === 'fallen-heavens'
+      ? [
+          'the Ember March',
+          'the Lion Road',
+          'the Moonfall Vale',
+          'the Ashen Crownlands',
+          'the Saint’s Descent',
+          'the Hollow Highlands',
+          'the Godbone Frontier',
+          'the Last Star Province',
+        ]
+      : [
+          'the Black Shore',
+          'the Bellwater Coast',
+          'the Pearl March',
+          'the Drowned Crownlands',
+          'the Ferryman’s Reach',
+          'the Moonless Strand',
+          'the Salt-Grave Frontier',
+          'the Last Tide Province',
+        ];
+  const campaignRealmName = `${mythic.world.name}, ${regionNames[regionDraw.value]}`;
+  const faction = [
+    {
+      name: 'The Veiled Court',
+      motive:
+        'Claim the newly awakened Mythic Paths before their bearers learn which fallen power chose them.',
+    },
+    {
+      name: 'The Ashen Synod',
+      motive: 'Burn every relic that remembers how mortals once defeated the gods.',
+    },
+    {
+      name: 'The Ivory Throne',
+      motive:
+        'Bind all Mythic Paths to the crown before an unranked hunter can challenge its rule.',
+    },
+    {
+      name: 'The Drowned Choir',
+      motive:
+        'Gather three awakened legends whose joined oath can open the sealed road below death.',
+    },
+  ][factionDraw.value]!;
   const bible = CampaignBibleSchema.parse({
     seed,
-    city: { id: `city-${world.id}`, name: world.city.name, tags: ['modern', 'breach-city'] },
+    city: {
+      id: `realm-${mythic.world.id}`,
+      name: campaignRealmName,
+      tags: ['mythic-realm', 'living-dungeons'],
+    },
     civicOrder: {
-      id: `civic-${world.id}`,
-      name: world.civicOrder.name,
-      mandate: world.civicOrder.publicPromise,
-      tags: ['regulator'],
+      id: `oathkeepers-${mythic.world.id}`,
+      name: 'The Oathkeepers',
+      mandate: 'Protect ordinary people when gods, kings, and guilds make survival a privilege.',
+      tags: ['oaths', 'public-trust'],
     },
     guildModel: {
-      id: `guild-${world.id}`,
-      name: world.guild.name,
-      mandate: world.guild.publicPromise,
-      tags: ['contracts', 'rankings'],
+      id: `hunter-guilds-${mythic.world.id}`,
+      name: 'The Ranked Hunter Guilds',
+      mandate: 'Train delvers, record victories, and keep the roads to living dungeons open.',
+      tags: ['hunters', 'ranked-trials'],
     },
-    rankSystem: { id: `public-licence-ranks-${world.id}`, tiers: [...world.rankTiers] },
-    breachLaw: { id: `breach-law-${world.id}`, summary: world.breachLaw },
-    powerLaw: { id: `power-law-${world.id}`, summary: world.powerLaw },
+    rankSystem: { id: `path-ranks-${mythic.world.id}`, tiers: [...mythic.world.rankNames] },
+    breachLaw: { id: `myth-law-${mythic.world.id}`, summary: mythic.world.mythLaw },
+    powerLaw: {
+      id: `progression-law-${mythic.world.id}`,
+      summary: mythic.world.progressionLaw,
+    },
     threatEcology: {
-      id: `threat-ecology-${world.id}`,
-      summary: world.threatEcology,
-      tags: ['adaptive', 'urban'],
+      id: `dungeon-ecology-${mythic.world.id}`,
+      summary:
+        'Monsters inherit fragments of the dead or forgotten powers whose realms they inhabit. Their visible habits reveal the counter needed to defeat them.',
+      tags: ['monsters', 'legends', 'counterplay'],
     },
     activeFactions: [
       {
-        id: `faction-${world.id}`,
-        name: world.faction.name,
-        motive: world.faction.secretMotive,
-        tags: ['active'],
+        id: `veiled-court-${mythic.world.id}`,
+        name: faction.name,
+        motive: faction.motive,
+        tags: ['rival', 'secret-patron'],
       },
     ],
     terminology: {
-      heroCollective: 'licensed squad',
-      incursion: 'breach',
-      powerSource: 'Calling',
+      heroCollective: 'hunter trio',
+      incursion: 'descent',
+      powerSource: 'Mythic Path',
       technique: 'technique',
     },
-    sceneVocabulary: world.sceneVocabulary,
-    toneProfileId: 'modern-progression',
+    sceneVocabulary: {
+      crisisSite: 'dungeon threshold',
+      hiddenRoute: 'forgotten stair',
+      publicVenue: 'guild hall',
+      publicSignal: 'omen bell',
+      recordMedium: 'Soul Ledger',
+      privateRefuge: 'wayside shrine',
+    },
+    toneProfileId: 'mythic-progression-fantasy',
   });
-
-  const shuffledNames = shuffle(streams, 'characters', names);
-  streams = shuffledNames.streams;
-  const characters: CharacterBlueprint[] = [];
-
-  for (const [slot, role] of roles.entries()) {
-    const compatibleKits = VALIDATED_STORY_AUTHORING.characterKits.filter(
-      (candidate) => candidate.role === role,
-    );
-    const kitPick = pick(streams, 'characters', compatibleKits);
-    streams = kitPick.streams;
-    const kit = kitPick.value;
-    const name = shuffledNames.values[slot]!;
-    const id = `${slug(name)}-${slot + 1}`;
-    const techniques = kit.calling.techniques.map((technique) => ({
-      id: technique.id,
-      name: technique.name,
-      storyDescription: realiseTechniqueStory(technique, name, kit.calling.name),
-      mechanicLabel: technique.mechanicRule,
-      resourceCost: technique.resourceCost,
-      cooldownRounds: technique.cooldownRounds,
-      condition: technique.condition,
-    }));
-
-    characters.push(
-      CharacterBlueprintSchema.parse({
-        id,
-        name,
-        pronouns:
-          slot === 0
-            ? { subject: 'she', object: 'her', possessive: 'her' }
-            : slot === 1
-              ? { subject: 'he', object: 'him', possessive: 'his' }
-              : { subject: 'they', object: 'them', possessive: 'their' },
-        callingId: kit.calling.id,
-        callingName: kit.calling.name,
-        role: kit.role,
-        ageBand: kit.ageBand,
-        origin: kit.origin,
-        formativeEvent: kit.formativeEvent,
-        drive: kit.drive,
-        contradiction: kit.contradiction,
-        temperament: kit.temperament,
-        story: {
-          portrait: realiseCharacterPortrait(kit, name, world.city.name),
-          fear: kit.fear,
-          interiorVoice: kit.interiorVoice,
-          signature: kit.calling.signature.story,
-          reaction: kit.calling.reaction.story,
-          limitation: kit.calling.limitation.story,
-        },
-        stats: kit.calling.stats,
-        signatureRuleId: kit.calling.signatureRuleId,
-        signature: kit.calling.signature.mechanic,
-        reactionRuleId: kit.calling.reactionRuleId,
-        reaction: kit.calling.reaction.mechanic,
-        limitationRuleId: kit.calling.limitationRuleId,
-        limitation: kit.calling.limitation.mechanic,
-        techniqueIds: techniques.map((technique) => technique.id),
-        techniques,
-        personalHookIds: [`hook-${id}-one`, `hook-${id}-two`],
-        personalHooks: [...kit.personalHooks],
-        awakeningCondition: kit.awakeningCondition,
-        coverageTags: [...kit.calling.coverageTags],
-        semanticFingerprint: `${role}:${kit.id}:${kitPick.index}`,
-      }),
-    );
-  }
+  const characters = mythic.trio.map((hero) =>
+    createCharacter(hero, campaignRealmName, mythic.world.progressionLaw),
+  );
 
   return {
     seed,
     bible,
-    premise: realiseCampaignPremise(world),
-    campaignQuestion: world.campaignQuestion,
+    premise: `${campaignRealmName}: ${openingLaw}\n\n${openingDisruption}`,
+    campaignQuestion: `What awakened these three Mythic Paths, and what price will the realm demand when their legend outgrows its gods?`,
     characters,
-    semanticFingerprint: `${world.id}|${characters
-      .map((character) => `${character.semanticFingerprint}:${character.id}`)
-      .join('|')}`,
-    rngStreams: streams,
+    semanticFingerprint: `${mythic.fingerprint}|seed:${seed}`,
+    rngStreams,
   };
 }
 

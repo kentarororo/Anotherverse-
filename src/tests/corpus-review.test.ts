@@ -20,7 +20,7 @@ describe('fixed human corpus review pack', () => {
     expect(first.every((entry) => !/[{][^}]+[}]/.test(entry.paragraph))).toBe(true);
     expect(first.every((entry) => /[.!?]$/.test(entry.paragraph))).toBe(true);
     expect(first.every((entry) => !/\s{2,}/.test(entry.paragraph))).toBe(true);
-    expect(first.every((entry) => entry.sentenceCount === 4)).toBe(true);
+    expect(first.every((entry) => entry.sentenceCount >= 4 && entry.sentenceCount <= 8)).toBe(true);
     expect(new Set(first.map((entry) => entry.paragraph)).size).toBeGreaterThanOrEqual(95);
     expect(
       first.every((entry) =>

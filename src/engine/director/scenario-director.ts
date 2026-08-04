@@ -19,6 +19,7 @@ import {
 import type { WorldFact } from '../model/world';
 import type { RngStreamsState } from '../rng/streams';
 import { drawInteger } from '../rng/streams';
+import { createMythicOpeningScenario } from './mythic-scenario';
 
 const categories: ScenarioCategory[] = ['operation', 'personal', 'discovery', 'rival', 'social'];
 
@@ -119,6 +120,25 @@ export function selectNextScenario(
   streams: RngStreamsState;
   debug: CanonicalGameState['directorDebug'];
 } {
+  const urgentOpeningThread = state.storyThreads.find(
+    (thread) => thread.status === 'open' && thread.urgency >= 75 && thread.nextEligibleTurn <= turn,
+  );
+  const mythicOpening =
+    urgentOpeningThread === undefined ? createMythicOpeningScenario(state, turn) : null;
+  if (mythicOpening !== null) {
+    return {
+      scenario: mythicOpening,
+      streams: initialStreams,
+      debug: [
+        {
+          templateId: mythicOpening.templateId,
+          score: 100,
+          selected: true,
+          reasons: ['canonical-mythic-opening:+100', 'seeded-authored-chapter:+100'],
+        },
+      ],
+    };
+  }
   const urgentThread = state.storyThreads.find(
     (thread) => thread.status === 'open' && thread.urgency >= 75 && thread.nextEligibleTurn <= turn,
   );

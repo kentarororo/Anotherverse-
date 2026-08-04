@@ -69,8 +69,8 @@ export function TitleScreen() {
       <section className="title-panel" aria-labelledby="game-title">
         <h1 id="game-title">ANOTHERVERSE</h1>
         <p className="title-deck">
-          Prepare a licensed squad for unstable breaches. Commit the plan, watch the operation
-          resolve, and carry its consequences forward.
+          Guide three awakened hunters into the ruins of forgotten gods. Choose their plan, watch
+          the battle unfold, and carry every victory, wound, and promise into the next chapter.
         </p>
 
         <div className="title-actions">

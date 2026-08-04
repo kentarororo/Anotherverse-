@@ -7,15 +7,16 @@ import { renderWorldFact } from '../../narrative/realiser/facts';
 import { BattlePlaybackStage } from '../components/BattlePlaybackStage';
 import { PlanningBattleStage } from '../components/PlanningBattleStage';
 import { operationEncounters } from '../../content/milestone-one';
+import {
+  buildHeroActionPreview,
+  planningRule,
+  POSITION_RULES,
+  PRIORITY_RULES,
+  STANCE_RULES,
+} from '../../engine/combat/planning';
+import { buildBattleCausality } from '../../engine/reports/battle-causality';
 
-const positions: Position[] = ['front', 'centre', 'rear'];
-const stances = ['aggressive', 'guarded', 'tactical', 'supportive'] as const;
-const priorities = [
-  ['focus-weakest', 'Focus Weakest'],
-  ['protect-rear', 'Protect Rear'],
-  ['break-threat', 'Break Threat'],
-  ['conserve-power', 'Conserve Power'],
-] as const;
+const positions: Position[] = POSITION_RULES.map((rule) => rule.id);
 
 function titleCase(value: string) {
   return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -97,6 +98,12 @@ export function CommandScreen() {
       const fact = game.worldFacts.find((candidate) => candidate.id === factId && candidate.active);
       return fact === undefined ? [] : [renderWorldFact(game, fact)];
     }) ?? [];
+  const actionPreview = buildHeroActionPreview(game);
+  const activePriority = planningRule(
+    PRIORITY_RULES,
+    game.pendingPlan.teamPriorityId ?? 'break-threat',
+  );
+  const battleCausality = report === undefined ? [] : buildBattleCausality(game, report);
 
   return (
     <main className="command-screen">
@@ -110,17 +117,17 @@ export function CommandScreen() {
             <dd>{displayedTurn}</dd>
           </div>
           <div>
-            <dt>Rank</dt>
+            <dt>Path Rank</dt>
             <dd>
-              {game.rank} · {game.reputation} rep
+              {game.rank} · {game.reputation} Renown
             </dd>
           </div>
           <div>
-            <dt>Threat</dt>
+            <dt>Danger</dt>
             <dd>{game.threat}</dd>
           </div>
           <div>
-            <dt>Supplies</dt>
+            <dt>Provisions</dt>
             <dd>{game.supplies}</dd>
           </div>
         </dl>
@@ -172,8 +179,8 @@ export function CommandScreen() {
         <section className="panel trio-panel" aria-labelledby="trio-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Squad status</p>
-              <h2 id="trio-title">The Trio</h2>
+              <p className="eyebrow">Hunter status</p>
+              <h2 id="trio-title">The Mythic Trio</h2>
             </div>
             <span className="badge">3 / 3</span>
           </div>
@@ -225,12 +232,15 @@ export function CommandScreen() {
                         disabled={showingAftermath}
                         onChange={(event) => setPosition(hero.id, event.target.value as Position)}
                       >
-                        {positions.map((position) => (
-                          <option value={position} key={position}>
-                            {titleCase(position)}
+                        {POSITION_RULES.map((rule) => (
+                          <option value={rule.id} key={rule.id}>
+                            {rule.label}
                           </option>
                         ))}
                       </select>
+                      <small>
+                        {planningRule(POSITION_RULES, game.pendingPlan.positions[hero.id]).effect}
+                      </small>
                     </label>
                     <label>
                       Stance
@@ -240,12 +250,15 @@ export function CommandScreen() {
                         disabled={showingAftermath}
                         onChange={(event) => setStance(hero.id, event.target.value)}
                       >
-                        {stances.map((stance) => (
-                          <option value={stance} key={stance}>
-                            {titleCase(stance)}
+                        {STANCE_RULES.map((rule) => (
+                          <option value={rule.id} key={rule.id}>
+                            {rule.label}
                           </option>
                         ))}
                       </select>
+                      <small>
+                        {planningRule(STANCE_RULES, game.pendingPlan.stanceIds[hero.id]).effect}
+                      </small>
                     </label>
                   </div>
                   <p>{hero.techniques.map((technique) => technique.name).join(' · ')}</p>
@@ -367,6 +380,17 @@ export function CommandScreen() {
           </div>
           {showingAftermath ? (
             <div className="aftermath-list">
+              {battleCausality.length > 0 && (
+                <div className="causal-aftermath" aria-label="Why the battle ended this way">
+                  {battleCausality.map((beat) => (
+                    <article key={beat.label}>
+                      <span>{beat.label}</span>
+                      <strong>{beat.title}</strong>
+                      <small>{beat.detail}</small>
+                    </article>
+                  ))}
+                </div>
+              )}
               {game.generatedDefinitions.characters.map((hero) => (
                 <div className="aftermath-hero-row" key={hero.id}>
                   <span>{hero.name}</span>
@@ -401,11 +425,11 @@ export function CommandScreen() {
                 </div>
               )}
               <div>
-                <span>Supplies</span>
+                <span>Provisions</span>
                 <strong>+{aftermath.suppliesDelta}</strong>
               </div>
               <div>
-                <span>Reputation</span>
+                <span>Renown</span>
                 <strong>
                   {aftermath.reputationDelta >= 0 ? '+' : ''}
                   {aftermath.reputationDelta}
@@ -433,16 +457,27 @@ export function CommandScreen() {
                       value={game.pendingPlan.teamPriorityId ?? ''}
                       onChange={(event) => setTeamPriority(event.target.value)}
                     >
-                      {priorities.map(([value, label]) => (
-                        <option value={value} key={value}>
-                          {label}
+                      {PRIORITY_RULES.map((rule) => (
+                        <option value={rule.id} key={rule.id}>
+                          {rule.label}
                         </option>
                       ))}
                     </select>
                   </label>
                   <div className="priority-effect" aria-live="polite">
-                    <span>Plan effect</span>
-                    <strong>{forecast.advantages[0]}</strong>
+                    <span>Exact priority rule</span>
+                    <strong>{activePriority.effect}</strong>
+                  </div>
+                  <div className="action-preview" aria-label="Expected opening actions">
+                    <span>Expected opening actions</span>
+                    {actionPreview.map((preview) => (
+                      <p key={preview.characterId}>
+                        <strong>
+                          {preview.characterName}: {preview.actionName}
+                        </strong>
+                        <small>{preview.explanation}</small>
+                      </p>
+                    ))}
                   </div>
                   <div className="forecast-list">
                     <div>

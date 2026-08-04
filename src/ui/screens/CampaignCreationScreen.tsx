@@ -15,14 +15,14 @@ export function CampaignCreationScreen() {
     <main className="creation-screen">
       <header className="creation-header">
         <div>
-          <p className="eyebrow">Campaign draft</p>
+          <p className="eyebrow">A new legend</p>
           <h1>{draft.bible.city.name}</h1>
         </div>
         <code>{draft.seed}</code>
       </header>
 
       <section className="campaign-premise" aria-labelledby="premise-title">
-        <h2 id="premise-title">First licence</h2>
+        <h2 id="premise-title">The opening chapter</h2>
         <div className="campaign-storybook">
           <p>{draft.premise}</p>
           <p className="campaign-question">
@@ -39,7 +39,7 @@ export function CampaignCreationScreen() {
                 <span>{titleCase(hero.role)}</span>
                 <h2>{hero.name}</h2>
               </div>
-              <strong>{hero.callingName}</strong>
+              <strong>{hero.callingName} Path</strong>
             </div>
             <section className="dossier-story" aria-label={`${hero.name} story`}>
               <p>{hero.story.portrait}</p>
@@ -51,7 +51,7 @@ export function CampaignCreationScreen() {
                 <dd>{hero.drive}</dd>
               </div>
               <div>
-                <dt>Fears</dt>
+                <dt>Fatal flaw</dt>
                 <dd>{hero.story.fear}</dd>
               </div>
               <div>

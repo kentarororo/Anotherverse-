@@ -677,7 +677,7 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       heroActors.map((actor) => [actor.definition.id, experience]),
     ),
     itemIdsGranted: [],
-    factIdsWritten: [`fact-breach-result-${state.turn}`],
+    factIdsWritten: [`fact-trial-result-${state.turn}`],
     threadIdsChanged: [],
     hpByCharacter: Object.fromEntries(
       heroActors.map((actor) => [actor.definition.id, partyState[actor.definition.id]!.hp]),
@@ -689,10 +689,10 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
     reputationDelta: outcome === 'victory' ? 3 : outcome === 'defeat' ? -2 : 0,
     summary:
       outcome === 'victory'
-        ? `The squad closed ${state.currentEncounter.title} in ${completedRounds} rounds.`
+        ? `The trio conquered ${state.currentEncounter.title} in ${completedRounds} rounds.`
         : outcome === 'defeat'
-          ? 'The squad was recovered after losing control of the concourse.'
-          : 'The squad withdrew when the twelve-round safety limit was reached.',
+          ? 'The trio fell inside the trial and returned carrying the wounds of that defeat.'
+          : 'The trio withdrew when the twelve-round limit was reached.',
   };
   return { report, aftermath, partyState, streams };
 }

@@ -28,9 +28,9 @@ test('renders authored campaign and character stories with exact rules kept visi
     .first()
     .click();
   const drawer = page.getByRole('dialog', { name: 'character details' });
-  await expect(drawer.getByRole('heading', { name: 'Calling in the story' })).toBeVisible();
+  await expect(drawer.getByRole('heading', { name: 'Path in the story' })).toBeVisible();
   await expect(drawer.getByText('Wants')).toBeVisible();
-  await expect(drawer.getByText('Fears')).toBeVisible();
+  await expect(drawer.getByText('Fatal flaw')).toBeVisible();
   await expect(drawer.locator('.technique-mechanics').first()).toContainText('Cost');
   await expect(drawer.locator('.technique-mechanics').first()).toContainText('Cooldown');
   const development = drawer.locator('.development-unlock');
@@ -117,7 +117,7 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
     document.documentElement.style.fontSize = '125%';
   });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.getByRole('heading', { name: 'The Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
   await expect(page.locator('.operation-content h2')).toBeVisible();
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
   await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
@@ -210,7 +210,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await page.getByLabel('Campaign seed').fill('browser-smoke-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
 
-  await expect(page.getByText('Campaign draft')).toBeVisible();
+  await expect(page.getByText('A new legend')).toBeVisible();
   await expect(page.locator('.dossier')).toHaveCount(3);
   const heroNames = await page.locator('.dossier h2').allTextContents();
   const [vanguardName, strikerName] = heroNames;
@@ -218,7 +218,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   expect(strikerName).toBeTruthy();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
 
-  await expect(page.getByRole('heading', { name: 'The Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
   const authoredOperationTitle = page.locator('.operation-content h2');
   await expect(authoredOperationTitle).toBeVisible();
   await expect(authoredOperationTitle).not.toHaveText('');
@@ -306,7 +306,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByRole('dialog', { name: 'equipment details' })).toBeVisible();
   await expect(
     page.getByRole('dialog', { name: 'equipment details' }).getByRole('heading', {
-      name: /Houndglass Edge|Weaver Ward/,
+      name: /Godbone Edge|Augur Ward/,
     }),
   ).toBeVisible();
   await page
@@ -326,7 +326,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(logsButton).toBeFocused();
 
   await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
-  await expect(page.getByText('Personal', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Discovery', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Take Action' })).toBeDisabled();
   await page.getByRole('radio').first().click();
   await page.getByRole('button', { name: 'Take Action' }).click();
@@ -335,7 +335,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
 
   await page.reload();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'The Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
   await expect(page.getByText('Turn').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Take Action' })).toBeDisabled();
 

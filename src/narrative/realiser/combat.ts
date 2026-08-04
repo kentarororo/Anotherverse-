@@ -2,16 +2,16 @@ import type { BattleReport, CombatEvent } from '../../engine/reports/combat';
 
 const actionNames: Record<string, string> = {
   'shield-strike': 'Shield Strike',
-  'vector-cut': 'Vector Cut',
-  'lattice-bolt': 'Lattice Bolt',
-  'aegis-break': 'Aegis Break',
-  'arc-finish': 'Arc Finish',
-  'binding-shot': 'Binding Shot',
-  'restorative-sigil': 'Restorative Sigil',
+  'vector-cut': 'Hunter’s Cut',
+  'lattice-bolt': 'Path Bolt',
+  'aegis-break': 'Guard Break',
+  'arc-finish': 'Execution Arc',
+  'binding-shot': 'Fate Binding',
+  'restorative-sigil': 'Mending Sigil',
   'rending-claw': 'Rending Claw',
-  'breach-charge': 'Breach Charge',
-  'shard-bolt': 'Shard Bolt',
-  'rending-hex': 'Rending Hex',
+  'breach-charge': 'Grave Charge',
+  'shard-bolt': 'Omen Bolt',
+  'rending-hex': 'Funeral Omen',
 };
 
 export const COMBAT_FRAMES_PER_EVENT_TYPE = 4;

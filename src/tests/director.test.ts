@@ -63,24 +63,29 @@ describe('causal scenario director', () => {
           );
         }
       }
-      const module = SCENARIO_MODULES[scenario.category].find(
-        (candidate) => candidate.id === scenario.templateId,
-      )!;
-      const roles =
-        state.turn === 1 && module.initialFactRoles !== undefined
-          ? module.initialFactRoles
-          : module.continuationFactRoles;
-      roles.forEach((role, roleIndex) => {
-        const fact = state.worldFacts.find(
-          (candidate) => candidate.id === scenario.premiseFactIds[roleIndex],
+      if (scenario.semanticFingerprint.startsWith('mythic:')) {
+        expect(scenario.premise).toContain(state.campaignBible!.city.name);
+        expect(scenario.premise).toContain(state.campaignBible!.activeFactions[0]!.name);
+      } else {
+        const module = SCENARIO_MODULES[scenario.category].find(
+          (candidate) => candidate.id === scenario.templateId,
         )!;
-        expect(worldFactMatchesSceneRole(role, fact, scenario.castIds[0]!)).toBe(true);
-        if (role === 'city') expect(scenario.premise).toContain(state.campaignBible!.city.name);
-        if (role === 'faction') {
-          expect(scenario.premise).toContain(state.campaignBible!.activeFactions[0]!.name);
-        }
-        if (role === 'origin') expect(scenario.premise).toContain(String(fact.value));
-      });
+        const roles =
+          state.turn === 1 && module.initialFactRoles !== undefined
+            ? module.initialFactRoles
+            : module.continuationFactRoles;
+        roles.forEach((role, roleIndex) => {
+          const fact = state.worldFacts.find(
+            (candidate) => candidate.id === scenario.premiseFactIds[roleIndex],
+          )!;
+          expect(worldFactMatchesSceneRole(role, fact, scenario.castIds[0]!)).toBe(true);
+          if (role === 'city') expect(scenario.premise).toContain(state.campaignBible!.city.name);
+          if (role === 'faction') {
+            expect(scenario.premise).toContain(state.campaignBible!.activeFactions[0]!.name);
+          }
+          if (role === 'origin') expect(scenario.premise).toContain(String(fact.value));
+        });
+      }
       if (state.turn === 5) {
         expect(scenario.templateId).not.toBe('social-3');
         expect(
@@ -259,13 +264,13 @@ describe('causal scenario director', () => {
   it('offers choices authored for the exact personal scene dilemma', () => {
     let state = campaign('scene-choice-seed');
     const choicesByTemplate = new Map<string, string[]>();
-    while (state.turn <= 17) {
+    while (state.turn <= 22) {
       const scenario = state.currentScenario!;
       choicesByTemplate.set(
         scenario.templateId,
         scenario.choices.map((choice) => choice.label),
       );
-      if (state.turn === 17) break;
+      if (state.turn === 22) break;
       if (state.pendingPlan.situationChoiceId === null) {
         state = applyGameCommand(state, {
           type: 'CHOOSE_SITUATION',
@@ -284,10 +289,10 @@ describe('causal scenario director', () => {
     ]);
   });
 
-  it('selects four distinct world-consistent operation encounters in the first 20 turns', () => {
+  it('selects four distinct world-consistent operation encounters in the first 21 turns', () => {
     let state = campaign('operation-variety-seed');
     const encounters = new Set<string>();
-    for (let turn = 1; turn <= 20; turn += 1) {
+    for (let turn = 1; turn <= 21; turn += 1) {
       if (state.currentScenario!.category === 'operation') {
         expect(state.currentEncounter).not.toBeNull();
         expect(state.currentScenario!.threatIds).toEqual(state.currentEncounter!.enemyIds);
