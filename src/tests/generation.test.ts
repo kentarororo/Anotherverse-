@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { CONTENT_MANIFEST_HASH } from '../content/manifest';
 import { generateCampaignDraft } from '../engine/generation/campaign';
 import { createEmptyGameState } from '../engine/model/state';
+import { EXECUTABLE_TECHNIQUES } from '../engine/model/executable-technique';
 import { applyGameCommand } from '../engine/simulation/apply-command';
+import { VALIDATED_STORY_AUTHORING } from '../narrative/authoring/validated-story';
 
 const seeds = Array.from({ length: 100 }, (_, index) => `generation-fixture-${index}`);
 
@@ -19,6 +21,19 @@ describe('generated campaigns and trios', () => {
     const drafts = seeds.map(generateCampaignDraft);
     const fingerprints = new Set(drafts.map((draft) => draft.semanticFingerprint));
     expect(fingerprints.size).toBeGreaterThanOrEqual(90);
+    const worldIds = new Set(drafts.map((draft) => draft.bible.city.id));
+    const kitCombinations = new Set(
+      drafts.map((draft) => draft.characters.map((hero) => hero.callingId).join('|')),
+    );
+    const worldKitCombinations = new Set(
+      drafts.map(
+        (draft) =>
+          `${draft.bible.city.id}|${draft.characters.map((hero) => hero.callingId).join('|')}`,
+      ),
+    );
+    expect(worldIds.size).toBe(4);
+    expect(kitCombinations.size).toBeGreaterThanOrEqual(20);
+    expect(worldKitCombinations.size).toBeGreaterThanOrEqual(50);
 
     for (const draft of drafts) {
       const names = draft.characters.map((hero) => hero.name);
@@ -29,6 +44,18 @@ describe('generated campaigns and trios', () => {
       expect(coverage.has('sustain') || coverage.has('resource')).toBe(true);
       expect(new Set(draft.characters.map((hero) => hero.signatureRuleId)).size).toBe(3);
       for (const hero of draft.characters) {
+        const sourceKit = VALIDATED_STORY_AUTHORING.characterKits.find(
+          (kit) => kit.calling.id === hero.callingId,
+        )!;
+        expect(hero.origin).toBe(sourceKit.origin);
+        expect(hero.formativeEvent).toBe(sourceKit.formativeEvent);
+        expect(hero.drive).toBe(sourceKit.drive);
+        expect(hero.contradiction).toBe(sourceKit.contradiction);
+        expect(hero.story.fear).toBe(sourceKit.fear);
+        expect(hero.story.portrait).toContain(hero.name);
+        expect(hero.story.portrait).toContain(hero.callingName);
+        expect(hero.story.portrait).toContain(hero.origin);
+        expect(hero.story.portrait).not.toMatch(/\{[^}]+\}|the prior event|two recorded facts/i);
         expect(hero.techniques).toHaveLength(2);
         expect(hero.personalHooks.length).toBeGreaterThanOrEqual(2);
         expect(hero.awakeningCondition.length).toBeGreaterThan(10);
@@ -36,6 +63,15 @@ describe('generated campaigns and trios', () => {
         expect(hero.reaction.length).toBeGreaterThan(10);
         expect(hero.reactionRuleId.length).toBeGreaterThan(3);
         expect(hero.limitation.length).toBeGreaterThan(10);
+        for (const technique of hero.techniques) {
+          expect(technique.storyDescription).toContain(hero.name);
+          expect(technique.storyDescription).toContain(hero.callingName);
+          expect(technique.storyDescription).not.toBe(technique.mechanicLabel);
+          expect(technique.storyDescription).not.toMatch(
+            /(?:[+-]\d+|\b\d+\s*(?:resource|rounds?|vitality|ward)\b)/i,
+          );
+          expect(technique.mechanicLabel.length).toBeGreaterThan(10);
+        }
       }
     }
   });
@@ -52,12 +88,15 @@ describe('generated campaigns and trios', () => {
       expect(report.rounds).toBeLessThanOrEqual(12);
       expect(report.events.length).toBeGreaterThan(0);
       for (const hero of campaign.generatedDefinitions.characters) {
-        expect(campaign.generatedDefinitions.combatants[hero.id]?.signatureRuleId).toBe(
-          hero.signatureRuleId,
-        );
-        expect(campaign.generatedDefinitions.combatants[hero.id]?.limitationRuleId).toBe(
-          hero.limitationRuleId,
-        );
+        const combatant = campaign.generatedDefinitions.combatants[hero.id]!;
+        expect(combatant.signatureRuleId).toBe(hero.signatureRuleId);
+        expect(combatant.limitationRuleId).toBe(hero.limitationRuleId);
+        for (const contract of EXECUTABLE_TECHNIQUES[
+          hero.role as 'vanguard' | 'striker' | 'support'
+        ]) {
+          expect(combatant.techniqueCosts?.[contract.id]).toBe(contract.resourceCost);
+          expect(combatant.techniqueCooldowns?.[contract.id]).toBe(contract.cooldownRounds);
+        }
       }
     }
   });

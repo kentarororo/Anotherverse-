@@ -25,6 +25,18 @@ export const temporaryCharacters: CharacterBlueprint[] = [
     drive: 'Make squad protection a promise institutions cannot revoke.',
     contradiction: 'Distrusts authority but still follows its procedures.',
     temperament: 'Measured and protective.',
+    story: {
+      portrait:
+        'Mira Vale once held a district breach line after official support withdrew. She now treats every formation as a promise that no institution may quietly revoke. The Iron Echo answers that conviction with a resonant shield-tone whenever an ally is threatened. Mira fears that following the old procedures will make her repeat the abandonment she survived.',
+      fear: 'She fears becoming the kind of officer who mistakes procedure for protection.',
+      interiorVoice: 'Count the exits, name the people at risk, and hold until everyone is clear.',
+      signature:
+        'The Iron Echo crosses the formation as a ringing shield-presence whenever danger reaches for the rear line.',
+      reaction:
+        'Each interception leaves a brief resonance around Mira, as though the defence remembers where she stood.',
+      limitation:
+        'The Calling loses force when Mira turns its protective geometry toward harm alone.',
+    },
     stats: { vitality: 12, power: 7, guard: 12, speed: 6, focus: 8 },
     signatureRuleId: 'rear-intercept',
     signature: 'Intercepts the first attack aimed at the rear each round.',
@@ -37,7 +49,9 @@ export const temporaryCharacters: CharacterBlueprint[] = [
       {
         id: 'aegis-break',
         name: 'Aegis Break',
-        description: 'Damages and Exposes one enemy.',
+        storyDescription:
+          'Mira drives a resonant edge through an enemy guard, leaving its defensive pattern visibly fractured.',
+        mechanicLabel: 'Damage one enemy and apply Exposed.',
         resourceCost: 2,
         cooldownRounds: 2,
         condition: 'At least 2 resource and an active target.',
@@ -45,7 +59,9 @@ export const temporaryCharacters: CharacterBlueprint[] = [
       {
         id: 'hold-the-line',
         name: 'Hold the Line',
-        description: 'Reinforces the squad front.',
+        storyDescription:
+          'Mira plants the Iron Echo across the squad front until its ringing boundary becomes a shared shelter.',
+        mechanicLabel: 'Guard the squad front and apply Ward.',
         resourceCost: 1,
         cooldownRounds: 2,
         condition: 'Protect Rear priority and at least 1 resource.',
@@ -70,6 +86,18 @@ export const temporaryCharacters: CharacterBlueprint[] = [
     drive: 'Prove that an unregistered style can reach the public rankings.',
     contradiction: 'Craves recognition but rejects instruction.',
     temperament: 'Direct and competitive.',
+    story: {
+      portrait:
+        'Dax Ren won an assessment bout with a technique the examiners refused to recognise. He now pursues a public ranking that cannot omit what everyone has seen. The Vector Edge appears as bright trajectory lines that turn his decisions into cutting routes. Dax fears that recognition will arrive only after an institution has renamed his work as its own.',
+      fear: 'He fears that official recognition will erase the independence that made him worth noticing.',
+      interiorVoice: 'If the route is real, commit to it before someone else draws the line.',
+      signature:
+        'The Vector Edge finds the shortest violent route through a defence that an ally has already opened.',
+      reaction:
+        'A committed finishing line sharpens Dax’s focus until hesitation falls away from the attack.',
+      limitation:
+        'Every aggressive route leaves a readable opening behind him, trading safety for certainty.',
+    },
     stats: { vitality: 8, power: 13, guard: 6, speed: 12, focus: 9 },
     signatureRuleId: 'exploit-exposed',
     signature: 'Deals +3 damage to Exposed targets.',
@@ -82,7 +110,9 @@ export const temporaryCharacters: CharacterBlueprint[] = [
       {
         id: 'arc-finish',
         name: 'Arc Finish',
-        description: 'A costly conditional finisher.',
+        storyDescription:
+          'Dax commits every visible trajectory to a single closing line meant to end a weakened threat.',
+        mechanicLabel: 'Heavy damage against an Exposed or weakened target.',
         resourceCost: 2,
         cooldownRounds: 2,
         condition: 'Aggressive stance or a target at 65% HP, with 2 resource.',
@@ -90,7 +120,9 @@ export const temporaryCharacters: CharacterBlueprint[] = [
       {
         id: 'cross-step',
         name: 'Cross Step',
-        description: 'Repositions through a target line.',
+        storyDescription:
+          'Dax crosses the threatened line in one exact step and attacks from the angle it exposes.',
+        mechanicLabel: 'Reposition and attack through the target line.',
         resourceCost: 1,
         cooldownRounds: 1,
         condition: 'Rear position or Tactical stance, with 1 resource.',
@@ -115,6 +147,18 @@ export const temporaryCharacters: CharacterBlueprint[] = [
     drive: 'Document powers the academies prefer to erase.',
     contradiction: 'Seeks truth but conceals their own evidence.',
     temperament: 'Observant and dryly compassionate.',
+    story: {
+      portrait:
+        'Sorrel Voss was expelled after stabilising a relic bond the academy had declared impossible. They now document the powers that official catalogues prefer to erase. The Quiet Lattice gathers around their hands as a patient geometry of light and listening spirits. Sorrel fears that protecting dangerous evidence may eventually become another way of hiding it.',
+      fear: 'They fear that caution will preserve the evidence while abandoning the people inside it.',
+      interiorVoice: 'Listen for the pattern that remains after every official explanation stops.',
+      signature:
+        'The Quiet Lattice lets every act of recovery leave a second protective pattern behind.',
+      reaction:
+        'A completed recovery circuit returns a measure of power through the same paths it repaired.',
+      limitation:
+        'The lattice resists direct harm and diffuses force that is not shaped toward restraint.',
+    },
     stats: { vitality: 9, power: 7, guard: 8, speed: 9, focus: 13 },
     signatureRuleId: 'mending-ward',
     signature: 'Restorative Sigil also grants a 3-point Ward.',
@@ -127,7 +171,9 @@ export const temporaryCharacters: CharacterBlueprint[] = [
       {
         id: 'restorative-sigil',
         name: 'Restorative Sigil',
-        description: 'Heals and Wards one ally.',
+        storyDescription:
+          'Sorrel closes an ally’s wounds with a quiet sigil that remains behind as a protective lattice.',
+        mechanicLabel: 'Heal one ally and apply Ward.',
         resourceCost: 2,
         cooldownRounds: 2,
         condition: 'An ally is below the stance recovery threshold, with 2 resource.',
@@ -135,7 +181,9 @@ export const temporaryCharacters: CharacterBlueprint[] = [
       {
         id: 'binding-shot',
         name: 'Binding Shot',
-        description: 'Damages and Staggers one enemy.',
+        storyDescription:
+          'Sorrel pins an enemy’s movement inside intersecting lines until its next action loses rhythm.',
+        mechanicLabel: 'Damage one enemy and apply Staggered.',
         resourceCost: 2,
         cooldownRounds: 2,
         condition: 'Tactical stance and at least 2 resource.',
@@ -425,7 +473,8 @@ export function createMilestoneOneDefinitions(characters = temporaryCharacters) 
         {
           id: `${character.callingId}-awakening`,
           name: `${character.callingName} Mastery`,
-          description: `Unlocked by progress toward: ${character.awakeningCondition}`,
+          storyDescription: `The next expression of ${character.callingName} waits behind the condition that has shaped ${character.name} from the beginning.`,
+          unlockCondition: `Progress toward: ${character.awakeningCondition}`,
         },
       ]),
     ),

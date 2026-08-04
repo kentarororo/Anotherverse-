@@ -48,6 +48,15 @@ export const TerminologySlotsSchema = z.object({
   technique: z.string().min(1),
 });
 
+export const SceneVocabularySchema = z.object({
+  crisisSite: z.string().min(1),
+  hiddenRoute: z.string().min(1),
+  publicVenue: z.string().min(1),
+  publicSignal: z.string().min(1),
+  recordMedium: z.string().min(1),
+  privateRefuge: z.string().min(1),
+});
+
 export const CampaignBibleSchema = z.object({
   seed: z.string().min(1),
   city: GeneratedPlaceSchema,
@@ -59,6 +68,7 @@ export const CampaignBibleSchema = z.object({
   threatEcology: ThreatEcologySchema,
   activeFactions: z.array(GeneratedFactionSchema),
   terminology: TerminologySlotsSchema,
+  sceneVocabulary: SceneVocabularySchema,
   toneProfileId: z.string().min(1),
 });
 

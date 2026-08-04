@@ -12,6 +12,10 @@ import {
   mitigateDamage,
 } from './stats';
 import { selectHeroAction } from './policy';
+import {
+  EXECUTABLE_TECHNIQUES,
+  type ExecutableTechniqueContract,
+} from '../model/executable-technique';
 
 interface RuntimeCombatant {
   definition: CombatantDefinition;
@@ -39,12 +43,36 @@ function techniqueCost(actor: RuntimeCombatant, actionId: string, fallback: numb
   return actor.definition.techniqueCosts?.[actionId] ?? fallback;
 }
 
+function executableTechnique(
+  actor: RuntimeCombatant,
+  actionId: string,
+): ExecutableTechniqueContract | undefined {
+  const role = actor.definition.policyId;
+  if (role !== 'vanguard' && role !== 'striker' && role !== 'support') return undefined;
+  return EXECUTABLE_TECHNIQUES[role].find((technique) => technique.id === actionId);
+}
+
+function effectNumber(contract: ExecutableTechniqueContract, key: string): number {
+  const value = contract.effect[key];
+  if (typeof value !== 'number') throw new Error(`Technique ${contract.id} lacks numeric ${key}.`);
+  return value;
+}
+
+function effectString(contract: ExecutableTechniqueContract, key: string): string {
+  const value = contract.effect[key];
+  if (typeof value !== 'string') throw new Error(`Technique ${contract.id} lacks text ${key}.`);
+  return value;
+}
+
 function techniqueReady(actor: RuntimeCombatant, actionId: string): boolean {
   return (actor.cooldowns[actionId] ?? 0) === 0;
 }
 
 function startTechniqueCooldown(actor: RuntimeCombatant, actionId: string): number {
-  const rounds = actor.definition.techniqueCooldowns?.[actionId] ?? 0;
+  const rounds =
+    actor.definition.techniqueCooldowns?.[actionId] ??
+    executableTechnique(actor, actionId)?.cooldownRounds ??
+    0;
   if (rounds > 0) actor.cooldowns[actionId] = rounds;
   return rounds;
 }
@@ -237,17 +265,25 @@ function resolveHeal(
   round: number,
   actionId: string,
 ) {
-  const cost = techniqueCost(actor, actionId, 2);
+  const contract = executableTechnique(actor, actionId);
+  if (contract === undefined) throw new Error(`Unknown executable heal technique: ${actionId}.`);
+  const cost = techniqueCost(actor, actionId, contract.resourceCost);
   const resourceBefore = actor.resource;
   actor.resource -= cost;
   const recoveryLoop = actor.definition.reactionRuleId === 'recovery-loop';
   if (recoveryLoop) actor.resource = Math.min(actor.definition.maxResource, actor.resource + 1);
   const hpBefore = target.hp;
-  const amount = actor.definition.stats.focus + 5;
+  const amount = actor.definition.stats.focus + effectNumber(contract, 'focusBonusHp');
   target.hp = Math.min(target.maxHp, target.hp + amount);
   const statusChanges = [
-    applyStatus(target, 'warded', actor.mastered ? 3 : 2),
-    applyStatus(target, 'inspired', 2),
+    applyStatus(
+      target,
+      'warded',
+      actor.mastered
+        ? effectNumber(contract, 'masteryWardRounds')
+        : effectNumber(contract, 'wardRounds'),
+    ),
+    applyStatus(target, 'inspired', effectNumber(contract, 'inspiredRounds')),
   ];
   appendEvent(events, {
     round,
@@ -278,17 +314,19 @@ function resolveGuard(
   round: number,
   actionId: string,
 ) {
-  const cost = techniqueCost(actor, actionId, 1);
+  const contract = executableTechnique(actor, actionId);
+  if (contract === undefined) throw new Error(`Unknown executable guard technique: ${actionId}.`);
+  const cost = techniqueCost(actor, actionId, contract.resourceCost);
   const resourceBefore = actor.resource;
   actor.resource = Math.max(0, actor.resource - cost);
-  const statusChange = applyStatus(target, 'warded', 2);
+  const statusChange = applyStatus(target, 'warded', effectNumber(contract, 'wardRounds'));
   appendEvent(events, {
     round,
     actorId: actor.definition.id,
     actionId,
     targetIds: [target.definition.id],
     eventType: 'guard',
-    finalAmount: 3,
+    finalAmount: effectNumber(contract, 'ward'),
     resourceBefore,
     resourceAfter: actor.resource,
     statusChanges: [statusChange],
@@ -456,22 +494,35 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         let statusToApply: { id: string; duration: number } | undefined;
         let resourceCost = 0;
         const triggers: string[] = [];
+        const techniqueContract = executableTechnique(actor, actionId);
         if (actor.definition.policyId === 'vanguard' && actionId === firstTechnique) {
-          bonus = 3;
-          resourceCost = techniqueCost(actor, actionId, 2);
-          statusToApply = { id: 'exposed', duration: 2 };
+          if (techniqueContract === undefined) throw new Error(`Unknown technique: ${actionId}.`);
+          bonus = effectNumber(techniqueContract, 'bonusPower');
+          resourceCost = techniqueCost(actor, actionId, techniqueContract.resourceCost);
+          statusToApply = {
+            id: effectString(techniqueContract, 'status'),
+            duration: effectNumber(techniqueContract, 'statusRounds'),
+          };
         } else if (actor.definition.policyId === 'striker' && actionId === firstTechnique) {
-          bonus = actor.mastered ? 10 : 8;
-          resourceCost = techniqueCost(actor, actionId, 2);
+          if (techniqueContract === undefined) throw new Error(`Unknown technique: ${actionId}.`);
+          bonus = actor.mastered
+            ? effectNumber(techniqueContract, 'masteryBonusPower')
+            : effectNumber(techniqueContract, 'bonusPower');
+          resourceCost = techniqueCost(actor, actionId, techniqueContract.resourceCost);
           triggers.push('conditional-finisher');
         } else if (actor.definition.policyId === 'striker' && actionId === secondTechnique) {
-          bonus = 4;
-          resourceCost = techniqueCost(actor, actionId, 1);
+          if (techniqueContract === undefined) throw new Error(`Unknown technique: ${actionId}.`);
+          bonus = effectNumber(techniqueContract, 'bonusPower');
+          resourceCost = techniqueCost(actor, actionId, techniqueContract.resourceCost);
           triggers.push('cross-step-route');
         } else if (actor.definition.policyId === 'support' && actionId === secondTechnique) {
-          bonus = 2;
-          resourceCost = techniqueCost(actor, actionId, 2);
-          statusToApply = { id: 'staggered', duration: 2 };
+          if (techniqueContract === undefined) throw new Error(`Unknown technique: ${actionId}.`);
+          bonus = effectNumber(techniqueContract, 'bonusPower');
+          resourceCost = techniqueCost(actor, actionId, techniqueContract.resourceCost);
+          statusToApply = {
+            id: effectString(techniqueContract, 'status'),
+            duration: effectNumber(techniqueContract, 'statusRounds'),
+          };
         }
         if (
           actor.definition.reactionRuleId === 'finisher-surge' &&

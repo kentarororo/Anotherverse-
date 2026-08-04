@@ -47,6 +47,22 @@ describe('causal scenario director', () => {
           state.worldFacts.some((fact) => fact.id === id && fact.active),
         ),
       ).toBe(true);
+      expect(scenario.premise).not.toMatch(
+        /\{[^}]+\}|the prior event|two recorded facts|something happened|the situation unfolds/i,
+      );
+      expect(
+        Object.values(state.campaignBible!.sceneVocabulary).some((value) =>
+          scenario.premise.includes(value),
+        ),
+      ).toBe(true);
+      for (const factId of scenario.premiseFactIds) {
+        const fact = state.worldFacts.find((candidate) => candidate.id === factId)!;
+        if (fact.createdTurn > 0 && typeof fact.value === 'string') {
+          expect(scenario.premise.toLowerCase()).toContain(
+            fact.value.replace(/[.!?]+$/, '').toLowerCase(),
+          );
+        }
+      }
       const module = SCENARIO_MODULES[scenario.category].find(
         (candidate) => candidate.id === scenario.templateId,
       )!;
@@ -59,6 +75,11 @@ describe('causal scenario director', () => {
           (candidate) => candidate.id === scenario.premiseFactIds[roleIndex],
         )!;
         expect(worldFactMatchesSceneRole(role, fact, scenario.castIds[0]!)).toBe(true);
+        if (role === 'city') expect(scenario.premise).toContain(state.campaignBible!.city.name);
+        if (role === 'faction') {
+          expect(scenario.premise).toContain(state.campaignBible!.activeFactions[0]!.name);
+        }
+        if (role === 'origin') expect(scenario.premise).toContain(String(fact.value));
       });
       if (state.turn === 5) {
         expect(scenario.templateId).not.toBe('social-3');
@@ -172,7 +193,10 @@ describe('causal scenario director', () => {
       state = applyGameCommand(state, { type: 'COMMIT_TURN' });
     }
     expect(state.currentScenario!.category).toBe('rival');
-    expect(state.currentScenario!.premise).toMatch(/enough trust|existing disagreement|must agree/);
+    const castNames = state.currentScenario!.castIds.map(
+      (id) => state.generatedDefinitions.characters.find((hero) => hero.id === id)!.name,
+    );
+    castNames.forEach((name) => expect(state.currentScenario!.premise).toContain(name));
     expect(
       state.directorDebug.some((candidate) =>
         candidate.reasons.some(
@@ -193,7 +217,7 @@ describe('causal scenario director', () => {
     };
     const selected = selectNextScenario(reputable, 4, reputable.rngStreams!);
     expect(selected.scenario.category).toBe('rival');
-    expect(selected.scenario.premise).toContain('Bronze licence');
+    expect(selected.scenario.premise).toContain('Bronze standing');
     expect(selected.debug.flatMap((candidate) => candidate.reasons)).toContain(
       'reputation-relevance:+9',
     );

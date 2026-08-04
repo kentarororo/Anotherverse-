@@ -1,12 +1,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../app/store';
 import { explainCurrentHeroPolicies } from '../../engine/combat/policy';
-
-interface TechniqueDefinition {
-  id: string;
-  name: string;
-  description: string;
-}
+import type { DevelopmentUnlock } from '../../engine/model/progression';
 
 export function ManagementDrawer() {
   const drawer = useAppStore((state) => state.drawer);
@@ -29,7 +24,9 @@ export function ManagementDrawer() {
   if (drawer === null) return null;
   const hero = game.generatedDefinitions.characters.find((candidate) => candidate.id === drawer.id);
   const member = hero === undefined ? undefined : game.partyState[hero.id];
-  const techniques = Object.values(game.generatedDefinitions.techniques) as TechniqueDefinition[];
+  const developmentUnlocks = Object.values(
+    game.generatedDefinitions.techniques,
+  ) as DevelopmentUnlock[];
 
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={closeDrawer}>
@@ -55,9 +52,24 @@ export function ManagementDrawer() {
             <h3>
               {hero.name} — {hero.callingName}
             </h3>
-            <p>
-              {hero.temperament} {hero.drive}
-            </p>
+            <section className="character-story" aria-label={`${hero.name} story`}>
+              <p>{hero.story.portrait}</p>
+              <blockquote>&ldquo;{hero.story.interiorVoice}&rdquo;</blockquote>
+              <dl className="story-motives">
+                <div>
+                  <dt>Wants</dt>
+                  <dd>{hero.drive}</dd>
+                </div>
+                <div>
+                  <dt>Fears</dt>
+                  <dd>{hero.story.fear}</dd>
+                </div>
+                <div>
+                  <dt>Contradiction</dt>
+                  <dd>{hero.contradiction}</dd>
+                </div>
+              </dl>
+            </section>
             <dl className="detail-list">
               <div>
                 <dt>Level / XP</dt>
@@ -72,18 +84,6 @@ export function ManagementDrawer() {
               <div>
                 <dt>Training points</dt>
                 <dd>{member.trainingPoints}</dd>
-              </div>
-              <div>
-                <dt>Signature</dt>
-                <dd>{hero.signature}</dd>
-              </div>
-              <div>
-                <dt>Reaction</dt>
-                <dd>{hero.reaction}</dd>
-              </div>
-              <div>
-                <dt>Limitation</dt>
-                <dd>{hero.limitation}</dd>
               </div>
               <div>
                 <dt>Awakening</dt>
@@ -106,37 +106,54 @@ export function ManagementDrawer() {
                 </dd>
               </div>
             </dl>
+            <h3>Calling in the story</h3>
+            <div className="calling-story-grid">
+              {[
+                ['Signature', hero.story.signature, hero.signature],
+                ['Reaction', hero.story.reaction, hero.reaction],
+                ['Limitation', hero.story.limitation, hero.limitation],
+              ].map(([label, story, mechanic]) => (
+                <article className="calling-story-card" key={label}>
+                  <strong>{label}</strong>
+                  <p>{story}</p>
+                  <small>{mechanic}</small>
+                </article>
+              ))}
+            </div>
             <h3>Equipped techniques</h3>
             {hero.techniques.map((technique) => (
-              <article className="drawer-item" key={technique.id}>
+              <article className="drawer-item technique-story-card" key={technique.id}>
                 <div>
                   <strong>{technique.name}</strong>
-                  <p>{technique.description}</p>
-                  <small>
-                    Cost {technique.resourceCost} · Cooldown {technique.cooldownRounds} rounds ·{' '}
-                    {technique.condition}
-                  </small>
+                  <p>{technique.storyDescription}</p>
+                  <div className="technique-mechanics" aria-label={`${technique.name} rules`}>
+                    <strong>{technique.mechanicLabel}</strong>
+                    <span>Cost {technique.resourceCost}</span>
+                    <span>Cooldown {technique.cooldownRounds}</span>
+                    <span>{technique.condition}</span>
+                  </div>
                 </div>
               </article>
             ))}
-            <h3>Technique development</h3>
-            {techniques
-              .filter((technique) => technique.id.startsWith(hero.callingId))
-              .map((technique) => {
-                const learned = member.learnedTechniqueIds.includes(technique.id);
+            <h3>Calling development</h3>
+            {developmentUnlocks
+              .filter((unlock) => unlock.id.startsWith(hero.callingId))
+              .map((unlock) => {
+                const learned = member.learnedTechniqueIds.includes(unlock.id);
                 return (
-                  <article className="drawer-item" key={technique.id}>
+                  <article className="drawer-item development-unlock" key={unlock.id}>
                     <div>
-                      <strong>{technique.name}</strong>
-                      <p>{technique.description}</p>
+                      <strong>{unlock.name}</strong>
+                      <p>{unlock.storyDescription}</p>
+                      <small className="unlock-condition">{unlock.unlockCondition}</small>
                     </div>
                     <button
                       className="button"
                       type="button"
                       disabled={learned || member.trainingPoints < 1}
-                      onClick={() => learnTechnique(hero.id, technique.id)}
+                      onClick={() => learnTechnique(hero.id, unlock.id)}
                     >
-                      {learned ? 'Learned' : 'Learn · 1 point'}
+                      {learned ? 'Unlocked' : 'Unlock · 1 point'}
                     </button>
                   </article>
                 );
@@ -314,7 +331,7 @@ export function ManagementDrawer() {
                     characters: game.generatedDefinitions.characters.length,
                     enemies: Object.keys(game.generatedDefinitions.enemies).length,
                     items: Object.keys(game.generatedDefinitions.items).length,
-                    techniques: Object.keys(game.generatedDefinitions.techniques).length,
+                    developmentUnlocks: Object.keys(game.generatedDefinitions.techniques).length,
                   },
                 },
                 null,

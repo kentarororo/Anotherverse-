@@ -21,7 +21,10 @@ export interface StorageLike {
 }
 
 export class LocalStorageSaveRepository implements SaveRepository {
-  public constructor(private readonly storage: StorageLike) {}
+  public constructor(
+    private readonly storage: StorageLike,
+    private readonly expectedContentManifestHash: string,
+  ) {}
 
   public load(): SaveLoadResult {
     const serialised = this.storage.getItem(SAVE_KEY);
@@ -42,6 +45,17 @@ export class LocalStorageSaveRepository implements SaveRepository {
     const result = SaveEnvelopeSchema.safeParse(candidate);
     if (!result.success) {
       return { status: 'corrupt', reason: result.error.issues[0]?.message ?? 'Invalid save.' };
+    }
+
+    const foundContentManifestHash = result.data.state.contentManifestHash;
+    if (foundContentManifestHash !== this.expectedContentManifestHash) {
+      return {
+        status: 'incompatible',
+        foundVersion: version,
+        foundContentManifestHash,
+        reason:
+          'This autosave was created with different story or gameplay content and cannot be safely continued in this build.',
+      };
     }
 
     return { status: 'ok', state: result.data.state };

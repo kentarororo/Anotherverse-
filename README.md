@@ -1,8 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **Milestone 4: First Playable
-Slice**.
+The project is a clean-room implementation and currently contains **v0.6: Authored Worlds**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -10,8 +9,8 @@ Slice**.
 
 - A clean title screen with New Campaign, Continue, accessible display settings, version, and an
   advanced seed input.
-- A deterministic campaign generator with four world rule packs and coherent seeded Campaign
-  Bibles.
+- A deterministic campaign generator with four whole world packs, nine whole character/Calling
+  kits, and coherent seeded Campaign Bibles.
 - A whole-campaign creation and regeneration screen with three complete generated hero dossiers.
 - Generated vanguard, striker, and support Callings with executable signatures, limitations,
   reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
@@ -50,8 +49,8 @@ Slice**.
   combat/aftermath reports, content manifest, and save envelopes.
 - One LocalStorage autosave behind a replaceable `SaveRepository` interface, including explicit
   corrupt and incompatible-save results.
-- Save schema 8 deliberately rejects schema-7 campaigns because their relationship provenance was
-  recorded before genuine two-person relationship events were enforced.
+- Save schema 9 deliberately rejects older campaigns whose generated characters predate the
+  story/mechanic split and validated authored-world content hash.
 - A corpus renderer contract that can later be joined by an optional LLM renderer without changing
   authoritative mechanics.
 
@@ -95,6 +94,8 @@ The final human quality gate is documented in [`PLAYTEST.md`](./PLAYTEST.md).
 The fixed 100-paragraph read-aloud harness is available at `/?review=corpus` without adding
 anything to the normal title screen.
 The requirement-by-requirement evidence ledger is in [`ACCEPTANCE.md`](./ACCEPTANCE.md).
+The single editable story source, authoring worksheet, and validation rules are documented in
+[`STORY_AUTHORING.md`](./STORY_AUTHORING.md).
 The asset-ready pixel-art production contract, stable ID mapping, first generation batch, and
 clean-room prompt templates are in [`ART_PIPELINE.md`](./ART_PIPELINE.md).
 

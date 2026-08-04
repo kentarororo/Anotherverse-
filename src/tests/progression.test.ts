@@ -79,7 +79,7 @@ describe('progression and management', () => {
     expect(equipped.partyState[hero.id]!.equipment[item.slot]).toBe(itemId);
   });
 
-  it('spends a training point to learn one Calling technique', () => {
+  it('models Calling mastery as a development unlock rather than a combat technique', () => {
     const initial = start('learning-seed');
     const hero = initial.generatedDefinitions.characters[0]!;
     const member = initial.partyState[hero.id]!;
@@ -88,6 +88,17 @@ describe('progression and management', () => {
       partyState: { ...initial.partyState, [hero.id]: { ...member, trainingPoints: 1 } },
     });
     const techniqueId = `${hero.callingId}-awakening`;
+    const unlock = initial.generatedDefinitions.techniques[techniqueId];
+    expect(unlock).toEqual(
+      expect.objectContaining({
+        id: techniqueId,
+        name: `${hero.callingName} Mastery`,
+        unlockCondition: expect.stringContaining(hero.awakeningCondition),
+      }),
+    );
+    expect(unlock).not.toHaveProperty('resourceCost');
+    expect(unlock).not.toHaveProperty('cooldownRounds');
+    expect(unlock).not.toHaveProperty('condition');
     const learned = applyGameCommand(eligible, {
       type: 'LEARN_TECHNIQUE',
       characterId: hero.id,

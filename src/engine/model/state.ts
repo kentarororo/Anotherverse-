@@ -8,14 +8,15 @@ import { CombatantDefinitionSchema, EncounterStateSchema, PartyMemberStateSchema
 import { DirectorCandidateDebugSchema, ScenarioBlueprintSchema } from './scenario';
 import {
   BestiaryEntrySchema,
+  DevelopmentUnlockSchema,
   EquipmentDefinitionSchema,
   RelationshipStateSchema,
 } from './progression';
 
-// Schema 8 rejects saves created before relationship facts were restricted to genuine two-person
-// rival/social decisions. Replaying that provenance from a schema-7 snapshot is not trustworthy,
-// so earlier saves are intentionally incompatible rather than silently migrated.
-export const GAME_SCHEMA_VERSION = 8 as const;
+// Schema 9 rejects saves created before authored character stories, selected-world scene
+// vocabulary, and typed Calling-development unlocks entered canonical state. Older snapshots
+// cannot be reconstructed faithfully, so they are intentionally incompatible.
+export const GAME_SCHEMA_VERSION = 9 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),
@@ -34,7 +35,7 @@ export const GeneratedDefinitionsSchema = z.object({
   combatants: z.record(z.string(), CombatantDefinitionSchema),
   enemies: z.record(z.string(), CombatantDefinitionSchema),
   items: z.record(z.string(), EquipmentDefinitionSchema),
-  techniques: z.record(z.string(), z.unknown()),
+  techniques: z.record(z.string(), DevelopmentUnlockSchema),
 });
 
 export const CanonicalGameStateSchema = z.object({

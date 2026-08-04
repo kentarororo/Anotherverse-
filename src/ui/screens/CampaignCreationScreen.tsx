@@ -23,7 +23,12 @@ export function CampaignCreationScreen() {
 
       <section className="campaign-premise" aria-labelledby="premise-title">
         <h2 id="premise-title">First licence</h2>
-        <p>{draft.premise}</p>
+        <div className="campaign-storybook">
+          <p>{draft.premise}</p>
+          <p className="campaign-question">
+            <strong>The question at the heart of this campaign:</strong> {draft.campaignQuestion}
+          </p>
+        </div>
       </section>
 
       <section className="dossier-grid" aria-label="Generated squad dossiers">
@@ -36,27 +41,43 @@ export function CampaignCreationScreen() {
               </div>
               <strong>{hero.callingName}</strong>
             </div>
-            <p className="dossier-origin">{hero.origin}</p>
+            <section className="dossier-story" aria-label={`${hero.name} story`}>
+              <p>{hero.story.portrait}</p>
+              <blockquote>&ldquo;{hero.story.interiorVoice}&rdquo;</blockquote>
+            </section>
             <dl>
               <div>
+                <dt>Wants</dt>
+                <dd>{hero.drive}</dd>
+              </div>
+              <div>
+                <dt>Fears</dt>
+                <dd>{hero.story.fear}</dd>
+              </div>
+              <div>
                 <dt>Signature</dt>
-                <dd>{hero.signature}</dd>
+                <dd>
+                  <p>{hero.story.signature}</p>
+                  <small>{hero.signature}</small>
+                </dd>
               </div>
               <div>
                 <dt>Reaction</dt>
-                <dd>{hero.reaction}</dd>
+                <dd>
+                  <p>{hero.story.reaction}</p>
+                  <small>{hero.reaction}</small>
+                </dd>
               </div>
               <div>
                 <dt>Limitation</dt>
-                <dd>{hero.limitation}</dd>
+                <dd>
+                  <p>{hero.story.limitation}</p>
+                  <small>{hero.limitation}</small>
+                </dd>
               </div>
               <div>
                 <dt>Techniques</dt>
                 <dd>{hero.techniques.map((technique) => technique.name).join(' · ')}</dd>
-              </div>
-              <div>
-                <dt>Drive</dt>
-                <dd>{hero.drive}</dd>
               </div>
               <div>
                 <dt>Personal hook</dt>
@@ -67,6 +88,21 @@ export function CampaignCreationScreen() {
                 <dd>{hero.awakeningCondition}</dd>
               </div>
             </dl>
+            <section className="dossier-techniques" aria-label={`${hero.name} technique stories`}>
+              <h3>Techniques in action</h3>
+              {hero.techniques.map((technique) => (
+                <article className="technique-story-card" key={technique.id}>
+                  <strong>{technique.name}</strong>
+                  <p>{technique.storyDescription}</p>
+                  <div className="technique-mechanics" aria-label={`${technique.name} rules`}>
+                    <strong>{technique.mechanicLabel}</strong>
+                    <span>Cost {technique.resourceCost}</span>
+                    <span>Cooldown {technique.cooldownRounds}</span>
+                    <span>{technique.condition}</span>
+                  </div>
+                </article>
+              ))}
+            </section>
           </article>
         ))}
       </section>

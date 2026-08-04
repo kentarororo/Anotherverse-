@@ -351,6 +351,21 @@ h2 {
   line-height: 1.65;
 }
 
+.campaign-storybook {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.campaign-storybook .campaign-question {
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line-soft);
+  color: #d6dfea;
+}
+
+.campaign-question strong {
+  color: var(--accent);
+}
+
 .dossier-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -408,6 +423,34 @@ h2 {
   line-height: 1.5;
 }
 
+.dossier-story,
+.character-story {
+  margin: 0.85rem 0;
+  padding: 0.85rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(111, 192, 255, 0.035);
+}
+
+.dossier-story > p,
+.character-story > p {
+  margin: 0;
+  color: #c8d0db;
+  font-size: 0.73rem;
+  line-height: 1.65;
+}
+
+.dossier-story blockquote,
+.character-story blockquote {
+  margin: 0.75rem 0 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--accent);
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
 .dossier dl {
   margin: 0;
 }
@@ -428,6 +471,65 @@ h2 {
   color: #c8d0db;
   font-size: 0.67rem;
   line-height: 1.4;
+}
+
+.dossier dd p {
+  margin: 0 0 0.3rem;
+}
+
+.dossier dd small,
+.calling-story-card small {
+  display: block;
+  color: var(--accent);
+  line-height: 1.45;
+}
+
+.dossier-techniques {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.dossier-techniques h3 {
+  margin: 0;
+  font-size: 0.76rem;
+}
+
+.technique-story-card {
+  padding: 0.75rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: var(--panel-raised);
+}
+
+.technique-story-card > p,
+.technique-story-card > div > p {
+  margin: 0.3rem 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
+.technique-mechanics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-top: 0.55rem;
+  font-size: 0.57rem;
+}
+
+.technique-mechanics strong,
+.technique-mechanics span {
+  padding: 0.24rem 0.38rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(5, 8, 13, 0.6);
+}
+
+.technique-mechanics strong {
+  flex-basis: 100%;
+  color: var(--accent);
 }
 
 .creation-actions {
@@ -1634,6 +1736,51 @@ select {
   font-size: 0.7rem;
   line-height: 1.45;
 }
+
+.story-motives {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.85rem 0 0;
+}
+
+.story-motives div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 0.6rem;
+}
+
+.story-motives dt {
+  color: var(--accent);
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.story-motives dd {
+  margin: 0;
+  color: #b8c1ce;
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.calling-story-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.calling-story-card {
+  padding: 0.75rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: var(--panel-raised);
+}
+
+.calling-story-card p {
+  margin: 0.3rem 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
 .drawer-item,
 .inventory-item {
   display: flex;
@@ -1654,6 +1801,14 @@ select {
   margin: 0.25rem 0 0;
   color: var(--muted);
   font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.unlock-condition {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--accent);
+  font-size: 0.6rem;
   line-height: 1.45;
 }
 .inventory-item {

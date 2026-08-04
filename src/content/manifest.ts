@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VALIDATED_STORY_AUTHORING } from '../narrative/authoring/validated-story';
 
 export const ContentPackReferenceSchema = z.object({
   id: z.string().min(1),
@@ -17,6 +18,7 @@ export const ContentManifestSchema = z.object({
     techniques: ContentPackReferenceSchema,
     equipment: ContentPackReferenceSchema,
     combatLanguage: ContentPackReferenceSchema,
+    story: ContentPackReferenceSchema,
   }),
 });
 
@@ -69,6 +71,11 @@ export const contentManifest = ContentManifestSchema.parse({
         (eventType) => [1, 2, 3, 4].map((index) => `${eventType}-frame-${index}`),
       ),
     ),
+    story: pack('story-authoring-v1', [
+      ...VALIDATED_STORY_AUTHORING.worlds.map((world) => world.id),
+      ...VALIDATED_STORY_AUTHORING.characterKits.map((kit) => kit.id),
+      ...VALIDATED_STORY_AUTHORING.sceneModules.map((scene) => scene.id),
+    ]),
   },
 });
 
@@ -81,4 +88,6 @@ function hashManifest(serialisedManifest: string): string {
   return `fnv1a-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }
 
-export const CONTENT_MANIFEST_HASH = hashManifest(JSON.stringify(contentManifest));
+export const CONTENT_MANIFEST_HASH = hashManifest(
+  JSON.stringify({ manifest: contentManifest, story: VALIDATED_STORY_AUTHORING }),
+);

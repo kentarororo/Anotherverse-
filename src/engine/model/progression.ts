@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+export const DevelopmentUnlockSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  storyDescription: z.string().min(40),
+  unlockCondition: z.string().min(1),
+});
+
+export type DevelopmentUnlock = z.infer<typeof DevelopmentUnlockSchema>;
+
 export const EquipmentDefinitionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),

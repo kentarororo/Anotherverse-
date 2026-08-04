@@ -223,7 +223,9 @@ export function selectNextScenario(
     throw new Error(`No ${category} scenario has the required live semantic facts.`);
 
   const encounter =
-    category === 'operation' ? encounterForOperationTemplate(selected.module.id) : null;
+    category === 'operation'
+      ? { ...encounterForOperationTemplate(selected.module.id), title: selected.module.title }
+      : null;
   const facts = selected.boundFacts;
   const premiseFactIds = facts.map((binding) => binding.fact.id);
   const scenePlan: ScenarioScenePlan = {

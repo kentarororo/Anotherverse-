@@ -1,5 +1,9 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
+import { VALIDATED_STORY_AUTHORING } from './src/narrative/authoring/validated-story.ts';
+
+// Loading the Vite config is the build-time gate for the user-editable story source.
+void VALIDATED_STORY_AUTHORING;
 
 export default defineConfig({
   base: '/Anotherverse-/',

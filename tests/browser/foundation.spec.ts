@@ -8,6 +8,39 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
+test('renders authored campaign and character stories with exact rules kept visible', async ({
+  page,
+}) => {
+  await page.getByText('Advanced').click();
+  await page.getByLabel('Campaign seed').fill('authored-world-browser-seed');
+  await page.getByRole('button', { name: 'New Campaign' }).click();
+
+  await expect(page.getByText('The question at the heart of this campaign:')).toBeVisible();
+  await expect(page.locator('.dossier-story')).toHaveCount(3);
+  await expect(page.locator('.dossier-techniques')).toHaveCount(3);
+  await expect(page.locator('.technique-mechanics')).toHaveCount(6);
+  await expect(page.locator('.technique-mechanics').first()).toContainText('Cost');
+  await expect(page.locator('.technique-mechanics').first()).toContainText('Cooldown');
+
+  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page
+    .getByRole('button', { name: /Details · Level/ })
+    .first()
+    .click();
+  const drawer = page.getByRole('dialog', { name: 'character details' });
+  await expect(drawer.getByRole('heading', { name: 'Calling in the story' })).toBeVisible();
+  await expect(drawer.getByText('Wants')).toBeVisible();
+  await expect(drawer.getByText('Fears')).toBeVisible();
+  await expect(drawer.locator('.technique-mechanics').first()).toContainText('Cost');
+  await expect(drawer.locator('.technique-mechanics').first()).toContainText('Cooldown');
+  const development = drawer.locator('.development-unlock');
+  await expect(development).toHaveCount(1);
+  await expect(development).toContainText('Progress toward:');
+  await expect(development).not.toContainText('Cost');
+  await expect(development).not.toContainText('Cooldown');
+  await expect(development).not.toContainText('undefined');
+});
+
 test('offers explicit corrupted and incompatible-save recovery', async ({ page }) => {
   await page.evaluate(() =>
     localStorage.setItem('anotherverse.prototype.autosave', '{not-valid-json'),
@@ -25,6 +58,24 @@ test('offers explicit corrupted and incompatible-save recovery', async ({ page }
   );
   await page.reload();
   await expect(page.getByRole('alert')).toContainText('Save schema 7 cannot be safely migrated');
+  await page.getByRole('button', { name: 'Reset autosave' }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('explains when a same-schema autosave belongs to different content', async ({ page }) => {
+  await page.getByText('Advanced').click();
+  await page.getByLabel('Campaign seed').fill('stale-content-browser-seed');
+  await page.getByRole('button', { name: 'New Campaign' }).click();
+  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.evaluate(() => {
+    const key = 'anotherverse.prototype.autosave';
+    const envelope = JSON.parse(localStorage.getItem(key)!);
+    envelope.state.contentManifestHash = 'fnv1a-stale-content';
+    localStorage.setItem(key, JSON.stringify(envelope));
+  });
+  await page.reload();
+
+  await expect(page.getByRole('alert')).toContainText('different story or gameplay content');
   await page.getByRole('button', { name: 'Reset autosave' }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
@@ -166,7 +217,9 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await page.getByRole('button', { name: 'Start Campaign' }).click();
 
   await expect(page.getByRole('heading', { name: 'The Trio' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Glassline Breach' })).toBeVisible();
+  const authoredOperationTitle = page.locator('.operation-content h2');
+  await expect(authoredOperationTitle).toBeVisible();
+  await expect(authoredOperationTitle).not.toHaveText('');
   await expect(page.getByLabel('Why this situation is happening')).toBeVisible();
   await expect(page.getByLabel('Why this situation is happening').locator('span')).toHaveCount(2);
   await expect(page.getByLabel(`${strikerName} position`)).toHaveValue('centre');

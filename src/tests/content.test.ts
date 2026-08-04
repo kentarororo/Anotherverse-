@@ -10,7 +10,7 @@ describe('production content manifest', () => {
 
   it('enumerates Milestone 4 content through the production manifest', () => {
     const packs = Object.values(contentManifest.packs);
-    expect(packs).toHaveLength(7);
+    expect(packs).toHaveLength(8);
     expect(contentManifest.milestone).toBe('M4');
     expect(contentManifest.packs.characters.moduleIds).toContain('iron-echo');
     expect(contentManifest.packs.characters.moduleIds).toContain('spirit-switchboard');
@@ -20,6 +20,9 @@ describe('production content manifest', () => {
     expect(contentManifest.packs.equipment.moduleIds).toEqual(['houndglass-edge', 'weaver-ward']);
     expect(contentManifest.packs.combatLanguage.moduleIds).toHaveLength(28);
     expect(contentManifest.packs.combatLanguage.moduleIds).toContain('resource-frame-4');
+    expect(contentManifest.packs.story.moduleIds).toHaveLength(33);
+    expect(contentManifest.packs.story.moduleIds).toContain('vanta-cross');
+    expect(contentManifest.packs.story.moduleIds).toContain('social-4');
     expect(
       temporaryEnemies.every(
         (enemy) =>

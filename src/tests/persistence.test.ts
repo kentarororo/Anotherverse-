@@ -29,7 +29,7 @@ describe('save repository boundary', () => {
 
   beforeEach(() => {
     storage = new MemoryStorage();
-    repository = new LocalStorageSaveRepository(storage);
+    repository = new LocalStorageSaveRepository(storage, CONTENT_MANIFEST_HASH);
   });
 
   it('round-trips canonical state without changing it', () => {
@@ -81,6 +81,36 @@ describe('save repository boundary', () => {
       JSON.stringify({ schemaVersion: 7, state: {} }),
     );
     expect(repository.load()).toEqual({ status: 'incompatible', foundVersion: 7 });
+  });
+
+  it('rejects a same-schema save built from different content', () => {
+    const state = applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
+      type: 'START_CAMPAIGN',
+      seed: 'content-hash-save-seed',
+      selectedDraftIndex: 0,
+    });
+    repository.save(state);
+    const envelope = JSON.parse(storage.getItem('anotherverse.prototype.autosave')!) as {
+      state: { contentManifestHash: string };
+    };
+    envelope.state.contentManifestHash = 'fnv1a-stale-content';
+    storage.setItem('anotherverse.prototype.autosave', JSON.stringify(envelope));
+
+    expect(repository.load()).toEqual({
+      status: 'incompatible',
+      foundVersion: 9,
+      foundContentManifestHash: 'fnv1a-stale-content',
+      reason:
+        'This autosave was created with different story or gameplay content and cannot be safely continued in this build.',
+    });
+  });
+
+  it('reports a malformed same-schema state as corrupt before checking its content hash', () => {
+    storage.setItem(
+      'anotherverse.prototype.autosave',
+      JSON.stringify({ schemaVersion: 9, savedAtCommandIndex: 0, state: {} }),
+    );
+    expect(repository.load()).toEqual(expect.objectContaining({ status: 'corrupt' }));
   });
 
   it('can explicitly clear the slot', () => {

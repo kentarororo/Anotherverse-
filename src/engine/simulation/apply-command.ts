@@ -156,7 +156,10 @@ export function applyGameCommand(
           currentScenario: selected.scenario,
           currentEncounter:
             selected.scenario.category === 'operation'
-              ? encounterForOperationTemplate(selected.scenario.templateId)
+              ? {
+                  ...encounterForOperationTemplate(selected.scenario.templateId),
+                  title: selected.scenario.title,
+                }
               : null,
           directorDebug: selected.debug,
           pendingPlan: {
@@ -462,7 +465,10 @@ export function applyGameCommand(
           currentScenario: next.scenario,
           currentEncounter:
             next.scenario.category === 'operation'
-              ? encounterForOperationTemplate(next.scenario.templateId)
+              ? {
+                  ...encounterForOperationTemplate(next.scenario.templateId),
+                  title: next.scenario.title,
+                }
               : null,
           directorDebug: next.debug,
           pendingPlan: {

@@ -10,6 +10,15 @@ export const CoreStatsSchema = z.object({
 
 export type CoreStats = z.infer<typeof CoreStatsSchema>;
 
+export const CharacterStorySchema = z.object({
+  portrait: z.string().min(80),
+  fear: z.string().min(12),
+  interiorVoice: z.string().min(12),
+  signature: z.string().min(24),
+  reaction: z.string().min(24),
+  limitation: z.string().min(24),
+});
+
 export const CharacterBlueprintSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -27,6 +36,7 @@ export const CharacterBlueprintSchema = z.object({
   drive: z.string().min(1),
   contradiction: z.string().min(1),
   temperament: z.string().min(1),
+  story: CharacterStorySchema,
   stats: CoreStatsSchema,
   signatureRuleId: z.string().min(1),
   signature: z.string().min(1),
@@ -40,7 +50,8 @@ export const CharacterBlueprintSchema = z.object({
       z.object({
         id: z.string().min(1),
         name: z.string().min(1),
-        description: z.string().min(1),
+        storyDescription: z.string().min(40),
+        mechanicLabel: z.string().min(5),
         resourceCost: z.number().int().nonnegative(),
         cooldownRounds: z.number().int().nonnegative(),
         condition: z.string().min(1),

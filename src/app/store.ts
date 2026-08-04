@@ -9,7 +9,10 @@ import type { Position } from '../engine/model/commands';
 import { generateCampaignDraft, type CampaignDraft } from '../engine/generation/campaign';
 import { createCampaignSeed } from './seed';
 
-const saveRepository = new LocalStorageSaveRepository(globalThis.localStorage);
+const saveRepository = new LocalStorageSaveRepository(
+  globalThis.localStorage,
+  CONTENT_MANIFEST_HASH,
+);
 
 interface AppStore {
   game: CanonicalGameState;

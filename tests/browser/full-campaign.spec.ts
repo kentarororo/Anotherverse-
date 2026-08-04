@@ -49,9 +49,9 @@ test('plays twenty consecutive turns with progression, equipment, and a mid-run 
       const detailButtons = page.locator('.hero-detail-button');
       for (let heroIndex = 0; heroIndex < 3; heroIndex += 1) {
         await detailButtons.nth(heroIndex).click();
-        const learn = page.getByRole('dialog').getByRole('button', { name: /Learn/ });
-        await expect(learn).toBeEnabled();
-        await learn.click();
+        const unlock = page.getByRole('dialog').getByRole('button', { name: /Unlock/ });
+        await expect(unlock).toBeEnabled();
+        await unlock.click();
         await page.getByRole('button', { name: 'Close' }).click();
       }
     }

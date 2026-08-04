@@ -1,4 +1,6 @@
 import type { ScenarioCategory } from '../../engine/model/scenario';
+import { VALIDATED_STORY_AUTHORING } from '../authoring/validated-story';
+import type { ValidatedBeat } from '../realiser/story-authoring';
 
 export type SceneFactRole =
   | 'city'
@@ -15,30 +17,12 @@ export interface ScenarioModule {
   id: string;
   category: ScenarioCategory;
   title: string;
-  initialFactRoles?: readonly [SceneFactRole, SceneFactRole];
+  initialFactRoles?: readonly [SceneFactRole, SceneFactRole] | undefined;
   continuationFactRoles: readonly [SceneFactRole, SceneFactRole];
   choiceSetId: string;
-  sceneKind:
-    | 'breach-return'
-    | 'junction-pressure'
-    | 'split-route'
-    | 'observed-closure'
-    | 'sealed-record'
-    | 'old-promise'
-    | 'missing-witness'
-    | 'calling-response'
-    | 'buried-signal'
-    | 'living-relic'
-    | 'residual-trace'
-    | 'hidden-archive'
-    | 'illegal-technique-claim'
-    | 'edited-record'
-    | 'public-challenge'
-    | 'closure-credit'
-    | 'district-testimony'
-    | 'licence-hearing'
-    | 'called-favour'
-    | 'report-ownership';
+  sceneKind: string;
+  initial?: ValidatedBeat | undefined;
+  continuation?: ValidatedBeat;
 }
 
 export interface ScenarioChoiceModule {
@@ -47,196 +31,31 @@ export interface ScenarioChoiceModule {
   consequence: string;
 }
 
+const authoredModules = VALIDATED_STORY_AUTHORING.sceneModules;
+
+/** Story metadata is derived from the single user-editable source in content/story/authoring.ts. */
 export const SCENARIO_MODULES: Readonly<Record<ScenarioCategory, readonly ScenarioModule[]>> = {
-  operation: [
-    {
-      id: 'operation-1',
-      category: 'operation',
-      title: 'Glassline Breach',
-      sceneKind: 'breach-return',
-      initialFactRoles: ['faction', 'city'],
-      continuationFactRoles: ['prior-operation', 'city'],
-      choiceSetId: 'operation-1',
-    },
-    {
-      id: 'operation-2',
-      category: 'operation',
-      title: 'Pressure at East Junction',
-      sceneKind: 'junction-pressure',
-      initialFactRoles: ['city', 'faction'],
-      continuationFactRoles: ['prior-social', 'city'],
-      choiceSetId: 'operation-2',
-    },
-    {
-      id: 'operation-3',
-      category: 'operation',
-      title: 'The Split Concourse',
-      sceneKind: 'split-route',
-      initialFactRoles: ['city', 'faction'],
-      continuationFactRoles: ['prior-operation', 'prior-decision'],
-      choiceSetId: 'operation-3',
-    },
-    {
-      id: 'operation-4',
-      category: 'operation',
-      title: 'Closure Under Watch',
-      sceneKind: 'observed-closure',
-      initialFactRoles: ['faction', 'city'],
-      continuationFactRoles: ['prior-social', 'faction'],
-      choiceSetId: 'operation-4',
-    },
-  ],
-  personal: [
-    {
-      id: 'personal-1',
-      category: 'personal',
-      title: 'A Record Left Sealed',
-      sceneKind: 'sealed-record',
-      continuationFactRoles: ['origin', 'prior-operation'],
-      choiceSetId: 'personal-1',
-    },
-    {
-      id: 'personal-2',
-      category: 'personal',
-      title: 'Terms of the Old Promise',
-      sceneKind: 'old-promise',
-      continuationFactRoles: ['origin', 'prior-decision'],
-      choiceSetId: 'personal-2',
-    },
-    {
-      id: 'personal-3',
-      category: 'personal',
-      title: 'The Missing Name',
-      sceneKind: 'missing-witness',
-      continuationFactRoles: ['origin', 'prior-operation'],
-      choiceSetId: 'personal-3',
-    },
-    {
-      id: 'personal-4',
-      category: 'personal',
-      title: 'Condition of Awakening',
-      sceneKind: 'calling-response',
-      continuationFactRoles: ['origin', 'prior-operation'],
-      choiceSetId: 'personal-4',
-    },
-  ],
-  discovery: [
-    {
-      id: 'discovery-1',
-      category: 'discovery',
-      title: 'Signal Beneath the Platform',
-      sceneKind: 'buried-signal',
-      continuationFactRoles: ['origin', 'prior-personal'],
-      choiceSetId: 'discovery-1',
-    },
-    {
-      id: 'discovery-2',
-      category: 'discovery',
-      title: 'An Unlicensed Relic',
-      sceneKind: 'living-relic',
-      continuationFactRoles: ['origin', 'prior-personal'],
-      choiceSetId: 'discovery-2',
-    },
-    {
-      id: 'discovery-3',
-      category: 'discovery',
-      title: 'The Second Pressure Trace',
-      sceneKind: 'residual-trace',
-      continuationFactRoles: ['prior-operation', 'origin'],
-      choiceSetId: 'discovery-3',
-    },
-    {
-      id: 'discovery-4',
-      category: 'discovery',
-      title: 'Archive Without a Door',
-      sceneKind: 'hidden-archive',
-      continuationFactRoles: ['origin', 'prior-personal'],
-      choiceSetId: 'discovery-4',
-    },
-  ],
-  rival: [
-    {
-      id: 'rival-1',
-      category: 'rival',
-      title: 'A Squad Files Objection',
-      sceneKind: 'illegal-technique-claim',
-      continuationFactRoles: ['prior-operation', 'prior-discovery'],
-      choiceSetId: 'rival-1',
-    },
-    {
-      id: 'rival-2',
-      category: 'rival',
-      title: 'Proof Before Rank',
-      sceneKind: 'edited-record',
-      continuationFactRoles: ['prior-operation', 'prior-personal'],
-      choiceSetId: 'rival-2',
-    },
-    {
-      id: 'rival-3',
-      category: 'rival',
-      title: 'The Public Challenge',
-      sceneKind: 'public-challenge',
-      continuationFactRoles: ['prior-operation', 'prior-discovery'],
-      choiceSetId: 'rival-3',
-    },
-    {
-      id: 'rival-4',
-      category: 'rival',
-      title: 'Credit for the Closure',
-      sceneKind: 'closure-credit',
-      continuationFactRoles: ['prior-operation', 'prior-decision'],
-      choiceSetId: 'rival-4',
-    },
-  ],
-  social: [
-    {
-      id: 'social-1',
-      category: 'social',
-      title: 'District Testimony',
-      sceneKind: 'district-testimony',
-      continuationFactRoles: ['prior-rival', 'prior-discovery'],
-      choiceSetId: 'social-1',
-    },
-    {
-      id: 'social-2',
-      category: 'social',
-      title: 'The Licence Hearing',
-      sceneKind: 'licence-hearing',
-      continuationFactRoles: ['prior-rival', 'faction'],
-      choiceSetId: 'social-2',
-    },
-    {
-      id: 'social-3',
-      category: 'social',
-      title: 'A Favour Called In',
-      sceneKind: 'called-favour',
-      continuationFactRoles: ['prior-social', 'prior-discovery'],
-      choiceSetId: 'social-3',
-    },
-    {
-      id: 'social-4',
-      category: 'social',
-      title: 'Who Owns the Report',
-      sceneKind: 'report-ownership',
-      continuationFactRoles: ['prior-operation', 'prior-rival'],
-      choiceSetId: 'social-4',
-    },
-  ],
+  operation: authoredModules.filter((module) => module.category === 'operation'),
+  personal: authoredModules.filter((module) => module.category === 'personal'),
+  discovery: authoredModules.filter((module) => module.category === 'discovery'),
+  rival: authoredModules.filter((module) => module.category === 'rival'),
+  social: authoredModules.filter((module) => module.category === 'social'),
 };
 
 export const SCENARIO_CHOICE_MODULES: Readonly<Record<string, readonly ScenarioChoiceModule[]>> = {
   'operation-1': [
     {
       id: 'close-glassline',
-      label: 'Take action at Glassline',
-      consequence: 'The locked formation engages both threats and reopens the evacuation lane.',
+      label: 'Take action at the breach return',
+      consequence: 'The locked formation engages both threats and reopens the escape route.',
     },
   ],
   'operation-2': [
     {
       id: 'secure-east-junction',
-      label: 'Take action at East Junction',
-      consequence: 'The locked plan contests the tram lanes and the compromised signal together.',
+      label: 'Take action in the blackout',
+      consequence:
+        'The locked plan contests both threat lanes and the compromised signal together.',
     },
   ],
   'operation-3': [
