@@ -30,8 +30,8 @@ export const contentManifest = ContentManifestSchema.parse({
   schemaVersion: 1,
   milestone: 'M4',
   packs: {
-    campaign: pack('campaign-mythic-v3', ['fallen-heavens', 'underworld-tide']),
-    characters: pack('characters-mythic-v3', [
+    campaign: pack('campaign-mythic-v4', ['fallen-heavens', 'underworld-tide']),
+    characters: pack('characters-mythic-v4', [
       ...PATH_CLASS_IDS,
       'lyra-vale',
       'doran-vey',
@@ -40,7 +40,7 @@ export const contentManifest = ContentManifestSchema.parse({
       'sena-quill',
       'tarin-sol',
     ]),
-    scenarios: pack('world-quest-arcs-v2', [
+    scenarios: pack('world-quest-arcs-v3', [
       ...Object.values(QUEST_ARCS).flatMap((arc) =>
         arc.chapters.map((chapter) => `${arc.id}-turn-${chapter.turn}`),
       ),
@@ -50,7 +50,7 @@ export const contentManifest = ContentManifestSchema.parse({
         ),
       ),
     ]),
-    enemies: pack('enemies-mythic-v2', [
+    enemies: pack('enemies-mythic-v3', [
       'rift-hound',
       'glass-weaver',
       'storm-jackal',
@@ -70,7 +70,7 @@ export const contentManifest = ContentManifestSchema.parse({
       'restorative-sigil',
       'binding-shot',
     ]),
-    equipment: pack('equipment-mythic-v3', [
+    equipment: pack('equipment-mythic-v4', [
       'houndglass-edge',
       'weaver-ward',
       'stormhook-sabre',
@@ -100,7 +100,7 @@ export const contentManifest = ContentManifestSchema.parse({
         (eventType) => `${eventType}-frame-1`,
       ),
     ),
-    story: pack('story-authoring-mythic-v5', [
+    story: pack('story-authoring-mythic-v6', [
       'mythic-opening-turns-1-3',
       'causal-scene-beats',
       'truthful-choice-effects',

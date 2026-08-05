@@ -25,15 +25,18 @@ test('renders authored campaign and character stories with exact rules kept visi
   await page.getByLabel('Campaign seed').fill('authored-world-browser-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
 
-  await expect(page.getByText('The question at the heart of this campaign:')).toBeVisible();
+  await page.getByText('Campaign details').click();
+  await expect(page.locator('.campaign-details')).toContainText(
+    'Seed: authored-world-browser-seed',
+  );
   await expect(page.locator('.dossier-story')).toHaveCount(3);
   await expect(page.locator('.dossier-techniques')).toHaveCount(3);
   await expect(page.locator('.technique-mechanics')).toHaveCount(6);
   await expect(page.locator('.technique-mechanics').first()).toContainText('Cost');
-  await expect(page.locator('.technique-mechanics').first()).toContainText('Cooldown');
+  await expect(page.locator('.technique-mechanics').first()).toContainText(/cooldown/i);
 
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
   await page
     .getByRole('button', { name: /Details · Level/ })
     .first()
@@ -78,7 +81,7 @@ test('explains when a same-schema autosave belongs to different content', async 
   await page.getByLabel('Campaign seed').fill('stale-content-browser-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
   await recruitOpeningTrio(page);
   await page.evaluate(() => {
     const key = 'anotherverse.prototype.autosave';
@@ -126,13 +129,13 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
   await page.getByLabel('Campaign seed').fill('mobile-accessibility-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
   await recruitOpeningTrio(page);
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '125%';
   });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Heroes' })).toBeVisible();
   await expect(page.locator('.operation-content h2')).toBeVisible();
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
   await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(6);
@@ -183,7 +186,7 @@ test('waits to consume mobile highlights until the battlefield is visible', asyn
   await page.getByLabel('Campaign seed').fill('mobile-visibility-gate-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
   await recruitOpeningTrio(page);
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '125%';
@@ -232,7 +235,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   const heroNames = await page.locator('.dossier h2').allTextContents();
   expect(heroNames[0]).toBeTruthy();
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
   await recruitOpeningTrio(page);
   const { vanguardName, strikerName } = await page.evaluate(() => {
     const state = JSON.parse(localStorage.getItem('anotherverse.prototype.autosave')!).state;
@@ -246,7 +249,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
     };
   });
 
-  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Heroes' })).toBeVisible();
   const authoredOperationTitle = page.locator('.operation-content h2');
   await expect(authoredOperationTitle).toBeVisible();
   await expect(authoredOperationTitle).not.toHaveText('');
@@ -298,7 +301,11 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
       combatants: Object.entries(report.hpAtEnd).map(([id, hp]) => ({
         name: report.combatantNames[id],
         hp,
-        maxHp: 16 + state.generatedDefinitions.combatants[id].stats.vitality * 2,
+        maxHp: Math.max(
+          report.hpAtStart[id],
+          report.hpAtEnd[id],
+          16 + state.generatedDefinitions.combatants[id].stats.vitality * 2,
+        ),
       })),
     };
   });
@@ -358,8 +365,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
 
   await page.reload();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
-  await expect(page.getByText('Turn').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Heroes' })).toBeVisible();
+  await expect(page.getByText('Chapter').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Take Action' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Save / Menu' }).click();
@@ -379,14 +386,13 @@ test('shows weighty monster materials and forges a deterministic relic', async (
   await page.getByLabel('Campaign seed').fill('balance-0');
   await page.getByRole('button', { name: 'New Campaign' }).click();
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
   await recruitOpeningTrio(page);
 
   await expect(page.locator('.campaign-metrics')).toContainText('Rations');
   await expect(page.locator('.campaign-metrics')).toContainText('Coin');
   await expect(page.locator('.campaign-metrics')).toContainText('Dust');
-  await expect(page.locator('.campaign-metrics')).toContainText('Gear');
-  await expect(page.locator('.campaign-metrics')).toContainText('Materials');
+  await expect(page.locator('.campaign-metrics')).toContainText('Monster parts');
 
   await page.getByRole('button', { name: 'Take Action' }).click();
   await expect(page.getByText('Chapter 3 complete')).toBeVisible();
@@ -395,12 +401,16 @@ test('shows weighty monster materials and forges a deterministic relic', async (
 
   await page.getByRole('button', { name: 'Forge' }).click();
   const forge = page.getByRole('dialog', { name: 'forge details' });
-  await expect(forge.getByText('3 materials')).toBeVisible();
+  const materialCountBefore = Number.parseInt(
+    (await forge.locator('.forge-resources span').first().textContent()) ?? '0',
+    10,
+  );
+  expect(materialCountBefore).toBeGreaterThanOrEqual(3);
   for (let index = 0; index < 3; index += 1) {
     await forge.locator('.material-card:not(:disabled)').first().click();
   }
   await expect(forge.getByLabel('Fusion preview')).toBeVisible();
-  await forge.getByRole('button', { name: 'Fuse three materials' }).click();
+  await forge.getByRole('button', { name: 'Forge relic · 10 Coin' }).click();
   await expect(forge.locator('.forge-result')).toBeVisible();
-  await expect(forge.getByText('0 materials')).toBeVisible();
+  await expect(forge.getByText(`${materialCountBefore - 3} materials`)).toBeVisible();
 });

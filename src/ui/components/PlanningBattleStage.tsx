@@ -40,7 +40,7 @@ export function PlanningBattleStage({
       aria-label="Planned battle formation"
       data-art-slot={`arena:${arenaId}`}
     >
-      <span className="arena-art-label">ARENA ART SLOT / {arenaId}</span>
+      {import.meta.env.DEV && <span className="arena-art-label">Arena: {arenaId}</span>}
       <div className="planning-lane planning-lane-heroes" aria-label="Planned hero positions">
         {orderedHeroes.map((hero) => {
           const member = partyState[hero.id];

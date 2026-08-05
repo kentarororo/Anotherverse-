@@ -68,8 +68,8 @@ export const PRIORITY_RULES: readonly PlanningRule<TeamPriorityId>[] = [
   },
   {
     id: 'conserve-power',
-    label: 'Conserve Awakening Power',
-    effect: 'Heroes reserve AP and use basic attacks, which restore 1 AP when resolved.',
+    label: 'Hold for an Opening',
+    effect: 'Keep 1 AP in reserve, but spend it to heal an ally or finish a vulnerable enemy.',
   },
 ];
 

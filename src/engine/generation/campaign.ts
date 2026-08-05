@@ -298,7 +298,15 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     questObjective: quest.acts[0].objective.replace('{faction}', faction.name),
     questActs: quest.acts.map((act) => act.title),
     characters,
-    semanticFingerprint: `${mythic.fingerprint}|seed:${seed}`,
+    // Describe the generated content rather than the input seed. A seed suffix made duplicate
+    // drafts appear semantically unique even when every player-facing choice was identical.
+    semanticFingerprint: [
+      mythic.fingerprint,
+      `realm:${campaignRealmName}`,
+      `faction:${faction.name}`,
+      `origins:${characters.map((hero) => hero.origin).join('|')}`,
+      `relics:${mythic.relics.map((relic) => `${relic.id}:${relic.name}`).join('|')}`,
+    ].join('|'),
     rngStreams,
   };
 }

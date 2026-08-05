@@ -1,18 +1,58 @@
 import type { CoreStats } from '../model/character';
-import type { StanceId, StatusState } from '../model/combat';
+import type { PartyMemberState, StanceId, StatusState } from '../model/combat';
+import type { EquipmentDefinition } from '../model/progression';
 
 export function maximumHp(stats: CoreStats): number {
   return 16 + stats.vitality * 2;
 }
 
-export function scaledEnemyStats(stats: CoreStats, turn: number): CoreStats {
+export function scaledEnemyStats(stats: CoreStats, turn: number, openingDuel = false): CoreStats {
+  if (openingDuel) {
+    return {
+      vitality: Math.max(1, stats.vitality - 5),
+      power: Math.max(1, stats.power - 4),
+      guard: Math.max(0, stats.guard - 3),
+      speed: stats.speed,
+      focus: Math.max(1, stats.focus - 1),
+    };
+  }
   const tier = Math.floor((turn - 1) / 5);
   return {
-    vitality: stats.vitality + 5 + tier,
-    power: stats.power + 4 + tier,
-    guard: stats.guard + 1 + Math.floor(tier / 2),
+    vitality: stats.vitality + 3 + tier * 2,
+    power: stats.power + 2 + tier * 2,
+    guard: stats.guard + 2 + Math.floor(tier / 2),
     speed: stats.speed + tier,
     focus: stats.focus + tier,
+  };
+}
+
+/**
+ * The single authoritative translation from persistent progression into battle stats.
+ * Level is broad growth, Calling rank is specialised mastery, equipment is additive,
+ * and low readiness creates a visible (but recoverable) performance penalty.
+ */
+export function effectiveHeroStats(
+  base: CoreStats,
+  member: PartyMemberState,
+  equipment: EquipmentDefinition[],
+): CoreStats {
+  const levelGrowth = Math.max(0, member.level - 1);
+  const callingGrowth = Math.max(0, member.callingRank - 1);
+  const readinessModifier = member.readiness < 40 ? -2 : member.readiness < 65 ? -1 : 0;
+  const equipmentPower = equipment.reduce((sum, item) => sum + item.powerBonus, 0);
+  const equipmentGuard = equipment.reduce((sum, item) => sum + item.guardBonus, 0);
+  return {
+    vitality: Math.max(1, base.vitality + Math.floor(levelGrowth / 2) + callingGrowth),
+    power: Math.max(
+      1,
+      base.power + levelGrowth + callingGrowth + equipmentPower + readinessModifier,
+    ),
+    guard: Math.max(
+      0,
+      base.guard + levelGrowth + callingGrowth + equipmentGuard + readinessModifier,
+    ),
+    speed: Math.max(1, base.speed + Math.floor(levelGrowth / 2) + readinessModifier),
+    focus: Math.max(1, base.focus + Math.floor(callingGrowth / 2) + readinessModifier),
   };
 }
 

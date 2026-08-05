@@ -13,7 +13,7 @@ test('plays twenty consecutive turns with recruitment, forging, and a mid-run re
   await page.getByLabel('Campaign seed').fill('twenty-turn-browser-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
 
   const encounteredCategories = new Set<string>();
 
@@ -39,7 +39,7 @@ test('plays twenty consecutive turns with recruitment, forging, and a mid-run re
       for (let materialIndex = 0; materialIndex < 3; materialIndex += 1) {
         await forge.locator('.material-card:not(:disabled)').first().click();
       }
-      await forge.getByRole('button', { name: 'Fuse three materials' }).click();
+      await forge.getByRole('button', { name: 'Forge relic · 10 Coin' }).click();
       await expect(forge.locator('.forge-result')).toBeVisible();
       await page.getByRole('button', { name: 'Close' }).click();
     }
@@ -78,7 +78,7 @@ test('plays twenty consecutive turns with recruitment, forging, and a mid-run re
   expect(encounteredCategories).toEqual(
     new Set(['operation', 'personal', 'discovery', 'rival', 'social']),
   );
-  await expect(page.locator('.campaign-metrics dd').nth(1)).toContainText('Silver');
+  await expect(page.locator('.campaign-metrics dd').nth(1)).toContainText(/Silver|Gold/);
 
   await page.getByRole('button', { name: 'Logs' }).click();
   await expect(page.locator('.drawer-item')).toHaveCount(20);

@@ -1,8 +1,10 @@
-import { STORY_AUTHORING } from '../../content/story/index.ts';
+import { LEGACY_MODERN_STORY_AUTHORING } from '../../content/story/index.ts';
 import { validateStoryAuthoring } from '../../engine/model/story-authoring.ts';
 
 /**
- * The only runtime entry point for authored story content. Importing this module validates the
- * editable source before any generator or director can consume it.
+ * Test-only validation entry point for the archived modern-city corpus. Production campaign
+ * generation does not import this module.
  */
-export const VALIDATED_STORY_AUTHORING = validateStoryAuthoring(STORY_AUTHORING);
+export const VALIDATED_LEGACY_MODERN_STORY_AUTHORING = validateStoryAuthoring(
+  LEGACY_MODERN_STORY_AUTHORING,
+);

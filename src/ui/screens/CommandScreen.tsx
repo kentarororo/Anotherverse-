@@ -46,6 +46,7 @@ export function CommandScreen() {
   const commitTurn = useAppStore((state) => state.commitTurn);
   const continueToPlanning = useAppStore((state) => state.continueToPlanning);
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const restParty = useAppStore((state) => state.restParty);
   const forecast = calculateForecast(game);
   const aftermath = game.aftermathReports.at(-1);
   const report = game.battleReports.find((candidate) => candidate.id === aftermath?.battleReportId);
@@ -108,6 +109,10 @@ export function CommandScreen() {
   const selectedChoiceAffordable =
     selectedChoice === undefined || game.supplies + selectedChoice.effects.provisionsDelta >= 0;
   const alternateChoice = scenario?.choices.find((choice) => choice.id !== selectedChoice?.id);
+  const partyNeedsRest = recruitedHeroes.some((hero) => {
+    const member = game.partyState[hero.id];
+    return member !== undefined && (member.hp < member.maxHp || member.readiness < 100);
+  });
 
   return (
     <main className="command-screen">
@@ -117,7 +122,7 @@ export function CommandScreen() {
         </div>
         <dl className="campaign-metrics">
           <div>
-            <dt>Turn</dt>
+            <dt>Chapter</dt>
             <dd>{displayedTurn}</dd>
           </div>
           <div>
@@ -125,10 +130,6 @@ export function CommandScreen() {
             <dd>
               {game.rank} · {game.reputation}
             </dd>
-          </div>
-          <div>
-            <dt>Danger</dt>
-            <dd>{game.threat}</dd>
           </div>
           <div>
             <dt>Rations</dt>
@@ -143,11 +144,7 @@ export function CommandScreen() {
             <dd>{game.relicDust}</dd>
           </div>
           <div>
-            <dt>Gear</dt>
-            <dd>{game.inventoryIds.length}</dd>
-          </div>
-          <div>
-            <dt>Materials</dt>
+            <dt>Monster parts</dt>
             <dd>{materialCount}</dd>
           </div>
           {newRewardCount > 0 && (
@@ -221,8 +218,8 @@ export function CommandScreen() {
         <section className="panel trio-panel" aria-labelledby="trio-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Hunter status</p>
-              <h2 id="trio-title">Your Trio</h2>
+              <p className="eyebrow">Awakened company</p>
+              <h2 id="trio-title">Your Heroes</h2>
             </div>
             <span className="badge">{recruitedHeroes.length} / 3</span>
           </div>
@@ -621,6 +618,16 @@ export function CommandScreen() {
                 </div>
               )}
             </>
+          )}
+          {!showingAftermath && (
+            <button
+              className="button button-quiet camp-button"
+              type="button"
+              disabled={game.supplies < 1 || !partyNeedsRest}
+              onClick={restParty}
+            >
+              Rest company · 1 Ration
+            </button>
           )}
           <button
             className="button button-primary commit-button"

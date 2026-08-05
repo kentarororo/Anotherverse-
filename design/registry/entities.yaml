@@ -1,0 +1,75 @@
+schemaVersion: 1
+authority: ADR-0001
+scope: six-turn-vertical-slice
+
+worlds:
+  - id: fallen-heavens
+    status: canonical
+    tags: [godgrave, fallen-stars, divine-monsters]
+  - id: underworld-tide
+    status: canonical
+    tags: [drowned-road, dead-king, bell-spirits]
+
+heroArchetypes:
+  - id: oathward
+    job: protect
+    playerRoleLabel: hidden-at-selection
+  - id: doomseeker
+    job: damage
+    playerRoleLabel: hidden-at-selection
+  - id: fateweaver
+    job: support
+    playerRoleLabel: hidden-at-selection
+
+stances:
+  - { id: guarded, purpose: survive-and-protect }
+  - { id: aggressive, purpose: burst-and-execute }
+  - { id: tactical, purpose: accuracy-and-setup }
+  - { id: supportive, purpose: heal-and-enable }
+
+positions: [front, centre, rear]
+priorities: [break-threat, focus-weakest, protect-rear, conserve-power]
+priorityLabels:
+  break-threat: Break Greatest Threat
+  focus-weakest: Finish the Weakest
+  protect-rear: Protect the Rear
+  conserve-power: Hold for an Opening
+
+resources:
+  - { id: rations, playerName: Rations, requiredSink: recovery }
+  - { id: coin, playerName: Coin, requiredSink: shop-or-fusion-hint }
+  - { id: relic-dust, playerName: Relic Dust, requiredSink: fusion-or-upgrade }
+  - { id: monster-material, playerName: Monster Material, requiredSink: fusion }
+
+conditionalEntities:
+  - id: danger
+    rule: Show only when numeric thresholds change encounters.
+  - id: renown
+    rule: Show only when a slice unlock consumes its threshold.
+  - id: readiness
+    rule: Show only when it changes technique effectiveness or access.
+
+enemyBehaviours:
+  - front-breaker
+  - rear-hunter
+  - ritual-charger
+  - healer
+  - protector
+  - swarm
+  - executioner
+  - status-controller
+
+facts:
+  - lead-selected
+  - first-companion-introduced
+  - first-companion-recruited
+  - second-companion-introduced
+  - second-companion-recruited
+  - counter-discovered
+  - choice-consequence-pending
+  - choice-consequence-resolved
+  - boss-defeated
+
+legacyQuarantine:
+  terms: [breach, academy, licence, licensing, network, operator, operation, squad-command]
+  rule: Forbidden in canonical player-facing content unless an ADR restores them.

@@ -133,7 +133,9 @@ export function selectNextScenario(
   const faction = state.campaignBible.activeFactions[0];
   if (faction === undefined) throw new Error('A quest chapter requires an active faction.');
   const encounter =
-    chapter.category === 'operation' ? encounterForOperationTemplate(chapter.templateId) : null;
+    chapter.category === 'operation'
+      ? encounterForOperationTemplate(chapter.templateId, worldId)
+      : null;
   const enemies =
     encounter?.enemyIds.map((id) => state.generatedDefinitions.enemies[id]?.name ?? id) ?? [];
   const act = arc.acts[chapter.act - 1]!;

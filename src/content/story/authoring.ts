@@ -1,12 +1,13 @@
 import type { StoryAuthoringSource } from './contract.ts';
 
 /**
- * THE USER-EDITABLE STORY SOURCE
+ * @deprecated Archived modern-city corpus from the pre-mythic prototype.
  *
- * Change prose and story meaning here. Keep IDs and mechanic sentences stable unless you are also
- * changing the corresponding game rule. STORY_AUTHORING.md explains every field and safe edit.
+ * Production campaigns are authored by `mythic-review.ts`, `opening-recruitment.ts`, and
+ * `quest-arcs.ts`. Keep this fixture only while its old schema/realiser tests remain useful; do
+ * not import it into campaign generation or describe it as production content.
  */
-export const STORY_AUTHORING = {
+export const LEGACY_MODERN_STORY_AUTHORING = {
   schemaVersion: 1,
   voice: {
     promise:

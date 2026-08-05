@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe('battle playback presentation mapping', () => {
-  it('plays every action in order at normal autobattler speed', () => {
+  it('selects key actions in order at normal autobattler speed', () => {
     const events = Array.from({ length: 24 }, (_, index) =>
       event({
         index,
@@ -64,13 +64,13 @@ describe('battle playback presentation mapping', () => {
       }),
     );
     const beats = selectBattleBeats(events);
-    expect(BEAT_DURATION_MS).toBe(800);
-    expect(beats).toHaveLength(19);
+    expect(BEAT_DURATION_MS).toBe(650);
+    expect(beats).toHaveLength(18);
     expect(beats.map((beat) => beat.index)).toEqual(
-      events
-        .filter((candidate) => candidate.eventType === 'attack')
-        .map((candidate) => candidate.index),
+      [...beats].sort((left, right) => left.index - right.index).map((beat) => beat.index),
     );
+    expect(beats[0]?.index).toBe(1);
+    expect(beats.at(-1)?.index).toBe(23);
   });
 
   it('reserves hit for real damage and gives non-damage recipients distinct states', () => {

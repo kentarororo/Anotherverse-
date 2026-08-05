@@ -16,116 +16,103 @@ export function CampaignCreationScreen() {
           <p className="eyebrow">A new legend</p>
           <h1>{draft.bible.city.name}</h1>
         </div>
-        <code>{draft.seed}</code>
       </header>
 
-      <section className="campaign-premise" aria-labelledby="premise-title">
-        <h2 id="premise-title">The opening chapter</h2>
+      <section
+        className="campaign-premise campaign-premise-compact"
+        aria-labelledby="premise-title"
+      >
+        <div>
+          <p className="eyebrow">Opening chapter</p>
+          <h2 id="premise-title">{draft.questTitle}</h2>
+        </div>
         <div className="campaign-storybook">
           <p>{draft.premise}</p>
-          <div className="campaign-main-quest">
-            <span>Main quest</span>
-            <h3>{draft.questTitle}</h3>
-            <p>{draft.questObjective}</p>
+          <p className="campaign-question">{draft.questObjective}</p>
+          <details className="campaign-details">
+            <summary>Campaign details</summary>
+            <p>{draft.campaignQuestion}</p>
             <small>{draft.questActs.join(' → ')}</small>
-          </div>
-          <p className="campaign-question">
-            <strong>The question at the heart of this campaign:</strong> {draft.campaignQuestion}
-          </p>
+            <code>Seed: {draft.seed}</code>
+          </details>
         </div>
       </section>
 
       <section className="creation-choice-heading" aria-labelledby="choose-hero-title">
-        <p className="eyebrow">Your first decision</p>
         <h2 id="choose-hero-title">Choose your first hero</h2>
-        <p>Choose the person whose story you want to begin.</p>
+        <p>Their role will reveal itself through play.</p>
       </section>
 
       <section className="dossier-grid" aria-label="Choose one starting hero">
         {draft.characters.map((hero) => (
           <article
-            className={`dossier role-${hero.role}${selectedLeadId === hero.id ? ' dossier-selected' : ''}`}
+            className={`dossier dossier-compact${selectedLeadId === hero.id ? ' dossier-selected' : ''}`}
             key={hero.id}
           >
             <div className="dossier-heading">
               <div>
-                <span>Awakened hunter</span>
+                <span>{hero.backgroundName}</span>
                 <h2>{hero.name}</h2>
               </div>
-              <strong>{hero.callingName}</strong>
+              <strong>
+                Mythic Awakening
+                <br />
+                {hero.callingName}
+              </strong>
             </div>
             <div className="class-path-line">
               <strong>{hero.pathClassName}</strong>
               <span>{hero.pathClassSummary}</span>
-              <small>Mythic Awakening: {hero.callingName}</small>
             </div>
             <section className="dossier-story" aria-label={`${hero.name} story`}>
-              <p>{hero.story.portrait}</p>
+              <p>{hero.formativeEvent}</p>
               <blockquote>&ldquo;{hero.story.interiorVoice}&rdquo;</blockquote>
             </section>
-            <dl>
+            <dl className="hero-choice-stats" aria-label={`${hero.name} starting strengths`}>
               <div>
-                <dt>Background</dt>
-                <dd>
-                  {hero.backgroundName} · {hero.origin}
-                </dd>
+                <dt>Vitality</dt>
+                <dd>{hero.stats.vitality}</dd>
               </div>
               <div>
-                <dt>Defining choice</dt>
-                <dd>{hero.formativeEvent}</dd>
+                <dt>Power</dt>
+                <dd>{hero.stats.power}</dd>
               </div>
               <div>
-                <dt>Wants</dt>
-                <dd>{hero.drive}</dd>
-              </div>
-              <div>
-                <dt>Fatal flaw</dt>
-                <dd>{hero.story.fear}</dd>
-              </div>
-              <div>
-                <dt>Bond</dt>
-                <dd>{hero.bond}</dd>
-              </div>
-              <div>
-                <dt>Signature</dt>
-                <dd>{hero.signature}</dd>
-              </div>
-              <div>
-                <dt>Reaction</dt>
-                <dd>{hero.reaction}</dd>
-              </div>
-              <div>
-                <dt>Limitation</dt>
-                <dd>{hero.limitation}</dd>
-              </div>
-              <div>
-                <dt>Techniques</dt>
-                <dd>{hero.techniques.map((technique) => technique.name).join(' · ')}</dd>
-              </div>
-              <div>
-                <dt>Personal hook</dt>
-                <dd>{hero.personalHooks[0]}</dd>
-              </div>
-              <div>
-                <dt>Awakening</dt>
-                <dd>{hero.awakeningCondition}</dd>
+                <dt>Focus</dt>
+                <dd>{hero.stats.focus}</dd>
               </div>
             </dl>
-            <section className="dossier-techniques" aria-label={`${hero.name} technique stories`}>
+            <section className="dossier-techniques" aria-label={`${hero.name} techniques`}>
               <h3>Techniques</h3>
               {hero.techniques.map((technique) => (
                 <article className="technique-story-card" key={technique.id}>
                   <strong>{technique.name}</strong>
-                  <p>{technique.storyDescription}</p>
+                  <p>{technique.mechanicLabel}</p>
                   <div className="technique-mechanics" aria-label={`${technique.name} rules`}>
-                    <strong>{technique.mechanicLabel}</strong>
                     <span>Cost {technique.resourceCost}</span>
-                    <span>Cooldown {technique.cooldownRounds}</span>
-                    <span>{technique.condition}</span>
+                    <span>{technique.cooldownRounds} round cooldown</span>
                   </div>
                 </article>
               ))}
             </section>
+            <details className="hero-details">
+              <summary>Read more about {hero.name}</summary>
+              <p>{hero.story.portrait}</p>
+              <dl>
+                <div>
+                  <dt>Goal</dt>
+                  <dd>{hero.drive}</dd>
+                </div>
+                <div>
+                  <dt>Flaw</dt>
+                  <dd>{hero.story.fear}</dd>
+                </div>
+                <div>
+                  <dt>Awakening trial</dt>
+                  <dd>{hero.awakeningCondition}</dd>
+                </div>
+              </dl>
+            </details>
             <button
               className={`button hero-choice-button${selectedLeadId === hero.id ? ' button-primary' : ''}`}
               type="button"
@@ -143,7 +130,7 @@ export function CampaignCreationScreen() {
           Back
         </button>
         <button className="button" type="button" onClick={regenerateCampaign}>
-          Regenerate Campaign
+          New legend
         </button>
         <button
           className="button button-primary"
@@ -151,7 +138,7 @@ export function CampaignCreationScreen() {
           onClick={confirmCampaign}
           disabled={selectedLeadId === null}
         >
-          {selectedLeadId === null ? 'Choose a hero first' : 'Start Campaign'}
+          {selectedLeadId === null ? 'Choose a hero first' : 'Begin Chapter One'}
         </button>
       </footer>
     </main>

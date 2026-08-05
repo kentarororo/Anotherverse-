@@ -74,7 +74,7 @@ export function createMythicOpeningScenario(
   const encounter =
     chapter.category === 'operation'
       ? chapterEncounterId === undefined
-        ? encounterForOperationTemplate(chapter.templateId)
+        ? encounterForOperationTemplate(chapter.templateId, worldId)
         : encounterForId(chapterEncounterId)
       : null;
   const enemies =

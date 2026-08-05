@@ -7,6 +7,7 @@ import { drawFromStream, drawInteger } from '../rng/streams';
 import {
   clampChance,
   directDamageLimitationPenalty,
+  effectiveHeroStats,
   effectiveGuard,
   maximumHp,
   mitigateDamage,
@@ -400,20 +401,16 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         const item = id === null ? undefined : state.generatedDefinitions.items[id];
         return item === undefined ? [] : [item];
       });
+      const stats = effectiveHeroStats(baseDefinition.stats, member, equipped);
+      const effectiveMaxHp = maximumHp(stats);
       const definition = {
         ...baseDefinition,
-        stats: {
-          ...baseDefinition.stats,
-          power:
-            baseDefinition.stats.power + equipped.reduce((sum, item) => sum + item.powerBonus, 0),
-          guard:
-            baseDefinition.stats.guard + equipped.reduce((sum, item) => sum + item.guardBonus, 0),
-        },
+        stats,
       };
       return {
         definition,
-        hp: member.hp,
-        maxHp: member.maxHp,
+        hp: Math.min(effectiveMaxHp, member.hp + Math.max(0, effectiveMaxHp - member.maxHp)),
+        maxHp: effectiveMaxHp,
         resource: member.resource,
         statuses: member.statuses.map((status) => ({ ...status })),
         mastered: member.learnedTechniqueIds.some((id) => id.endsWith('-awakening')),
@@ -422,12 +419,13 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       };
     });
   if (heroActors.length === 0) throw new Error('Combat requires at least one recruited hero.');
+  const openingDuel = state.turn === 1 && heroActors.length === 1;
   const enemyActors = state.currentEncounter.enemyIds.map((id) => {
     const baseDefinition = definitions[id];
     if (baseDefinition === undefined) throw new Error(`Missing enemy definition: ${id}`);
     const definition = {
       ...baseDefinition,
-      stats: scaledEnemyStats(baseDefinition.stats, state.turn),
+      stats: scaledEnemyStats(baseDefinition.stats, state.turn, openingDuel),
     };
     return {
       definition,
@@ -693,6 +691,7 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         {
           ...previous,
           hp: endingHp,
+          maxHp: actor.maxHp,
           resource: actor.resource,
           readiness: Math.max(0, previous.readiness - Math.ceil((damageTaken / actor.maxHp) * 25)),
           experience: nextExperience,

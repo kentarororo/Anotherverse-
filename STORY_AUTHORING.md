@@ -11,6 +11,10 @@ Anotherverse uses a bounded offline story engine. It does not shuffle arbitrary 
 - `src/engine/director/scenario-director.ts`: deterministic chapter selection and safe slot binding.
 - `src/engine/simulation/apply-command.ts`: authoritative mechanics and storage of the selected authored result.
 
+`src/content/story/authoring.ts` is an archived modern-city test fixture. It is deliberately named
+`LEGACY_MODERN_STORY_AUTHORING` and must not be imported by the campaign generator, director, or
+production manifest. Passing its schema tests proves only that the archive remains parseable.
+
 The quest arc is the story owner. The renderer may substitute a compatible name or concrete noun, but it may not invent a new motive, artifact, event, or causal link.
 
 ## Coherence rules

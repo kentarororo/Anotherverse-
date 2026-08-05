@@ -1,7 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **v0.12: Living Company Slice**.
+The project is a clean-room implementation and currently contains **v0.13: Mythic Ascension Slice**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -9,8 +9,9 @@ The project is a clean-room implementation and currently contains **v0.12: Livin
 
 - A clean title screen with New Campaign, Continue, accessible display settings, version, and an
   advanced seed input.
-- A deterministic campaign generator with two mythology-first realms, six complete hero identities,
-  distinct colourful origins, and balanced internal class archetypes.
+- A deterministic campaign selector with two mythology-first realms, six authored hero identities,
+  distinct origin pools, and balanced internal class archetypes. Seeds select and combine bounded
+  authored content; they do not create new identities or prose.
 - A campaign creation screen where the player chooses one of three complete starting heroes without
   being shown a Tank, Damage, or Support label.
 - The two unchosen candidates never enter canonical campaign state. Chapter 1 starts with a solo
@@ -19,8 +20,8 @@ The project is a clean-room implementation and currently contains **v0.12: Livin
 - Original Oathward, Doomseeker, and Fateweaver classes beneath each hero's unique Mythic Awakening, with executable signatures, limitations,
   reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
   conditions.
-- Two complete, world-specific four-act quests covering all 20 chapters, with recurring allies,
-  enemies, locations, objectives, and chapter payoffs.
+- Two structurally complete, world-specific four-act quest drafts covering 20 chapters. Narrative
+  quality and progression pacing remain vertical-slice work, not a shipping-complete claim.
 - A deterministic quest director that selects whole authored chapters and binds only safe names,
   locations, enemies, and prior results. It never assembles plots from random sentence fragments.
 - Persistent WorldFacts that store the authored result of a choice, so the next chapter can quote
@@ -103,14 +104,15 @@ npm run check
 ```
 
 The final human quality gate is documented in [`PLAYTEST.md`](./PLAYTEST.md).
-The fixed 100-paragraph read-aloud harness is available at `/?review=corpus` without adding
-anything to the normal title screen.
+The `/?review=corpus` route is an archived modern-city corpus harness retained for regression
+comparison. It is not production Anotherverse content and does not count as mythic narrative
+acceptance evidence.
 The controlled Mythic Narrative v2 prototype is available at `/?review=mythic-v2`. It compares
 deterministic mythology × progression-fantasy drafts built from complete authored worlds, fixed
 hero identities, role-compatible relics, whole chapter variants, and immutable combat rules. Its
 four review judgments are stored locally per seed and do not change a campaign save.
 The requirement-by-requirement evidence ledger is in [`ACCEPTANCE.md`](./ACCEPTANCE.md).
-The single editable story source, authoring worksheet, and validation rules are documented in
+The production mythic story sources, authoring worksheet, and validation rules are documented in
 [`STORY_AUTHORING.md`](./STORY_AUTHORING.md).
 The asset-ready pixel-art production contract, stable ID mapping, first generation batch, and
 clean-room prompt templates are in [`ART_PIPELINE.md`](./ART_PIPELINE.md).

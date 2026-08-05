@@ -4,7 +4,8 @@ import type { BattleReport, CombatEvent } from '../../engine/reports/combat';
 import { maximumHp } from '../../engine/combat/stats';
 import { PixelArtSlot } from './PixelArtSlot';
 
-export const BEAT_DURATION_MS = 800;
+export const BEAT_DURATION_MS = 650;
+export const MAX_VISIBLE_BATTLE_BEATS = 18;
 
 interface BattlePlaybackStageProps {
   report: BattleReport;
@@ -20,9 +21,32 @@ function titleCase(value: string) {
 }
 
 export function selectBattleBeats(events: CombatEvent[]) {
-  return events.filter((event) =>
+  const actions = events.filter((event) =>
     ['attack', 'heal', 'guard', 'interrupt', 'defeat'].includes(event.eventType),
   );
+  if (actions.length <= MAX_VISIBLE_BATTLE_BEATS) return actions;
+
+  const seenRounds = new Set<number>();
+  const scored = actions.map((event, position) => {
+    let score = event.finalAmount ?? 0;
+    if (event.eventType === 'defeat') score += 1000;
+    if (event.eventType === 'interrupt') score += 700;
+    if (event.eventType === 'heal') score += 500;
+    if (event.eventType === 'guard') score += 400;
+    if ((event.statusChanges?.length ?? 0) > 0) score += 300;
+    if (!seenRounds.has(event.round)) {
+      score += 180;
+      seenRounds.add(event.round);
+    }
+    if (position === 0 || position === actions.length - 1) score += 900;
+    return { event, score };
+  });
+
+  return scored
+    .sort((left, right) => right.score - left.score || left.event.index - right.event.index)
+    .slice(0, MAX_VISIBLE_BATTLE_BEATS)
+    .sort((left, right) => left.event.index - right.event.index)
+    .map(({ event }) => event);
 }
 
 function reducedMotionIsActive() {
@@ -139,7 +163,7 @@ export function BattlePlaybackStage({
   const [playback, setPlayback] = useState<'waiting' | 'playing' | 'paused' | 'result'>(() =>
     reducedMotion ? 'paused' : 'waiting',
   );
-  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 2>(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 2 | 4>(1);
 
   useEffect(() => {
     setBeatIndex(0);
@@ -226,7 +250,11 @@ export function BattlePlaybackStage({
       {ids.map((id) => {
         const definition = combatants[id];
         if (definition === undefined) return null;
-        const maximum = maximumHp(definition.stats);
+        const maximum = Math.max(
+          maximumHp(definition.stats),
+          report.hpAtStart[id] ?? 0,
+          report.hpAtEnd[id] ?? 0,
+        );
         const current = hp[id] ?? 0;
         const state = deriveSpriteState(id, event, current);
         return (
@@ -276,14 +304,14 @@ export function BattlePlaybackStage({
       tabIndex={-1}
     >
       <div className="battlefield">
-        <span className="arena-art-label">ARENA ART SLOT / {arenaId}</span>
+        {import.meta.env.DEV && <span className="arena-art-label">Arena: {arenaId}</span>}
         {renderLane('heroes', heroIds)}
         <div className="battle-beat" key={visibleEventIndex ?? 'result'} aria-live="polite">
           {event === null ? (
             <div className={`battle-result outcome-${report.outcome}`}>
               <span>{report.outcome}</span>
               <strong>{report.rounds} rounds</strong>
-              <small>{report.events.length} actions in the battle record</small>
+              <small>{report.events.length} actions recorded</small>
             </div>
           ) : (
             <>
@@ -317,14 +345,16 @@ export function BattlePlaybackStage({
           {playback === 'result'
             ? 'Result'
             : playback === 'waiting'
-              ? `Ready · ${beats.length} actions`
-              : `${beatIndex + 1}/${beats.length} actions`}
+              ? `Ready · ${beats.length} key moments`
+              : `${beatIndex + 1}/${beats.length} key moments`}
         </span>
         {!reducedMotion && playback !== 'result' && (
           <button
             className="playback-button"
             type="button"
-            onClick={() => setPlaybackSpeed((current) => (current === 1 ? 2 : 1))}
+            onClick={() =>
+              setPlaybackSpeed((current) => (current === 1 ? 2 : current === 2 ? 4 : 1))
+            }
           >
             Speed {playbackSpeed}x
           </button>

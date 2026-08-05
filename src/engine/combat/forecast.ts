@@ -1,6 +1,6 @@
 import type { CanonicalGameState } from '../model/state';
 import type { ScenarioForecast, StanceId, TeamPriorityId } from '../model/combat';
-import { scaledEnemyStats } from './stats';
+import { effectiveHeroStats, scaledEnemyStats } from './stats';
 
 const stanceScores: Record<StanceId, number> = {
   aggressive: 3,
@@ -13,6 +13,7 @@ export function calculateForecast(state: CanonicalGameState): ScenarioForecast {
   const recruitedIds = new Set(state.recruitedCharacterIds);
   const heroes = state.generatedDefinitions.characters.filter((hero) => recruitedIds.has(hero.id));
   const enemyIds = state.currentEncounter?.enemyIds ?? [];
+  const openingDuel = state.turn === 1 && heroes.length === 1;
   const enemies = enemyIds.flatMap((id) => {
     const enemy = state.generatedDefinitions.enemies[id];
     return enemy === undefined ? [] : [enemy];
@@ -39,16 +40,15 @@ export function calculateForecast(state: CanonicalGameState): ScenarioForecast {
       const item = itemId === null ? undefined : state.generatedDefinitions.items[itemId];
       return item === undefined ? [] : [item];
     });
-    return (
-      total +
-      hero.stats.power +
-      hero.stats.guard +
-      hero.stats.focus +
-      equipment.reduce((sum, item) => sum + item.powerBonus + item.guardBonus, 0)
-    );
+    const combatant = state.generatedDefinitions.combatants[hero.id];
+    const effective =
+      member === undefined || combatant === undefined
+        ? hero.stats
+        : effectiveHeroStats(combatant.stats, member, equipment);
+    return total + effective.power + effective.guard + effective.focus;
   }, 0);
   const enemyScore = enemies.reduce((total, enemy) => {
-    const stats = scaledEnemyStats(enemy.stats, state.turn);
+    const stats = scaledEnemyStats(enemy.stats, state.turn, openingDuel);
     return total + stats.power + stats.guard + enemy.threat;
   }, 0);
   const score = Math.round(
@@ -68,7 +68,7 @@ export function calculateForecast(state: CanonicalGameState): ScenarioForecast {
     (stance) => stance === 'guarded',
   ).length;
   const enemyPower = enemies.reduce(
-    (total, enemy) => total + scaledEnemyStats(enemy.stats, state.turn).power,
+    (total, enemy) => total + scaledEnemyStats(enemy.stats, state.turn, openingDuel).power,
     0,
   );
   const incomingBase = Math.max(

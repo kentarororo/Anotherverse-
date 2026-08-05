@@ -9,6 +9,7 @@ export function ManagementDrawer() {
   const game = useAppStore((state) => state.game);
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const equipItem = useAppStore((state) => state.equipItem);
+  const improveItem = useAppStore((state) => state.improveItem);
   const learnTechnique = useAppStore((state) => state.learnTechnique);
   const fuseMaterials = useAppStore((state) => state.fuseMaterials);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
@@ -194,12 +195,18 @@ export function ManagementDrawer() {
             {game.inventoryIds.map((itemId) => {
               const item = game.generatedDefinitions.items[itemId];
               if (item === undefined) return null;
+              const owner = game.generatedDefinitions.characters.find(
+                (character) => game.partyState[character.id]?.equipment[item.slot] === item.id,
+              );
               return (
                 <article className="inventory-item" key={item.id}>
                   <div>
                     <span>{item.slot}</span>
                     <h3>{item.name}</h3>
                     <p>{item.description}</p>
+                    <small>
+                      {owner === undefined ? 'Unequipped' : `Equipped by ${owner.name}`}
+                    </small>
                   </div>
                   <div className="equip-actions">
                     {game.generatedDefinitions.characters
@@ -215,6 +222,14 @@ export function ManagementDrawer() {
                         </button>
                       ))}
                   </div>
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={game.relicDust < 3}
+                    onClick={() => improveItem(item.id)}
+                  >
+                    Improve · 3 Dust
+                  </button>
                 </article>
               );
             })}
@@ -299,14 +314,14 @@ export function ManagementDrawer() {
             <button
               className="button button-primary forge-action"
               type="button"
-              disabled={selectedFusionMaterials === null}
+              disabled={selectedFusionMaterials === null || game.coins < 10}
               onClick={() => {
                 if (selectedFusionMaterials === null) return;
                 fuseMaterials(selectedFusionMaterials);
                 setSelectedMaterialIds([]);
               }}
             >
-              Fuse three materials
+              Forge relic · 10 Coin
             </button>
             {game.fusionHistory.at(-1) !== undefined &&
               (() => {

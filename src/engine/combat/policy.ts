@@ -45,17 +45,23 @@ function candidate(
   };
 }
 
+function reserveAllowsSpend(context: HeroPolicyContext, cost: number, emergency = false): boolean {
+  if (context.teamPriorityId !== 'conserve-power' || emergency) return true;
+  return context.resource - cost >= 1;
+}
+
 export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroActionCandidate[] {
   const choices: HeroActionCandidate[] = [candidate(context.basicActionId, 'basic', 10, [])];
-  const conserve = context.teamPriorityId === 'conserve-power';
-
   if (context.policyId === 'support' && context.firstTechniqueId !== undefined) {
     const threshold = context.stance === 'supportive' ? 0.9 : 0.7;
     choices.push(
       candidate(context.firstTechniqueId, 'heal', 100, [
         [context.resource >= context.firstTechniqueCost, 'Insufficient action resource.'],
         [context.firstTechniqueReady, 'Technique is cooling down.'],
-        [!conserve, 'Conserve Awakening Power reserves this resource.'],
+        [
+          reserveAllowsSpend(context, context.firstTechniqueCost, context.woundedAllyRatio < 0.35),
+          'Conserve Power keeps one point in reserve until an ally is in danger.',
+        ],
         [
           context.woundedAllyRatio < threshold,
           `No ally is below the ${threshold * 100}% threshold.`,
@@ -70,7 +76,10 @@ export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroAction
         [context.teamPriorityId === 'protect-rear', 'Team priority is not Protect Rear.'],
         [context.resource >= context.secondTechniqueCost, 'Insufficient action resource.'],
         [context.secondTechniqueReady, 'Technique is cooling down.'],
-        [!conserve, 'Conserve Power reserves this resource.'],
+        [
+          reserveAllowsSpend(context, context.secondTechniqueCost),
+          'Conserve Power keeps one point in reserve.',
+        ],
       ]),
     );
   }
@@ -80,7 +89,10 @@ export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroAction
       candidate(context.firstTechniqueId, 'attack-technique', 80, [
         [context.resource >= context.firstTechniqueCost, 'Insufficient action resource.'],
         [context.firstTechniqueReady, 'Technique is cooling down.'],
-        [!conserve, 'Conserve Power reserves this resource.'],
+        [
+          reserveAllowsSpend(context, context.firstTechniqueCost),
+          'Conserve Power keeps one point in reserve.',
+        ],
       ]),
     );
   }
@@ -90,7 +102,10 @@ export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroAction
       candidate(context.firstTechniqueId, 'attack-technique', 80, [
         [context.resource >= context.firstTechniqueCost, 'Insufficient action resource.'],
         [context.firstTechniqueReady, 'Technique is cooling down.'],
-        [!conserve, 'Conserve Power reserves this resource.'],
+        [
+          reserveAllowsSpend(context, context.firstTechniqueCost, context.targetHpRatio <= 0.35),
+          'Conserve Power keeps one point in reserve until the target can be finished.',
+        ],
         [
           context.stance === 'aggressive' || context.targetHpRatio <= 0.65,
           'Requires Aggressive stance or a target at 65% HP or lower.',
@@ -104,7 +119,10 @@ export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroAction
       candidate(context.secondTechniqueId, 'attack-technique', 70, [
         [context.resource >= context.secondTechniqueCost, 'Insufficient action resource.'],
         [context.secondTechniqueReady, 'Technique is cooling down.'],
-        [!conserve, 'Conserve Power reserves this resource.'],
+        [
+          reserveAllowsSpend(context, context.secondTechniqueCost),
+          'Conserve Power keeps one point in reserve.',
+        ],
         [
           context.stance === 'tactical' || context.position === 'rear',
           'Requires Tactical stance or rear position.',
@@ -119,7 +137,10 @@ export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroAction
         [context.resource >= context.secondTechniqueCost, 'Insufficient action resource.'],
         [context.secondTechniqueReady, 'Technique is cooling down.'],
         [context.stance === 'tactical', 'Requires Tactical stance.'],
-        [!conserve, 'Conserve Power reserves this resource.'],
+        [
+          reserveAllowsSpend(context, context.secondTechniqueCost),
+          'Conserve Power keeps one point in reserve.',
+        ],
       ]),
     );
   }

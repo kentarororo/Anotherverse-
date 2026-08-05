@@ -69,7 +69,7 @@ export function MythicReviewScreen() {
     <main className="mythic-review-screen">
       <header className="mythic-review-header">
         <div>
-          <p className="eyebrow">Narrative prototype · controlled procedural generation</p>
+          <p className="eyebrow">Narrative prototype · bounded authored variation</p>
           <h1>Mythic Narrative v2</h1>
           <p>
             An original mythology × progression-fantasy direction: immediate stakes, concrete
@@ -315,7 +315,7 @@ export function MythicReviewScreen() {
       </fieldset>
 
       <footer className="mythic-review-footer">
-        <span>Generation fingerprint</span>
+        <span>Composition fingerprint</span>
         <code>{draft.fingerprint}</code>
       </footer>
     </main>

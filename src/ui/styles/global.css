@@ -597,6 +597,91 @@ h2 {
   padding-top: 1rem;
 }
 
+.campaign-premise-compact {
+  grid-template-columns: minmax(160px, 0.32fr) 1fr;
+  padding-bottom: 0.4rem;
+}
+
+.campaign-premise-compact h2 {
+  margin: 0.25rem 0 0;
+  font-size: 1.15rem;
+}
+
+.campaign-details,
+.hero-details {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.campaign-details summary,
+.hero-details summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.campaign-details p,
+.hero-details p {
+  margin-top: 0.55rem;
+}
+
+.campaign-details small,
+.campaign-details code {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--muted);
+}
+
+.dossier-compact {
+  min-height: 0;
+  border-top-color: rgba(87, 229, 195, 0.45);
+}
+
+.dossier-compact .dossier-story {
+  margin: 0.45rem 0 0.65rem;
+}
+
+.dossier-compact .dossier-story > p {
+  font-size: 0.75rem;
+}
+
+.hero-choice-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.hero-choice-stats > div {
+  padding: 0.5rem !important;
+  border: 1px solid var(--line-soft) !important;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.hero-choice-stats dd {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.dossier-compact .dossier-techniques {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dossier-compact .dossier-techniques h3 {
+  grid-column: 1 / -1;
+}
+
+.dossier-compact .technique-story-card {
+  padding: 0.6rem;
+}
+
+.dossier-compact .hero-details {
+  margin: 0.75rem 0;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line-soft);
+}
+
 .command-screen {
   display: grid;
   grid-template-rows: 58px minmax(0, 1fr) 74px;
@@ -3614,6 +3699,25 @@ html[data-reduce-motion='true'] *::after {
   animation: none;
 }
 
+.combat-unit.is-actor .pixel-sprite-canvas {
+  filter: drop-shadow(0 0 9px rgba(255, 224, 132, 0.72));
+}
+
+.combat-unit.is-target.is-hit .unit-readout {
+  border-color: rgba(255, 107, 118, 0.75);
+  animation: combat-impact 240ms steps(2, end);
+}
+
+@keyframes combat-impact {
+  45% {
+    background: rgba(137, 29, 42, 0.78);
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
 .unit-readout,
 .combat-lane-enemies .unit-readout {
   width: 100%;
@@ -3662,6 +3766,25 @@ html[data-reduce-motion='true'] *::after {
   border: 1px solid rgba(87, 229, 195, 0.22);
   border-radius: 7px;
   background: rgba(5, 10, 14, 0.91);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42);
+}
+
+.impact-cue {
+  display: inline-block;
+  color: #fff0b5;
+  font-size: 0.82rem;
+  animation: impact-number 360ms cubic-bezier(0.2, 0.9, 0.25, 1.35) both;
+}
+
+@keyframes impact-number {
+  from {
+    opacity: 0;
+    transform: scale(0.7) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .event-vfx-placeholder {

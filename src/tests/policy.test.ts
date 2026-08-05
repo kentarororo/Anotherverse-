@@ -31,12 +31,20 @@ describe('visible combat action policy', () => {
       teamPriorityId: 'conserve-power',
     });
     expect(conserved.find((choice) => choice.actionId === 'finisher')).toMatchObject({
-      legal: false,
-      reasons: ['Conserve Power reserves this resource.'],
+      legal: true,
     });
     expect(selectHeroAction({ ...strikerContext, teamPriorityId: 'conserve-power' }).actionId).toBe(
-      'basic',
+      'finisher',
     );
+    const lowReserve = evaluateHeroActionPolicy({
+      ...strikerContext,
+      resource: 2,
+      teamPriorityId: 'conserve-power',
+    });
+    expect(lowReserve.find((choice) => choice.actionId === 'finisher')).toMatchObject({
+      legal: false,
+      reasons: ['Conserve Power keeps one point in reserve until the target can be finished.'],
+    });
   });
 
   it('makes supportive recovery thresholds and weights explicit', () => {

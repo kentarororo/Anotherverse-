@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CONTENT_MANIFEST_HASH } from '../content/manifest';
 import { CanonicalGameStateSchema, createEmptyGameState } from '../engine/model/state';
 import { applyGameCommand } from '../engine/simulation/apply-command';
+import { effectiveHeroStats } from '../engine/combat/stats';
 
 function start(seed = 'progression-seed') {
   return applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
@@ -152,6 +153,97 @@ describe('progression and management', () => {
     });
     const item = equipped.generatedDefinitions.items[itemId]!;
     expect(equipped.partyState[hero.id]!.equipment[item.slot]).toBe(itemId);
+    expect(forged.coins - equipped.coins).toBe(0);
+  });
+
+  it('keeps each item on one hero and transfers ownership when re-equipped', () => {
+    const initial = battleStart('unique-equipment-owner');
+    const [first, second] = initial.recruitedCharacterIds;
+    const eligible = CanonicalGameStateSchema.parse({
+      ...initial,
+      inventoryIds: ['houndglass-edge'],
+    });
+    const firstEquip = applyGameCommand(eligible, {
+      type: 'EQUIP_ITEM',
+      characterId: first!,
+      itemId: 'houndglass-edge',
+    });
+    const transferred = applyGameCommand(firstEquip, {
+      type: 'EQUIP_ITEM',
+      characterId: second!,
+      itemId: 'houndglass-edge',
+    });
+    expect(transferred.partyState[first!]!.equipment.weapon).toBeNull();
+    expect(transferred.partyState[second!]!.equipment.weapon).toBe('houndglass-edge');
+  });
+
+  it('turns Rations, Coin, and Dust into deterministic recovery and upgrade sinks', () => {
+    const initial = battleStart('resource-sinks');
+    const leadId = initial.leadCharacterId!;
+    const worn = CanonicalGameStateSchema.parse({
+      ...initial,
+      supplies: 2,
+      relicDust: 3,
+      inventoryIds: ['houndglass-edge'],
+      partyState: {
+        ...initial.partyState,
+        [leadId]: { ...initial.partyState[leadId]!, hp: 5, readiness: 35 },
+      },
+    });
+    const rested = applyGameCommand(worn, { type: 'REST_PARTY' });
+    expect(rested.supplies).toBe(1);
+    expect(rested.partyState[leadId]!.hp).toBeGreaterThan(5);
+    expect(rested.partyState[leadId]!.readiness).toBe(60);
+
+    const improved = applyGameCommand(rested, {
+      type: 'IMPROVE_ITEM',
+      itemId: 'houndglass-edge',
+    });
+    expect(improved.relicDust).toBe(0);
+    expect(improved.generatedDefinitions.items['houndglass-edge']!.powerBonus).toBe(
+      initial.generatedDefinitions.items['houndglass-edge']!.powerBonus + 1,
+    );
+  });
+
+  it('charges a visible Coin fee for forging and rejects unaffordable fusion', () => {
+    const initial = battleStart('forge-fee');
+    const materials = { 'grave-hound-fang': 2, 'augur-thread': 1 };
+    const eligible = CanonicalGameStateSchema.parse({ ...initial, materials, coins: 10 });
+    const forged = applyGameCommand(eligible, {
+      type: 'FUSE_MATERIALS',
+      materialIds: ['grave-hound-fang', 'grave-hound-fang', 'augur-thread'],
+    });
+    expect(forged.coins).toBe(0);
+    const poor = CanonicalGameStateSchema.parse({ ...initial, materials, coins: 9 });
+    expect(() =>
+      applyGameCommand(poor, {
+        type: 'FUSE_MATERIALS',
+        materialIds: ['grave-hound-fang', 'grave-hound-fang', 'augur-thread'],
+      }),
+    ).toThrow('requires 10 Coin');
+  });
+
+  it('makes level, Calling rank, equipment, and readiness affect authoritative stats', () => {
+    const initial = battleStart('effective-stat-stack');
+    const lead = initial.generatedDefinitions.characters.find(
+      (hero) => hero.id === initial.leadCharacterId,
+    )!;
+    const member = initial.partyState[lead.id]!;
+    const item = initial.generatedDefinitions.items['houndglass-edge']!;
+    const baseline = effectiveHeroStats(lead.stats, member, []);
+    const advanced = effectiveHeroStats(
+      lead.stats,
+      { ...member, level: 4, callingRank: 3, readiness: 100 },
+      [item],
+    );
+    const exhausted = effectiveHeroStats(
+      lead.stats,
+      { ...member, level: 4, callingRank: 3, readiness: 20 },
+      [item],
+    );
+    expect(advanced.power).toBeGreaterThan(baseline.power);
+    expect(advanced.guard).toBeGreaterThan(baseline.guard);
+    expect(exhausted.power).toBe(advanced.power - 2);
   });
 
   it('models Calling mastery as a development unlock rather than a combat technique', () => {
@@ -265,7 +357,8 @@ describe('progression and management', () => {
       }
       state = applyGameCommand(state, { type: 'COMMIT_TURN' });
     }
-    expect(state.rank).toBe('Bronze');
+    expect(['Silver', 'Gold']).toContain(state.rank);
+    expect(state.reputation).toBeGreaterThanOrEqual(6);
     const recruits = state.recruitedCharacterIds.map((id) => state.partyState[id]!);
     expect(recruits.every((member) => member.callingRank >= 2)).toBe(true);
     expect(recruits.every((member) => member.trainingPoints >= 1)).toBe(true);

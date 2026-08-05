@@ -49,6 +49,7 @@ function squadRankForReputation(reputation: number, tiers: readonly string[] = [
 }
 
 function encounterForSelection(
+  state: CanonicalGameState,
   scenario: NonNullable<CanonicalGameState['currentScenario']>,
   choice: NonNullable<CanonicalGameState['currentScenario']>['choices'][number],
 ) {
@@ -56,7 +57,13 @@ function encounterForSelection(
     return { ...encounterForId(choice.encounterId), title: scenario.title };
   }
   return scenario.category === 'operation'
-    ? { ...encounterForOperationTemplate(scenario.templateId), title: scenario.title }
+    ? {
+        ...encounterForOperationTemplate(
+          scenario.templateId,
+          questWorldId(state.campaignBible?.city.id ?? ''),
+        ),
+        title: scenario.title,
+      }
     : null;
 }
 
@@ -317,7 +324,11 @@ export function applyGameCommand(
           ...foundation,
           rngStreams: selected.streams,
           currentScenario: selected.scenario,
-          currentEncounter: encounterForSelection(selected.scenario, selected.scenario.choices[0]!),
+          currentEncounter: encounterForSelection(
+            foundation,
+            selected.scenario,
+            selected.scenario.choices[0]!,
+          ),
           directorDebug: selected.debug,
           pendingPlan: {
             ...foundation.pendingPlan,
@@ -392,7 +403,7 @@ export function applyGameCommand(
       appendCommand(
         {
           ...state,
-          currentEncounter: encounterForSelection(scenario, choice),
+          currentEncounter: encounterForSelection(state, scenario, choice),
           pendingPlan: { ...state.pendingPlan, situationChoiceId: command.choiceId },
         },
         command,
@@ -416,7 +427,21 @@ export function applyGameCommand(
         {
           ...state,
           partyState: {
-            ...state.partyState,
+            ...Object.fromEntries(
+              Object.entries(state.partyState).map(([characterId, other]) => [
+                characterId,
+                characterId === command.characterId
+                  ? other
+                  : {
+                      ...other,
+                      equipment: {
+                        weapon: other.equipment.weapon === item.id ? null : other.equipment.weapon,
+                        support:
+                          other.equipment.support === item.id ? null : other.equipment.support,
+                      },
+                    },
+              ]),
+            ),
             [command.characterId]: {
               ...member,
               equipment: { ...member.equipment, [item.slot]: item.id },
@@ -459,6 +484,8 @@ export function applyGameCommand(
 
   if (command.type === 'FUSE_MATERIALS') {
     if (state.rngStreams === null) throw new Error('The Forge requires an active campaign seed.');
+    const forgeFee = 10;
+    if (state.coins < forgeFee) throw new Error(`The Forge requires ${forgeFee} Coin.`);
     const required = requiredMaterialCounts(command.materialIds);
     for (const [materialId, count] of Object.entries(required)) {
       if (state.generatedDefinitions.materials[materialId] === undefined) {
@@ -484,6 +511,7 @@ export function applyGameCommand(
       appendCommand(
         {
           ...state,
+          coins: state.coins - forgeFee,
           materials,
           relicDust: state.relicDust + relicDustGranted,
           generatedDefinitions: {
@@ -510,6 +538,54 @@ export function applyGameCommand(
             },
           ],
           rngStreams: resolution.streams,
+        },
+        command,
+      ),
+    );
+  }
+
+  if (command.type === 'REST_PARTY') {
+    if (state.supplies < 1) throw new Error('Resting requires 1 Ration.');
+    const partyState = Object.fromEntries(
+      Object.entries(state.partyState).map(([characterId, member]) => [
+        characterId,
+        state.recruitedCharacterIds.includes(characterId)
+          ? {
+              ...member,
+              hp: Math.min(member.maxHp, member.hp + Math.max(6, Math.ceil(member.maxHp * 0.25))),
+              readiness: Math.min(100, member.readiness + 25),
+            }
+          : member,
+      ]),
+    );
+    return CanonicalGameStateSchema.parse(
+      appendCommand({ ...state, supplies: state.supplies - 1, partyState }, command),
+    );
+  }
+
+  if (command.type === 'IMPROVE_ITEM') {
+    const item = state.generatedDefinitions.items[command.itemId];
+    if (item === undefined || !state.inventoryIds.includes(command.itemId)) {
+      throw new Error('Only owned equipment can be improved.');
+    }
+    const dustCost = 3;
+    if (state.relicDust < dustCost)
+      throw new Error(`Improving equipment requires ${dustCost} Dust.`);
+    const improved = {
+      ...item,
+      powerBonus: item.powerBonus + (item.slot === 'weapon' ? 1 : 0),
+      guardBonus: item.guardBonus + (item.slot === 'support' ? 1 : 0),
+      description: `${item.description.replace(/ Improved\.$/, '')} Improved.`,
+    };
+    return CanonicalGameStateSchema.parse(
+      appendCommand(
+        {
+          ...state,
+          relicDust: state.relicDust - dustCost,
+          generatedDefinitions: {
+            ...state.generatedDefinitions,
+            items: { ...state.generatedDefinitions.items, [item.id]: improved },
+          },
         },
         command,
       ),
@@ -746,7 +822,7 @@ export function applyGameCommand(
           currentScenario: next.scenario,
           currentEncounter:
             next.scenario.category === 'operation'
-              ? encounterForSelection(next.scenario, next.scenario.choices[0]!)
+              ? encounterForSelection(rosterReadyBase, next.scenario, next.scenario.choices[0]!)
               : null,
           directorDebug: next.debug,
           pendingPlan: {

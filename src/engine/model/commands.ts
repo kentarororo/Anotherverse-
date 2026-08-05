@@ -42,6 +42,11 @@ export const GameCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('FUSE_MATERIALS'),
     materialIds: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]),
   }),
+  z.object({ type: z.literal('REST_PARTY') }),
+  z.object({
+    type: z.literal('IMPROVE_ITEM'),
+    itemId: z.string().min(1),
+  }),
   z.object({ type: z.literal('COMMIT_TURN') }),
 ]);
 

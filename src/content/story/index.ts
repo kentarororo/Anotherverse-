@@ -1,4 +1,5 @@
-export { STORY_AUTHORING } from './authoring.ts';
+/** @deprecated Test-only archive. Production mythology content lives outside this directory. */
+export { LEGACY_MODERN_STORY_AUTHORING } from './authoring.ts';
 export type {
   StoryAuthoringSource,
   StoryBeatTemplate,

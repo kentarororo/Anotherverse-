@@ -1,0 +1,22 @@
+# Design Change 0001 — Mythic Slice Propagation Ledger
+
+Decision: [ADR-0001](../adr/0001-mythic-manhwa-vertical-slice.md)  
+Status: P0 propagation implemented; deeper slice content remains in progress
+
+| Area                | Known targets                                                                                                              | Required propagation                                                                              | Verification                                  | Status   |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------- | -------- |
+| Canon vocabulary    | `src/content/player-language.ts`, `src/content/milestone-one.ts`, `README.md`, `STORY_AUTHORING.md`                        | Quarantine modern breach/academy/licence/network prose; apply terminology registry                | Forbidden-term content test                   | Complete |
+| World generation    | `src/content/mythic-review.ts`, `src/engine/generation/campaign.ts`                                                        | World-scoped modules, stable streams, identity seeds, validation fallback                         | Same-seed test; cross-world vocabulary test   | Complete |
+| Scenario direction  | `src/engine/director/scenario-director.ts`, `src/engine/director/mythic-scenario.ts`, `src/content/opening-recruitment.ts` | Six-turn act grammar, typed facts, consequence selection, recruitment invariants                  | Transcript and reachability tests             | Pending  |
+| Legacy story path   | `src/engine/model/story-authoring.ts`                                                                                      | Remove, quarantine, or migrate stale four-world modern expectations                               | No canonical imports; forbidden IDs test      | Complete |
+| Combat planning     | `src/engine/combat/planning.ts`, `policy.ts`, `forecast.ts`, `simulate.ts`                                                 | Replace Conserve policy; make stances/positions/counters materially distinct; decisive beats      | Policy viability and counter delta tests      | Partial  |
+| Combat presentation | `src/ui/screens/CommandScreen.tsx`, battle UI/CSS                                                                          | Centralize arena; 0.7–1.2s action beats; damage/status/turning-point feedback                     | Browser timing/readability checks             | Complete |
+| Progression         | progression/state models and simulation reward application                                                                 | Connect levels, Awakening, equipment, and Readiness to combat values                              | ≥10% intended-dimension tests                 | Complete |
+| Economy and fusion  | `src/engine/simulation/apply-command.ts`, `src/ui/components/ManagementDrawer.tsx`, content catalogs                       | Add near-term sinks, single-owner equipment, weighted fusion, highlighted drops                   | Faucet/sink reachability; ownership invariant | Complete |
+| HUD and UX          | `src/ui/screens/CommandScreen.tsx`, `ManagementDrawer.tsx`                                                                 | Hide non-mechanical meters; reduce selection and command density                                  | Browser snapshot and task-time review         | Complete |
+| Documentation       | `README.md`, `ACCEPTANCE.md`, `PLAYTEST.md`, `STORY_AUTHORING.md`, `RULEBOOK_CROSSWALK.md`                                 | Align product claim, slice scope, authoring rules, and acceptance gates                           | Documentation consistency scan                | Pending  |
+| Regression          | `src/tests/*`, browser suite                                                                                               | Add deterministic generation, chronology, balance bands, semantic diversity, economy reachability | Unit + browser suite                          | Complete |
+
+## Completion rule
+
+Mark a row complete only when implementation, automated evidence, and player-facing documentation agree. Any newly affected file is appended here before the change is considered propagated.

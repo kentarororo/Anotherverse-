@@ -1,26 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { STORY_AUTHORING } from '../content/story';
+import { LEGACY_MODERN_STORY_AUTHORING } from '../content/story';
 import {
   extractStoryTemplateSlots,
   StoryAuthoringSchema,
   validateStoryAuthoring,
 } from '../engine/model/story-authoring';
 import { EXECUTABLE_TECHNIQUES } from '../engine/model/executable-technique';
-import { VALIDATED_STORY_AUTHORING } from '../narrative/authoring/validated-story';
+import { VALIDATED_LEGACY_MODERN_STORY_AUTHORING } from '../narrative/authoring/validated-story';
 import { QUEST_ARCS } from '../content/quest-arcs';
 import { realiseTechniqueStory } from '../narrative/realiser/story-authoring';
 
-describe('single-source story authoring', () => {
-  it('validates the complete production source and all declared template slots', () => {
-    expect(validateStoryAuthoring(STORY_AUTHORING)).toEqual(VALIDATED_STORY_AUTHORING);
-    expect(VALIDATED_STORY_AUTHORING.worlds).toHaveLength(4);
-    expect(VALIDATED_STORY_AUTHORING.characterKits).toHaveLength(9);
-    expect(VALIDATED_STORY_AUTHORING.sceneModules).toHaveLength(20);
+describe('archived modern story authoring', () => {
+  it('keeps the legacy fixture valid without treating it as production content', () => {
+    expect(validateStoryAuthoring(LEGACY_MODERN_STORY_AUTHORING)).toEqual(
+      VALIDATED_LEGACY_MODERN_STORY_AUTHORING,
+    );
+    expect(VALIDATED_LEGACY_MODERN_STORY_AUTHORING.worlds).toHaveLength(4);
+    expect(VALIDATED_LEGACY_MODERN_STORY_AUTHORING.characterKits).toHaveLength(9);
+    expect(VALIDATED_LEGACY_MODERN_STORY_AUTHORING.sceneModules).toHaveLength(20);
 
     const beats = [
-      ...VALIDATED_STORY_AUTHORING.worlds.map((world) => world.premise),
-      ...VALIDATED_STORY_AUTHORING.characterKits.map((kit) => kit.portrait),
-      ...VALIDATED_STORY_AUTHORING.sceneModules.flatMap((scene) => [
+      ...VALIDATED_LEGACY_MODERN_STORY_AUTHORING.worlds.map((world) => world.premise),
+      ...VALIDATED_LEGACY_MODERN_STORY_AUTHORING.characterKits.map((kit) => kit.portrait),
+      ...VALIDATED_LEGACY_MODERN_STORY_AUTHORING.sceneModules.flatMap((scene) => [
         ...(scene.initial === undefined ? [] : [scene.initial]),
         scene.continuation,
       ]),
@@ -37,7 +39,7 @@ describe('single-source story authoring', () => {
       'recordMedium',
       'privateRefuge',
     ]);
-    for (const scene of VALIDATED_STORY_AUTHORING.sceneModules) {
+    for (const scene of VALIDATED_LEGACY_MODERN_STORY_AUTHORING.sceneModules) {
       const sceneBeats = [
         ...(scene.initial === undefined ? [] : [scene.initial]),
         scene.continuation,
@@ -46,26 +48,26 @@ describe('single-source story authoring', () => {
         expect(beat.requiredSlots.some((slot) => worldIdentitySlots.has(slot))).toBe(true),
       );
     }
-    expect(JSON.stringify(VALIDATED_STORY_AUTHORING)).not.toMatch(
+    expect(JSON.stringify(VALIDATED_LEGACY_MODERN_STORY_AUTHORING)).not.toMatch(
       /the prior event|two recorded facts|something happened|the situation unfolds|TBD|TODO|lorem ipsum/i,
     );
   });
 
   it('rejects undeclared slots, incompatible mechanics, and exact numeric rules in prose', () => {
-    const badSlots = structuredClone(STORY_AUTHORING) as any;
+    const badSlots = structuredClone(LEGACY_MODERN_STORY_AUTHORING) as any;
     badSlots.worlds[0].premise.requiredSlots.push('lead');
     expect(StoryAuthoringSchema.safeParse(badSlots).success).toBe(false);
 
-    const badTechnique = structuredClone(STORY_AUTHORING) as any;
+    const badTechnique = structuredClone(LEGACY_MODERN_STORY_AUTHORING) as any;
     badTechnique.characterKits[0].calling.techniques[0].id = 'unknown-technique';
     expect(StoryAuthoringSchema.safeParse(badTechnique).success).toBe(false);
 
-    const mechanicLeak = structuredClone(STORY_AUTHORING) as any;
+    const mechanicLeak = structuredClone(LEGACY_MODERN_STORY_AUTHORING) as any;
     mechanicLeak.characterKits[0].calling.signature.story =
       'The shield becomes an exact rule and grants 3 Ward whenever the bearer intercepts.';
     expect(StoryAuthoringSchema.safeParse(mechanicLeak).success).toBe(false);
 
-    const worldNeutralScene = structuredClone(STORY_AUTHORING) as any;
+    const worldNeutralScene = structuredClone(LEGACY_MODERN_STORY_AUTHORING) as any;
     const continuation = worldNeutralScene.sceneModules[0].continuation;
     const identitySlots = [
       'crisisSite',
@@ -86,7 +88,7 @@ describe('single-source story authoring', () => {
   });
 
   it('realises all 18 Calling techniques with natural live personalization', () => {
-    const descriptions = VALIDATED_STORY_AUTHORING.characterKits.flatMap((kit) =>
+    const descriptions = VALIDATED_LEGACY_MODERN_STORY_AUTHORING.characterKits.flatMap((kit) =>
       kit.calling.techniques.map((technique) => ({
         kit,
         description: realiseTechniqueStory(technique, 'Test Hero', kit.calling.name),
@@ -102,7 +104,7 @@ describe('single-source story authoring', () => {
   });
 
   it('matches every authored mechanic to the canonical executable contract', () => {
-    for (const kit of VALIDATED_STORY_AUTHORING.characterKits) {
+    for (const kit of VALIDATED_LEGACY_MODERN_STORY_AUTHORING.characterKits) {
       for (const contract of EXECUTABLE_TECHNIQUES[kit.role]) {
         const technique = kit.calling.techniques.find((candidate) => candidate.id === contract.id);
         expect(technique).toEqual(
@@ -119,7 +121,7 @@ describe('single-source story authoring', () => {
   });
 
   it('keeps shared scene prose and recorded choices free of one-world transit residue', () => {
-    const sceneProse = VALIDATED_STORY_AUTHORING.sceneModules.flatMap((scene) => [
+    const sceneProse = VALIDATED_LEGACY_MODERN_STORY_AUTHORING.sceneModules.flatMap((scene) => [
       ...(scene.initial?.sentences ?? []),
       ...scene.continuation.sentences,
     ]);

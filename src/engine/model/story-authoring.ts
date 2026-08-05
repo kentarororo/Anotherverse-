@@ -200,6 +200,8 @@ const StoryVoiceGuideSchema = z.object({
   prohibitedShortcuts: z.array(z.string().trim().min(3)).min(1),
 });
 
+// Legacy modern-corpus schema. Production mythology campaigns use the quest-arc and opening
+// schemas; this validator remains solely to keep the archived review fixture parseable.
 const EXPECTED_WORLD_IDS = ['cinder-bay', 'halcyon-ward', 'lumen-port', 'vanta-cross'] as const;
 const EXPECTED_CALLINGS_BY_ROLE = {
   vanguard: ['anchor-saint', 'iron-echo', 'storm-bastion'],

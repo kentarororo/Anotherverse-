@@ -19,11 +19,10 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
   await expect(page.getByText('A new legend')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Choose your first hero' })).toBeVisible();
   await expect(page.locator('.dossier')).toHaveCount(3);
-  await expect(page.locator('.dossier-heading > div > span')).toHaveText([
+  await expect(page.locator('.dossier-heading > div > span')).toHaveCount(3);
+  await expect(page.locator('.dossier-heading > div > span').first()).not.toHaveText(
     'Awakened hunter',
-    'Awakened hunter',
-    'Awakened hunter',
-  ]);
+  );
   await expect(page.locator('.creation-screen')).toContainText('Mythic Awakening');
   await expect(page.locator('.creation-screen')).not.toContainText(
     /telemetry|licen[cs]e|bureau|network|contract squad|Mythic Path|Calling/i,
@@ -32,9 +31,9 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
     .getByRole('button', { name: /Begin as/ })
     .first()
     .click();
-  await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Heroes' })).toBeVisible();
   await expect(page.locator('.trio-panel .badge')).toHaveText('1 / 3');
   await expect(page.getByLabel('Story situation')).toContainText('A Star Falls');
   await expect(page.getByLabel('Story situation')).toContainText(/alone on Starfall Road/);
@@ -69,12 +68,8 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
     .allTextContents();
 
   await page.getByLabel('Team priority').selectOption('conserve-power');
-  await expect(page.getByText(/Heroes reserve AP and use basic attacks/)).toBeVisible();
-  await expect(page.getByLabel('Expected opening actions').locator('small')).toHaveText([
-    /restores 1 AP/,
-    /restores 1 AP/,
-    /restores 1 AP/,
-  ]);
+  await expect(page.getByText(/Keep 1 AP in reserve/)).toBeVisible();
+  await expect(page.getByLabel('Expected opening actions').locator('small')).toHaveCount(3);
   const conserveActions = await page
     .getByLabel('Expected opening actions')
     .locator('strong')

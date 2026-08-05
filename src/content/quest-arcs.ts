@@ -735,7 +735,7 @@ const underworldTide: QuestArcDefinition = {
             'The trio took the king’s page and defeated its drowned guards. Captain Cael arrived as the last hand slipped from the rail.',
             fx(0, 0, 2, 0),
           ),
-          encounterId: 'secret-awakened-ward',
+          encounterId: 'secret-drowned-ward',
           outcomeConsequences: {
             victory:
               'The trio took the king’s page and defeated its drowned guards. Captain Cael arrived as the last hand slipped from the rail.',
@@ -955,7 +955,7 @@ const underworldTide: QuestArcDefinition = {
             '{lead} cut the rope free and the trio defeated the waking guardian. A black crown spread across the hero’s arm.',
             fx(1, 0, 2, 0),
           ),
-          encounterId: 'secret-waking-guardian',
+          encounterId: 'secret-bell-guardian',
           outcomeConsequences: {
             victory:
               '{lead} took the bell-rope and the trio defeated the waking guardian. A black crown spread across the hero’s arm.',

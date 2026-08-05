@@ -1,9 +1,15 @@
-# Anotherverse Pixel-Art Production Contract
+# Anotherverse Mythology × Manhwa Pixel-Art Contract
 
-Status: v0.7 placeholder integration is live; production PNG asset resolution is the next pass
+Status: mythology × manhwa is the visual authority; older modern-city inventories below are
+reference-only until replaced. Production PNG asset resolution is the next pass.
 Audience: asset creator, gameplay/UI engineer, content designer, and playtest lead  
-Scope: the three-hero management screen, compact auto-battle playback, dossiers, Bestiary, and
-current four-operation slice
+Scope: the three-hero progression screen, compact auto-battle playback, dossiers, Bestiary, and the
+six-turn mythic vertical slice across `fallen-heavens` and `underworld-tide`.
+
+Canonical visual keys come from the live manifest: hero IDs `lyra-vale`, `doran-vey`, `mira-rook`,
+`ren-ash`, `sena-quill`, and `tarin-sol`; world IDs `fallen-heavens` and `underworld-tide`; and the
+encounter IDs exported by `src/content/milestone-one.ts`. Do not produce new assets for
+`lumen-port`, `vanta-cross`, `halcyon-ward`, `cinder-bay`, or `m1-glassline-breach`.
 
 ## 1. The recommended path
 
@@ -39,11 +45,12 @@ Enemies already have stable IDs and can resolve directly by ID.
 
 ## 2. Visual target
 
-Anotherverse should look like an original modern progression-fantasy operations game rendered in
-restrained, high-contrast pixel art. The world combines contemporary civic infrastructure with
-breach phenomena, licensed combat equipment, living relics, and readable supernatural geometry.
-It should not look medieval, parchment-led, chibi-comedic, or like a direct recreation of a named
-game, comic, show, artist, or character.
+Anotherverse should look like an original mythology × manhwa progression fantasy rendered in
+restrained, high-contrast pixel art. Fallen Heavens uses mountain shrines, godbone, storm-lit
+valleys, and broken divine monuments. Underworld Tide uses black stairs, funeral bells, drowned
+royal ruins, moonless coasts, and pale sea-light. Avoid modern transit, licensing, academy,
+corporate, or operations-centre imagery. Do not directly recreate a named game, comic, show,
+artist, or character.
 
 The art must improve tactical legibility before spectacle:
 
@@ -59,20 +66,20 @@ The art must improve tactical legibility before spectacle:
 
 Art may extend these into small ramps, but it should visibly belong to the existing interface:
 
-| Purpose               | Anchor    |
-| --------------------- | --------- |
-| Near-black            | `#080a0f` |
-| Graphite              | `#11151d` |
-| Raised slate          | `#171c26` |
-| Structural line       | `#28303d` |
-| Muted text/steel      | `#8e99aa` |
-| Bright neutral        | `#edf1f7` |
-| Calling/breach accent | `#57e5c3` |
-| Vanguard              | `#65a9ff` |
-| Striker               | `#ff7d86` |
-| Support               | `#64dfad` |
-| Enemy/danger          | `#ff6b76` |
-| Warning/rank          | `#ffcb6b` |
+| Purpose          | Anchor    |
+| ---------------- | --------- |
+| Near-black       | `#080a0f` |
+| Graphite         | `#11151d` |
+| Raised slate     | `#171c26` |
+| Structural line  | `#28303d` |
+| Muted text/steel | `#8e99aa` |
+| Bright neutral   | `#edf1f7` |
+| Awakening accent | `#57e5c3` |
+| Vanguard         | `#65a9ff` |
+| Striker          | `#ff7d86` |
+| Support          | `#64dfad` |
+| Enemy/danger     | `#ff6b76` |
+| Warning/rank     | `#ffcb6b` |
 
 Use at most 12 colours in one unit sprite, including transparency, and at most 24 visible colours in
 one arena composition. Preserve a two-value separation between body, weapon/tool, and VFX. Do not
@@ -239,12 +246,12 @@ observer/handling apparatus.
 
 ### Arenas: key by encounter ID
 
-| Encounter ID             | File key                 | Required scene                                                   |
-| ------------------------ | ------------------------ | ---------------------------------------------------------------- |
-| `m1-glassline-breach`    | `m1-glassline-breach`    | damaged transit concourse, glass pressure seam, evacuation route |
-| `m4-east-junction`       | `m4-east-junction`       | civic power junction, storm-lit relay pylons, branching lanes    |
-| `m4-split-concourse`     | `m4-split-concourse`     | narrow split rail line, broken route records/signage             |
-| `m4-closure-under-watch` | `m4-closure-under-watch` | surveyed closure platform, distant observers and audit devices   |
+| Encounter ID          | File key              | Required scene                                            |
+| --------------------- | --------------------- | --------------------------------------------------------- |
+| `m1-fallen-god-trial` | `m1-fallen-god-trial` | godgrave crater, broken shrine, ribs of a fallen star-god |
+| `m4-east-junction`    | `m4-east-junction`    | storm-god spring, mountain shrine, branching stone paths  |
+| `tide-black-stair`    | `tide-black-stair`    | black stair, exposed seabed, distant returning water      |
+| `tide-final-bell`     | `tide-final-bell`     | drowned bell frame, royal landing, pale underworld sea    |
 
 Keep the middle 45% of each arena relatively quiet so the action card and VFX stay readable. The
 hero side is left, enemy side is right. Environmental lighting may point toward the breach, but the
@@ -254,12 +261,10 @@ backdrop must not contain combatants or imply an outcome.
 
 Art must use structured IDs rather than trying to parse generated prose. Current stable world keys:
 
-| World pack     | City/motif                                                  | Faction motif                                          |
-| -------------- | ----------------------------------------------------------- | ------------------------------------------------------ |
-| `lumen-port`   | rebuilt transit, pre-Cascade records, luminous harbour haze | Meridian survey instruments and sealed archives        |
-| `vanta-cross`  | public ranking displays, overlooked vertical districts      | Crownless academy tags and unsponsored training spaces |
-| `halcyon-ward` | sealed infrastructure and waking living relics              | Quiet Survey barriers and concealed excavation marks   |
-| `cinder-bay`   | industrial bay and illegal breach harvesting                | Ashline extraction frames and corporate containment    |
+| World pack        | Realm motif                                                | Faction motif                                       |
+| ----------------- | ---------------------------------------------------------- | --------------------------------------------------- |
+| `fallen-heavens`  | mountain shrines, godbone, star craters, bronze lions      | veils, ash censers, ivory crowns, broken divine law |
+| `underworld-tide` | black stairs, drowned courts, funeral fleets, moonless sea | royal seals, pale bells, memory ledgers, black rope |
 
 Future narrative bindings should expose `locationId`, `factionId`, `propId`, `castIds`, and
 `threatIds`. The art layer can then select a world plate, crest, prop vignette, portraits, and enemy

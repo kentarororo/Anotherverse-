@@ -486,6 +486,58 @@ export const operationEncounters: EncounterState[] = [
     rewardPreview: 'Three guardian materials, Coin, relic dust, and hunter experience.',
   },
   {
+    id: 'tide-black-stair',
+    title: 'The Black Stair Opens',
+    brief:
+      'Drowned Lancers hold the wet steps while a Bell Wraith tolls against whoever guards the rear.',
+    enemyIds: ['drowned-lancer', 'bell-wraith', 'drowned-lancer'],
+    signature: 'Undertow Charge hits the front; Funeral Toll marks the rear.',
+    rewardPreview: 'Three drowned materials, Coin, relic dust, and Bestiary knowledge.',
+  },
+  {
+    id: 'tide-sunken-ledger',
+    title: 'The Sunken Ledger',
+    brief:
+      "A Bell Wraith guards the dead king's record while two Drowned Lancers close the flooded aisle.",
+    enemyIds: ['bell-wraith', 'drowned-lancer', 'drowned-lancer'],
+    signature: 'Funeral Toll hunts the rear while Undertow Charge closes the front.',
+    rewardPreview: 'Three drowned materials, Coin, relic dust, and a royal clue.',
+  },
+  {
+    id: 'tide-dead-kings-guard',
+    title: "The Dead King's Guard",
+    brief:
+      "Two Drowned Lancers defend the royal landing while a Bell Wraith speaks the king's last order.",
+    enemyIds: ['drowned-lancer', 'drowned-lancer', 'bell-wraith'],
+    signature: 'Twin Undertow Charges test the front; Funeral Toll punishes the rear.',
+    rewardPreview: 'Three drowned materials, Coin, relic dust, and Renown.',
+  },
+  {
+    id: 'tide-final-bell',
+    title: 'The Final Bell',
+    brief: 'Bell Wraiths call the tide home while a Drowned Lancer blocks the only stair to shore.',
+    enemyIds: ['bell-wraith', 'drowned-lancer', 'bell-wraith'],
+    signature: 'Funeral Toll marks the rear; Undertow Charge seals the front.',
+    rewardPreview: 'Three drowned materials, Coin, relic dust, and hunter experience.',
+  },
+  {
+    id: 'secret-drowned-ward',
+    title: "The King's Drowned Ward",
+    brief:
+      'Taking the royal page wakes the Lancers drowned beside it and the Wraith who named them.',
+    enemyIds: ['drowned-lancer', 'bell-wraith', 'drowned-lancer'],
+    signature: 'Undertow Charge holds the aisle; Funeral Toll hunts the rear.',
+    rewardPreview: 'Three drowned materials, Coin, relic dust, and hunter experience.',
+  },
+  {
+    id: 'secret-bell-guardian',
+    title: 'The Guardian of the Final Bell',
+    brief: 'Cutting the rope wakes its Bell Wraith and the drowned royal guard beneath the frame.',
+    enemyIds: ['bell-wraith', 'drowned-lancer', 'bell-wraith'],
+    signature: 'Funeral Toll marks the rear while Undertow Charge blocks escape.',
+    rewardPreview: 'Three drowned materials, Coin, relic dust, and hunter experience.',
+  },
+  {
     id: 'opening-starfall-hound',
     title: 'The Hound on Starfall Road',
     brief: 'A lone Grave Hound blocks the pilgrims’ escape from the fallen star.',
@@ -503,9 +555,31 @@ export const operationEncounters: EncounterState[] = [
   },
 ];
 
-export function encounterForOperationTemplate(templateId: string): EncounterState {
+const operationEncounterIdsByWorld = {
+  'fallen-heavens': [
+    'm1-fallen-god-trial',
+    'm4-east-junction',
+    'm4-split-concourse',
+    'm4-closure-under-watch',
+  ],
+  'underworld-tide': [
+    'tide-black-stair',
+    'tide-sunken-ledger',
+    'tide-dead-kings-guard',
+    'tide-final-bell',
+  ],
+} as const;
+
+export function encounterForOperationTemplate(
+  templateId: string,
+  worldId: 'fallen-heavens' | 'underworld-tide' = 'fallen-heavens',
+): EncounterState {
   const parsedIndex = Number.parseInt(templateId.split('-').at(-1) ?? '1', 10) - 1;
-  return operationEncounters[parsedIndex] ?? temporaryEncounter;
+  const encounterId =
+    operationEncounterIdsByWorld[worldId][parsedIndex] ?? operationEncounterIdsByWorld[worldId][0];
+  return (
+    operationEncounters.find((encounter) => encounter.id === encounterId) ?? temporaryEncounter
+  );
 }
 
 export function encounterForId(encounterId: string): EncounterState {

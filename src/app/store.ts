@@ -42,6 +42,8 @@ interface AppStore {
   openDrawer: (drawer: NonNullable<AppStore['drawer']>) => void;
   closeDrawer: () => void;
   equipItem: (characterId: string, itemId: string) => void;
+  restParty: () => void;
+  improveItem: (itemId: string) => void;
   learnTechnique: (characterId: string, techniqueId: string) => void;
   fuseMaterials: (materialIds: [string, string, string]) => void;
 }
@@ -139,6 +141,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
   equipItem: (characterId, itemId) => {
     const nextState = applyGameCommand(get().game, { type: 'EQUIP_ITEM', characterId, itemId });
+    saveRepository.save(nextState);
+    set({ game: nextState, saveStatus: { status: 'ok', state: nextState } });
+  },
+  restParty: () => {
+    const nextState = applyGameCommand(get().game, { type: 'REST_PARTY' });
+    saveRepository.save(nextState);
+    set({ game: nextState, saveStatus: { status: 'ok', state: nextState } });
+  },
+  improveItem: (itemId) => {
+    const nextState = applyGameCommand(get().game, { type: 'IMPROVE_ITEM', itemId });
     saveRepository.save(nextState);
     set({ game: nextState, saveStatus: { status: 'ok', state: nextState } });
   },

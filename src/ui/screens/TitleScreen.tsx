@@ -179,7 +179,7 @@ export function TitleScreen() {
           </div>
         )}
 
-        <footer className="version">Playable Slice v0.12.0 · Save Schema 14</footer>
+        <footer className="version">Mythic Ascension Slice v0.13.0 · Save Schema 14</footer>
       </section>
     </main>
   );
