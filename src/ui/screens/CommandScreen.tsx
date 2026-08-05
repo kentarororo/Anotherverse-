@@ -52,11 +52,17 @@ export function CommandScreen() {
   const showingAftermath = turnView === 'aftermath' && aftermath !== undefined;
   const displayedTurn = showingAftermath ? aftermath.turn : game.turn;
   const scenario = game.currentScenario;
+  const recruitedHeroes = game.generatedDefinitions.characters.filter((hero) =>
+    game.recruitedCharacterIds.includes(hero.id),
+  );
   const selectedChoice = scenario?.choices.find(
     (choice) => choice.id === game.pendingPlan.situationChoiceId,
   );
   const hasBattle = game.currentEncounter !== null;
   const newDropIds = showingAftermath ? (aftermath.itemIdsGranted ?? []) : [];
+  const newMaterialIds = showingAftermath ? (aftermath.materialIdsGranted ?? []) : [];
+  const newRewardCount = newDropIds.length + newMaterialIds.length;
+  const materialCount = Object.values(game.materials).reduce((sum, count) => sum + count, 0);
   const battleEnemyIds =
     report === undefined
       ? []
@@ -68,27 +74,21 @@ export function CommandScreen() {
     return enemy === undefined ? [] : [enemy];
   });
   const battleAssetIds = Object.fromEntries([
-    ...game.generatedDefinitions.characters.map((hero) => [hero.id, hero.callingId] as const),
+    ...recruitedHeroes.map((hero) => [hero.id, hero.callingId] as const),
     ...battleEnemyIds.map((enemyId) => [enemyId, enemyId] as const),
   ]);
   const resolvedArenaId = encounterIdForEnemies(battleEnemyIds);
   const totalBattleHpStart =
     report === undefined
       ? 0
-      : game.generatedDefinitions.characters.reduce(
-          (total, hero) => total + (report.hpAtStart[hero.id] ?? 0),
-          0,
-        );
+      : recruitedHeroes.reduce((total, hero) => total + (report.hpAtStart[hero.id] ?? 0), 0);
   const totalBattleHpEnd =
     report === undefined
       ? 0
-      : game.generatedDefinitions.characters.reduce(
-          (total, hero) => total + (report.hpAtEnd[hero.id] ?? 0),
-          0,
-        );
+      : recruitedHeroes.reduce((total, hero) => total + (report.hpAtEnd[hero.id] ?? 0), 0);
   const formationSummary = positions
     .map((position) => {
-      const hero = game.generatedDefinitions.characters.find(
+      const hero = recruitedHeroes.find(
         (candidate) => game.pendingPlan.positions[candidate.id] === position,
       );
       return hero === undefined ? titleCase(position) : `${titleCase(position)} ${hero.name}`;
@@ -141,12 +141,21 @@ export function CommandScreen() {
             <dt>Gear</dt>
             <dd>{game.inventoryIds.length}</dd>
           </div>
-          {newDropIds.length > 0 && (
-            <div className="new-drop-metric" data-new-drop-count={newDropIds.length}>
+          <div>
+            <dt>Materials</dt>
+            <dd>{materialCount}</dd>
+          </div>
+          {newRewardCount > 0 && (
+            <div className="new-drop-metric" data-new-drop-count={newRewardCount}>
               <dt>New</dt>
               <dd>
-                <button type="button" onClick={() => openDrawer({ type: 'equipment' })}>
-                  {newDropIds.length} drop
+                <button
+                  type="button"
+                  onClick={() =>
+                    openDrawer({ type: newMaterialIds.length > 0 ? 'forge' : 'equipment' })
+                  }
+                >
+                  {newRewardCount} drop{newRewardCount === 1 ? '' : 's'}
                 </button>
               </dd>
             </div>
@@ -166,6 +175,13 @@ export function CommandScreen() {
             onClick={() => openDrawer({ type: 'equipment' })}
           >
             Inventory
+          </button>
+          <button
+            className="header-link"
+            type="button"
+            onClick={() => openDrawer({ type: 'forge' })}
+          >
+            Forge
           </button>
           <button
             className="header-link"
@@ -201,12 +217,12 @@ export function CommandScreen() {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Hunter status</p>
-              <h2 id="trio-title">The Mythic Trio</h2>
+              <h2 id="trio-title">Your Trio</h2>
             </div>
-            <span className="badge">3 / 3</span>
+            <span className="badge">{recruitedHeroes.length} / 3</span>
           </div>
           <div className="hero-list">
-            {game.generatedDefinitions.characters.map((hero) => {
+            {recruitedHeroes.map((hero) => {
               const member = game.partyState[hero.id];
               if (member === undefined) return null;
               const hpPercent = (member.hp / member.maxHp) * 100;
@@ -216,7 +232,8 @@ export function CommandScreen() {
                     <div>
                       <strong>{hero.name}</strong>
                       <span>
-                        {hero.pathClassName} · {hero.callingName} Path · Ready {member.readiness}%
+                        {hero.pathClassName} · Mythic Awakening: {hero.callingName} · Ready{' '}
+                        {member.readiness}%
                       </span>
                     </div>
                     <b>
@@ -341,7 +358,7 @@ export function CommandScreen() {
               <BattlePlaybackStage
                 report={report}
                 combatants={game.generatedDefinitions.combatants}
-                heroIds={game.generatedDefinitions.characters.map((hero) => hero.id)}
+                heroIds={recruitedHeroes.map((hero) => hero.id)}
                 enemyIds={battleEnemyIds}
                 assetIds={battleAssetIds}
                 arenaId={resolvedArenaId}
@@ -350,7 +367,7 @@ export function CommandScreen() {
               <>
                 <PlanningBattleStage
                   arenaId={game.currentEncounter.id}
-                  heroes={game.generatedDefinitions.characters}
+                  heroes={recruitedHeroes}
                   enemies={currentEnemies}
                   partyState={game.partyState}
                   positions={game.pendingPlan.positions}
@@ -411,19 +428,19 @@ export function CommandScreen() {
                   ))}
                 </div>
               )}
-              {game.generatedDefinitions.characters.map((hero) => (
+              {recruitedHeroes.map((hero) => (
                 <div className="aftermath-hero-row" key={hero.id}>
                   <span>{hero.name}</span>
                   <strong>
-                    {aftermath.hpByCharacter[hero.id]} HP · +
-                    {aftermath.experienceByCharacter[hero.id]} XP
+                    {aftermath.hpByCharacter[hero.id] ?? game.partyState[hero.id]?.hp ?? 0} HP · +
+                    {aftermath.experienceByCharacter[hero.id] ?? 0} XP
                   </strong>
                 </div>
               ))}
               <div className="progression-summary">
                 <span>Level progress</span>
                 <strong>
-                  {game.generatedDefinitions.characters
+                  {recruitedHeroes
                     .map((hero) => {
                       const member = game.partyState[hero.id];
                       return `${hero.name} ${member === undefined ? 0 : member.experience % 50}/50`;
@@ -456,6 +473,14 @@ export function CommandScreen() {
                 <span>Danger</span>
                 <strong>{signed(aftermath.dangerDelta)}</strong>
               </div>
+              <div>
+                <span>Coin</span>
+                <strong>{signed(aftermath.coinsDelta)}</strong>
+              </div>
+              <div>
+                <span>Dust</span>
+                <strong>{signed(aftermath.relicDustDelta)}</strong>
+              </div>
               {aftermath.bondDelta !== 0 && (
                 <div>
                   <span>Bond</span>
@@ -470,6 +495,25 @@ export function CommandScreen() {
                 <div key={itemId}>
                   <span>Equipment recovered</span>
                   <strong>{game.generatedDefinitions.items[itemId]?.name}</strong>
+                </div>
+              ))}
+              {aftermath.materialIdsGranted.map((materialId, index) => (
+                <div key={`${materialId}-${index}`}>
+                  <span>Monster material</span>
+                  <strong>
+                    {game.generatedDefinitions.materials[materialId]?.name ?? materialId}
+                  </strong>
+                </div>
+              ))}
+              {aftermath.characterIdsRecruited.map((characterId) => (
+                <div key={characterId} className="recruitment-result">
+                  <span>Companion joined</span>
+                  <strong>
+                    {
+                      game.generatedDefinitions.characters.find((hero) => hero.id === characterId)
+                        ?.name
+                    }
+                  </strong>
                 </div>
               ))}
             </div>

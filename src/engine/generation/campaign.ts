@@ -198,8 +198,7 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
   const faction = [
     {
       name: 'The Veiled Court',
-      motive:
-        'Claim the newly awakened Mythic Paths before their bearers learn which fallen power chose them.',
+      motive: 'Claim the newly awakened heroes before they learn which fallen power chose them.',
     },
     {
       name: 'The Ashen Synod',
@@ -208,7 +207,7 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     {
       name: 'The Ivory Throne',
       motive:
-        'Bind all Mythic Paths to the crown before an unranked hunter can challenge its rule.',
+        'Bind every Mythic Awakening to the crown before an unranked hunter can challenge its rule.',
     },
     {
       name: 'The Drowned Choir',
@@ -258,7 +257,7 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     terminology: {
       heroCollective: 'hunter trio',
       incursion: 'descent',
-      powerSource: 'Mythic Path',
+      powerSource: 'Mythic Awakening',
       technique: 'technique',
     },
     sceneVocabulary: {
@@ -289,7 +288,7 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     seed,
     bible,
     premise: `${campaignRealmName}: ${openingLaw}\n\n${openingDisruption}`,
-    campaignQuestion: `What awakened these three Mythic Paths, and what price will the realm demand when their legend outgrows its gods?`,
+    campaignQuestion: `What awakened these three heroes, and what price will the realm demand when their legend outgrows its gods?`,
     questTitle: quest.title,
     questObjective: quest.acts[0].objective.replace('{faction}', faction.name),
     questActs: quest.acts.map((act) => act.title),

@@ -78,11 +78,18 @@ describe('generated campaigns and trios', () => {
 
   it('binds generated definitions to executable mechanics and terminating battles', () => {
     for (const seed of seeds.slice(0, 25)) {
-      const campaign = applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
+      let campaign = applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
         type: 'START_CAMPAIGN',
         seed,
         selectedDraftIndex: 0,
       });
+      while (campaign.turn < 3) {
+        campaign = applyGameCommand(campaign, {
+          type: 'CHOOSE_SITUATION',
+          choiceId: campaign.currentScenario!.choices[0]!.id,
+        });
+        campaign = applyGameCommand(campaign, { type: 'COMMIT_TURN' });
+      }
       const resolved = applyGameCommand(campaign, { type: 'COMMIT_TURN' });
       const report = resolved.battleReports[0]!;
       expect(report.rounds).toBeLessThanOrEqual(12);

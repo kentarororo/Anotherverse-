@@ -1,151 +1,155 @@
-import { generateMythicReviewDraft } from '../../content/mythic-review';
+import { encounterForOperationTemplate } from '../../content/milestone-one';
+import { OPENING_JOURNEYS } from '../../content/opening-recruitment';
+import { QUEST_ARCS, questWorldId } from '../../content/quest-arcs';
 import type { CanonicalGameState } from '../model/state';
 import { ScenarioBlueprintSchema, type ScenarioBlueprint } from '../model/scenario';
-import { createSceneBeats } from '../narrative/scene-beats';
-import { QUEST_ARCS, questWorldId } from '../../content/quest-arcs';
+import type { WorldFact } from '../model/world';
 
-function lowerFirst(value: string) {
-  return `${value[0]?.toLowerCase() ?? ''}${value.slice(1)}`;
+const SLOT_PATTERN = /\{([A-Za-z][A-Za-z0-9]*)\}/g;
+
+function bind(text: string, values: Record<string, string>): string {
+  const result = text.replace(SLOT_PATTERN, (token, key: string) => values[key] ?? token).trim();
+  if (/\{[^}]+\}/.test(result)) throw new Error(`Unresolved opening slot in: ${result}`);
+  return result;
 }
 
-function effectsFor(category: ScenarioBlueprint['category'], choiceIndex: number) {
-  if (category === 'operation')
-    return { renownDelta: 0, provisionsDelta: 0, dangerDelta: 0, bondDelta: 0 };
-  if (category === 'personal') {
-    return choiceIndex === 0
-      ? { renownDelta: 1, provisionsDelta: 0, dangerDelta: 1, bondDelta: 2 }
-      : { renownDelta: 0, provisionsDelta: 0, dangerDelta: 0, bondDelta: 1 };
+function latestOpeningDecision(state: CanonicalGameState, turn: number): WorldFact {
+  const fact = state.worldFacts.find(
+    (candidate) =>
+      candidate.active &&
+      candidate.createdTurn === turn - 1 &&
+      candidate.id === `fact-scenario-result-${turn - 1}`,
+  );
+  if (fact === undefined) throw new Error(`Opening Turn ${turn} requires the previous choice.`);
+  return fact;
+}
+
+function openingFoundationFacts(state: CanonicalGameState): [WorldFact, WorldFact] {
+  const facts = state.worldFacts.filter(
+    (fact) =>
+      fact.active &&
+      fact.createdTurn === 0 &&
+      fact.tags.some((tag) => tag === 'city' || tag === 'faction'),
+  );
+  const first = facts[0];
+  const second = facts[1];
+  if (first === undefined || second === undefined) {
+    throw new Error('The authored opening requires one live world fact and one live faction fact.');
   }
-  return choiceIndex === 0
-    ? { renownDelta: 1, provisionsDelta: 0, dangerDelta: 2, bondDelta: 0 }
-    : { renownDelta: 0, provisionsDelta: 1, dangerDelta: -1, bondDelta: 0 };
+  return [first, second];
 }
 
 /**
- * The first three turns are a hand-authored mythic vertical slice. It is regenerated from the
- * campaign seed, then parsed into the same canonical ScenarioBlueprint used by the director.
+ * Turns 1–2 recruit the two companions selected by canonical roster order. Turn 3 is the first
+ * operation. Each world owns a complete three-scene journey; this binder changes only hero,
+ * Awakening, and enemy names and carries the prior authored consequence forward unchanged.
  */
 export function createMythicOpeningScenario(
   state: CanonicalGameState,
   turn: number,
 ): ScenarioBlueprint | null {
   if (turn < 1 || turn > 3 || state.campaignSeed === null) return null;
-  const draft = generateMythicReviewDraft(state.campaignSeed);
-  const chapter = draft.chapters[turn - 1];
-  if (chapter === undefined) return null;
-  const lead = draft.trio.find((hero) => chapter.paragraph.includes(hero.name)) ?? draft.trio[0]!;
-  const foundationFactIds = state.worldFacts
-    .filter((fact) => fact.active && (fact.tags.includes('city') || fact.tags.includes('faction')))
-    .slice(0, 2)
-    .map((fact) => fact.id);
-  const priorDecision = [...state.worldFacts]
-    .reverse()
-    .find(
-      (fact) =>
-        fact.active &&
-        fact.createdTurn > 0 &&
-        ['operation', 'discovery', 'personal'].some((tag) => fact.tags.includes(tag)),
-    );
-  const premiseFactIds =
-    turn === 1 || priorDecision === undefined
-      ? foundationFactIds
-      : [foundationFactIds[turn % foundationFactIds.length]!, priorDecision.id];
-  if (premiseFactIds.length < 2) return null;
-  const choices =
-    chapter.category === 'operation'
-      ? [
-          {
-            id: `enter-mythic-trial-t${turn}`,
-            label: 'Enter the trial',
-            description: 'Set formation, stances, and team priority before the battle begins.',
-            consequence: chapter.choiceResults[0],
-            outcomeConsequences:
-              draft.world.id === 'fallen-heavens'
-                ? {
-                    victory: chapter.choiceResults[0],
-                    defeat:
-                      'The squad escaped the crater after the guardians overwhelmed them. Behind an empty altar, they found a fresh name cut into a god’s rib.',
-                    roundCap:
-                      'The trial ended before either side won. Behind an empty altar, the squad found a fresh name cut into a god’s rib.',
-                  }
-                : {
-                    victory: chapter.choiceResults[0],
-                    defeat:
-                      'The squad escaped the shore in an empty black boat after the drowned broke their line. Below the first landing, they found a ferryman chained beneath the bell.',
-                    roundCap:
-                      'Dawn ended the fight before either side won. Below the first landing, the squad found a ferryman chained beneath the bell.',
-                  },
-            effects: effectsFor('operation', 0),
-          },
-        ]
-      : chapter.choices.map((label, choiceIndex) => ({
-          id: `${chapter.id}-choice-${choiceIndex + 1}-t${turn}`,
-          label,
-          description: chapter.choiceDescriptions[choiceIndex],
-          consequence: chapter.choiceResults[choiceIndex],
-          ...(chapter.id === 'ferrymans-price' && choiceIndex === 1
-            ? {
-                encounterId: 'secret-drowned-stair',
-                outcomeConsequences: {
-                  victory: chapter.choiceResults[choiceIndex],
-                  defeat:
-                    'The drowned drove the trio back to the ferryman. He carried them across, but took one bright childhood summer from each hero as payment.',
-                  roundCap:
-                    'The trio held the drowned until the funeral bell rang. In the silence that followed, they climbed the last steps and found the royal seal nailed to the bell-room door.',
-                },
-              }
-            : {}),
-          effects:
-            chapter.choiceEffects?.[choiceIndex] ?? effectsFor(chapter.category, choiceIndex),
-        }));
+  if (state.campaignBible === null)
+    throw new Error('The authored opening requires a campaign bible.');
 
-  const setting = `the ${state.campaignBible?.sceneVocabulary.crisisSite ?? 'dungeon threshold'}`;
-  const memoryLine =
-    priorDecision === undefined
-      ? `The trio came to ${setting} for its first ranked trial.`
-      : String(priorDecision.value);
-  const chapterBeats = createSceneBeats(chapter.paragraph);
-  const sceneBeats = {
-    hook: chapterBeats.hook,
-    cause: memoryLine,
-    stakes: `${chapterBeats.cause} ${chapterBeats.stakes}`,
-    decision:
-      chapter.category === 'operation'
-        ? 'Set the formation and choose which threat the squad will stop first.'
-        : `Will the trio ${lowerFirst(chapter.choices[0])} or ${lowerFirst(chapter.choices[1])}?`,
+  const lead =
+    state.generatedDefinitions.characters.find((hero) => hero.id === state.leadCharacterId) ??
+    state.generatedDefinitions.characters[0];
+  if (lead === undefined) throw new Error('The authored opening requires a chosen lead.');
+  const companions = state.generatedDefinitions.characters.filter((hero) => hero.id !== lead.id);
+  const firstCompanion = companions[0];
+  const secondCompanion = companions[1];
+  if (firstCompanion === undefined || secondCompanion === undefined) {
+    throw new Error('The authored opening requires two recruitable companions.');
+  }
+
+  const worldId = questWorldId(state.campaignBible.city.id);
+  const journey = OPENING_JOURNEYS[worldId];
+  const chapter = journey.chapters[turn - 1];
+  if (chapter === undefined) return null;
+  const encounter =
+    chapter.category === 'operation' ? encounterForOperationTemplate(chapter.templateId) : null;
+  const enemies =
+    encounter?.enemyIds.map((id) => state.generatedDefinitions.enemies[id]?.name ?? id) ?? [];
+  const slots = {
+    lead: lead.name,
+    leadAwakening: lead.callingName,
+    firstCompanion: firstCompanion.name,
+    firstAwakening: firstCompanion.callingName,
+    secondCompanion: secondCompanion.name,
+    secondAwakening: secondCompanion.callingName,
+    enemyOne: enemies[0] ?? 'the charging guardian',
+    enemyTwo: enemies[1] ?? 'the watching seer',
   };
-  const premise = [sceneBeats.hook, sceneBeats.cause, sceneBeats.stakes, sceneBeats.decision].join(
-    ' ',
-  );
-  const arc = QUEST_ARCS[questWorldId(state.campaignBible!.city.id)];
-  const act = arc.acts[0];
+  const foundationFacts = openingFoundationFacts(state);
+  const priorDecision = turn === 1 ? undefined : latestOpeningDecision(state, turn);
+  const sceneBeats = {
+    hook: bind(chapter.hook, slots),
+    cause:
+      priorDecision === undefined
+        ? bind(chapter.cause, slots)
+        : bind(String(priorDecision.value ?? chapter.cause), slots),
+    stakes: bind(chapter.stakes, slots),
+    decision: bind(chapter.decision, slots),
+  };
+  const choices = chapter.choices.map((candidate) => ({
+    id: `${candidate.id}-t${turn}`,
+    label: bind(candidate.label, slots),
+    description: bind(candidate.description, slots),
+    consequence: bind(candidate.consequence, slots),
+    outcomeConsequences:
+      candidate.outcomeConsequences === undefined
+        ? undefined
+        : {
+            victory: bind(candidate.outcomeConsequences.victory, slots),
+            defeat: bind(candidate.outcomeConsequences.defeat, slots),
+            roundCap: bind(candidate.outcomeConsequences.roundCap, slots),
+          },
+    effects: candidate.effects,
+  }));
+  const arc = QUEST_ARCS[worldId];
+  const premiseFactIds =
+    priorDecision === undefined
+      ? foundationFacts.map((fact) => fact.id)
+      : [foundationFacts[(turn - 1) % foundationFacts.length]!.id, priorDecision.id];
+  const castIds =
+    turn === 1
+      ? [lead.id, firstCompanion.id]
+      : turn === 2
+        ? [lead.id, firstCompanion.id, secondCompanion.id]
+        : state.generatedDefinitions.characters.map((hero) => hero.id);
 
   return ScenarioBlueprintSchema.parse({
     id: `scenario-turn-${turn}`,
-    templateId: chapter.category === 'operation' ? 'operation-1' : `mythic-${chapter.id}`,
+    templateId: chapter.templateId,
     category: chapter.category,
     title: chapter.title,
-    premise,
+    premise: [sceneBeats.hook, sceneBeats.cause, sceneBeats.stakes, sceneBeats.decision].join(' '),
     sceneBeats,
     quest: {
       id: arc.id,
       title: arc.title,
       act: 1,
-      actTitle: act.title,
-      objective: act.objective.replace('{faction}', state.campaignBible!.activeFactions[0]!.name),
+      actTitle: chapter.actTitle,
+      objective: chapter.objective,
       chapter: turn,
       totalChapters: 20,
     },
     premiseFactIds,
-    castIds: chapter.category === 'operation' ? draft.trio.map((hero) => hero.id) : [lead.id],
-    threatIds: chapter.category === 'operation' ? ['rift-hound', 'glass-weaver'] : [],
+    castIds,
+    threatIds: encounter?.enemyIds ?? [],
     choices,
     forecast: {
-      likelyBenefit: choices[0]!.consequence,
-      likelyRisk: choices.at(-1)!.consequence,
-      confidence: chapter.category === 'discovery' ? 'moderate' : 'high',
+      likelyBenefit: choices[0]!.description,
+      likelyRisk: choices.at(-1)!.description,
+      confidence: chapter.category === 'operation' ? 'moderate' : 'high',
     },
-    advancesThreadId: chapter.category === 'personal' ? `thread-personal-${lead.id}` : undefined,
-    semanticFingerprint: `mythic:${draft.world.id}:${chapter.id}:${turn}`,
+    advancesThreadId:
+      turn === 1
+        ? `thread-personal-${firstCompanion.id}`
+        : turn === 2
+          ? `thread-personal-${secondCompanion.id}`
+          : undefined,
+    semanticFingerprint: `${journey.id}:${chapter.turn}:${lead.id}`,
   });
 }

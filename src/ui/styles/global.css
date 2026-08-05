@@ -389,6 +389,22 @@ h2 {
   color: var(--accent);
 }
 
+.creation-choice-heading {
+  padding: 0.7rem 0 1rem;
+  text-align: center;
+}
+
+.creation-choice-heading h2 {
+  margin: 0.2rem 0;
+  font-size: 1.4rem;
+}
+
+.creation-choice-heading > p:last-child {
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
 .dossier-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -396,11 +412,25 @@ h2 {
 }
 
 .dossier {
+  display: flex;
+  flex-direction: column;
   padding: 1rem;
   border: 1px solid var(--line);
   border-top: 3px solid #778399;
   border-radius: var(--radius);
   background: var(--panel);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.dossier-selected {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px rgba(87, 229, 195, 0.34),
+    0 16px 48px rgba(0, 0, 0, 0.28);
+  transform: translateY(-3px);
 }
 
 .dossier.role-vanguard {
@@ -511,6 +541,11 @@ h2 {
   display: grid;
   gap: 0.55rem;
   margin-top: 0.8rem;
+}
+
+.hero-choice-button {
+  width: 100%;
+  margin-top: auto;
 }
 
 .dossier-techniques h3 {
@@ -1923,6 +1958,95 @@ select {
   min-height: 34px;
   padding: 0.4rem;
   font-size: 0.62rem;
+}
+
+.forge-resources,
+.fusion-bowl,
+.fusion-odds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.forge-resources > span,
+.fusion-bowl > span,
+.fusion-bowl > button,
+.fusion-odds > small {
+  padding: 0.38rem 0.52rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: #b8c1ce;
+  background: rgba(5, 8, 13, 0.55);
+  font-size: 0.62rem;
+}
+
+.material-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.material-card {
+  display: grid;
+  gap: 0.22rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  color: var(--text);
+  background: var(--panel-raised);
+  text-align: left;
+}
+
+.material-card:not(:disabled):hover,
+.material-card:not(:disabled):focus-visible {
+  border-color: var(--accent);
+}
+
+.material-card:disabled {
+  opacity: 0.42;
+}
+
+.material-card span,
+.material-card small,
+.fusion-preview > span,
+.forge-result > span {
+  color: var(--accent);
+  font-size: 0.57rem;
+  text-transform: uppercase;
+}
+
+.material-card p,
+.fusion-preview p,
+.forge-result p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+  line-height: 1.45;
+}
+
+.fusion-preview,
+.forge-result {
+  margin-top: 0.8rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(87, 229, 195, 0.3);
+  border-radius: 8px;
+  background: rgba(87, 229, 195, 0.05);
+}
+
+.fusion-preview h3 {
+  margin: 0.25rem 0;
+}
+
+.fusion-preview > strong {
+  display: block;
+  margin: 0.55rem 0;
+  color: #dce9e5;
+  font-size: 0.68rem;
+}
+
+.forge-action {
+  width: 100%;
+  margin-top: 0.85rem;
 }
 .drawer-empty {
   padding: 2rem 1rem;

@@ -1,7 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **v0.10: Tactical Slice**.
+The project is a clean-room implementation and currently contains **v0.11: Awakening & Forge Slice**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -11,8 +11,11 @@ The project is a clean-room implementation and currently contains **v0.10: Tacti
   advanced seed input.
 - A deterministic campaign generator with two mythology-first realms, six complete hero identities,
   and three distinct, colourful origins per generated squad.
-- A whole-campaign creation and regeneration screen with three complete generated hero dossiers.
-- Original Oathward, Doomseeker, and Fateweaver classes beneath each hero's unique Mythic Path, with executable signatures, limitations,
+- A campaign creation screen where the player chooses one of three complete starting heroes: Tank,
+  Damage, or Support.
+- Two world-specific opening journeys in which the chosen lead earns one named companion in Chapter
+  1, earns the final companion in Chapter 2, and enters the trio's first battle in Chapter 3.
+- Original Oathward, Doomseeker, and Fateweaver classes beneath each hero's unique Mythic Awakening, with executable signatures, limitations,
   reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
   conditions.
 - Two complete, world-specific four-act quests covering all 20 chapters, with recurring allies,
@@ -23,14 +26,16 @@ The project is a clean-room implementation and currently contains **v0.10: Tacti
   what actually happened instead of reinterpreting a button label.
 - Build-time validation for unresolved slots, chapter order, choice count, forbidden meta language,
   and unsupported procedural substitutions.
-- Levels, experience, training points, Path ranks, Renown, Rations, Coin, relic dust, Path
-  mastery, equipment rewards, and relationship bonds that affect later situations.
+- Levels, experience, training points, Hunter ranks, Renown, Rations, Coin, relic dust, Awakening
+  techniques, forged equipment, and relationship bonds that affect later situations.
 - Bestiary intelligence that raises forecast confidence and equipment counter tags that resolve in
   authoritative combat events.
 - Contextual character, inventory, Bestiary, world-memory, archived-log, and development inspector
   drawers.
-- Four core battles and three choice-bound secret encounters with ten enemy modules and ten unique
-  equipment rewards, played through the real Command screen.
+- Four core battles and three choice-bound secret encounters with ten enemy modules and ten named
+  monster materials, played through the real Command screen.
+- A deterministic Forge that consumes any three monster materials. Each material changes visible
+  weapon/support and charger/hexer odds; one seeded reward draw creates an equippable relic.
 - Formation, stance, and team-priority controls that measurably change target selection, action
   policy, mitigation, and deterministic outcomes.
 - Scored legal-action policies whose visible weights and failed conditions appear in the
@@ -40,7 +45,7 @@ The project is a clean-room implementation and currently contains **v0.10: Tacti
 - A two-lane battle playback that shows every action in order at a readable 800 ms pace, with
   canonical HP, actor/target highlights, pause/replay/skip, and reduced-motion manual advance.
 - A 2D formation preview and six-combatant arena presentation with distinct role/enemy
-  silhouettes, event VFX placeholders, stable Calling/enemy/arena asset IDs, and safe CSS fallbacks.
+  silhouettes, event VFX placeholders, stable Awakening/enemy/arena asset IDs, and safe CSS fallbacks.
 - Visible VIT, POW, GRD, SPD, FOC, and AP numbers on the command screen, plus plan effect,
   post-battle squad HP retention, level progress, and formation review.
 - Reduced-motion battle review that starts on the first stable action frame and advances manually
@@ -56,15 +61,15 @@ The project is a clean-room implementation and currently contains **v0.10: Tacti
   combat/aftermath reports, content manifest, and save envelopes.
 - One LocalStorage autosave behind a replaceable `SaveRepository` interface, including explicit
   corrupt and incompatible-save results.
-- Save schema 12 deliberately rejects older campaigns that cannot reconstruct the current resources,
-  choice-bound battles, and rewards.
+- Save schema 13 deliberately rejects older campaigns that cannot reconstruct the selected lead,
+  recruited companions, material inventory, and Forge history.
 - A corpus renderer contract that can later be joined by an optional LLM renderer without changing
   authoritative mechanics.
 
 ## Deliberately stubbed
 
-The current slice contains two complete 20-chapter quests. Equipment and growth content remains
-intentionally compact while the quest and autobattle loop is validated.
+The current slice contains two complete 20-chapter quests and one compact ten-material Forge pool.
+Equipment affixes and Awakening growth remain intentionally compact while the core loop is validated.
 
 ## Setup and verification
 
@@ -87,7 +92,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-The browser suite includes a complete 20-turn campaign, equipment and Calling progression, every
+The browser suite includes a complete 20-turn campaign, forged equipment and Awakening progression, every
 situation category, archived reports, and a save/reload continuation after Turn 10.
 
 Run the non-browser First Playable Slice gate in one command:

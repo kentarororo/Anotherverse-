@@ -4,7 +4,8 @@ Anotherverse uses a bounded offline story engine. It does not shuffle arbitrary 
 
 ## Canonical sources
 
-- `src/content/mythic-review.ts`: the two realms, six fixed heroes, Mythic Paths, relics, and three opening chapters.
+- `src/content/mythic-review.ts`: the two realms, six fixed heroes, Mythic Awakenings, and relics.
+- `src/content/opening-recruitment.ts`: the two complete three-chapter recruitment journeys.
 - `src/content/quest-arcs.ts`: the two four-act quests and their exact chapter choices, results, and effects.
 - `src/content/path-classes.ts`: the original Oathward, Doomseeker, and Fateweaver class contracts.
 - `src/engine/director/scenario-director.ts`: deterministic chapter selection and safe slot binding.
@@ -17,7 +18,7 @@ The quest arc is the story owner. The renderer may substitute a compatible name 
 Every hero follows one visible chain:
 
 ```text
-Background -> defining choice -> desire and bond -> flaw -> base class -> Mythic Path -> techniques -> awakening
+Background -> defining choice -> desire and bond -> flaw -> base class -> Mythic Awakening -> techniques -> next form
 ```
 
 Every campaign follows one visible chain:
@@ -69,7 +70,7 @@ What that choice cost:
 What they want now:
 The person, promise, or place they protect:
 The flaw that endangers the party:
-Mythic Path and its visible manifestation:
+Mythic Awakening and its visible manifestation:
 Two techniques - visible action, tactical purpose, and exact rule:
 The personal choice required to awaken:
 ```

@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 test.use({ viewport: { width: 1365, height: 768 } });
+
+async function recruitOpeningTrio(page: Page) {
+  for (const nextTurn of [2, 3]) {
+    await page.getByRole('radio').first().click();
+    await page.getByRole('button', { name: 'Take Action' }).click();
+    await expect(page.getByRole('heading', { name: 'Aftermath' })).toBeVisible();
+    await page.getByRole('button', { name: `Continue to Turn ${nextTurn}` }).click();
+  }
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -22,6 +32,7 @@ test('renders authored campaign and character stories with exact rules kept visi
   await expect(page.locator('.technique-mechanics').first()).toContainText('Cost');
   await expect(page.locator('.technique-mechanics').first()).toContainText('Cooldown');
 
+  await page.locator('.hero-choice-button').first().click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
   await page
     .getByRole('button', { name: /Details · Level/ })
@@ -66,7 +77,9 @@ test('explains when a same-schema autosave belongs to different content', async 
   await page.getByText('Advanced').click();
   await page.getByLabel('Campaign seed').fill('stale-content-browser-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
+  await page.locator('.hero-choice-button').first().click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await recruitOpeningTrio(page);
   await page.evaluate(() => {
     const key = 'anotherverse.prototype.autosave';
     const envelope = JSON.parse(localStorage.getItem(key)!);
@@ -112,12 +125,14 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
   await page.getByText('Advanced').click();
   await page.getByLabel('Campaign seed').fill('mobile-accessibility-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
+  await page.locator('.hero-choice-button').first().click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await recruitOpeningTrio(page);
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '125%';
   });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
   await expect(page.locator('.operation-content h2')).toBeVisible();
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
   await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(6);
@@ -167,7 +182,9 @@ test('waits to consume mobile highlights until the battlefield is visible', asyn
   await page.getByText('Advanced').click();
   await page.getByLabel('Campaign seed').fill('mobile-visibility-gate-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
+  await page.locator('.hero-choice-button').first().click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await recruitOpeningTrio(page);
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '125%';
     const scope = globalThis as typeof globalThis & {
@@ -216,9 +233,11 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   const [vanguardName, strikerName] = heroNames;
   expect(vanguardName).toBeTruthy();
   expect(strikerName).toBeTruthy();
+  await page.locator('.hero-choice-button').first().click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await recruitOpeningTrio(page);
 
-  await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
   const authoredOperationTitle = page.locator('.operation-content h2');
   await expect(authoredOperationTitle).toBeVisible();
   await expect(authoredOperationTitle).not.toHaveText('');
@@ -238,8 +257,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
 
   await page.getByRole('button', { name: 'Take Action' }).click();
   await expect(page.getByRole('heading', { name: /Victory|Defeat|Round Cap/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Continue to Turn 2' })).toBeVisible();
-  await expect(page.getByText('Chapter 1 complete')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue to Turn 4' })).toBeVisible();
+  await expect(page.getByText('Chapter 3 complete')).toBeVisible();
   await expect(page.getByLabel('Battle playback', { exact: true })).toBeVisible();
   await expect(page.locator('.combat-unit')).toHaveCount(6);
   await expect(page.locator('.battle-playback-stage [data-art-slot^="unit:"]')).toHaveCount(6);
@@ -320,24 +339,18 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await logsButton.focus();
   await logsButton.click();
   await expect(page.getByRole('heading', { name: 'Completed chapters' })).toBeVisible();
-  await expect(page.getByText(/Turn 1 · Battle/)).toBeVisible();
+  await expect(page.getByText(/Turn 3 · Battle/)).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(logsButton).toBeFocused();
 
-  await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
-  await expect(page.getByText('Discovery', { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Take Action' })).toBeDisabled();
-  await page.getByRole('radio').first().click();
-  await page.getByRole('button', { name: 'Take Action' }).click();
-  await expect(page.getByRole('heading', { name: 'Resolved' })).toBeVisible();
-  await page.getByRole('button', { name: 'Continue to Turn 3' }).click();
+  await page.getByRole('button', { name: 'Continue to Turn 4' }).click();
 
   await page.reload();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
   await expect(page.getByText('Turn').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Take Action' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Take Action' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Save / Menu' }).click();
   let confirmation = '';
@@ -350,24 +363,34 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByRole('heading', { name: 'ANOTHERVERSE' })).toBeVisible();
 });
 
-test('shows resources and turns the ferryman refusal into a battle', async ({ page }) => {
+test('shows weighty monster materials and forges a deterministic relic', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByText('Advanced').click();
-  await page.getByLabel('Campaign seed').fill('reputation-choice-seed');
+  await page.getByLabel('Campaign seed').fill('balance-0');
   await page.getByRole('button', { name: 'New Campaign' }).click();
+  await page.locator('.hero-choice-button').first().click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
+  await recruitOpeningTrio(page);
 
   await expect(page.locator('.campaign-metrics')).toContainText('Rations');
   await expect(page.locator('.campaign-metrics')).toContainText('Coin');
   await expect(page.locator('.campaign-metrics')).toContainText('Dust');
   await expect(page.locator('.campaign-metrics')).toContainText('Gear');
+  await expect(page.locator('.campaign-metrics')).toContainText('Materials');
 
   await page.getByRole('button', { name: 'Take Action' }).click();
-  await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
-  await page.getByRole('radio', { name: /Take the drowned stair/i }).click();
-  await expect(page.getByLabel('Planned battle formation')).toBeVisible();
-  await expect(page.getByLabel('Enemy threats')).toContainText('Drowned Lancer');
-  await page.getByRole('button', { name: 'Take Action' }).click();
-  await expect(page.getByText('Chapter 2 complete')).toBeVisible();
+  await expect(page.getByText('Chapter 3 complete')).toBeVisible();
   await expect(page.getByText('Battle details')).toBeVisible();
+  await expect(page.getByText('Monster material').first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Forge' }).click();
+  const forge = page.getByRole('dialog', { name: 'forge details' });
+  await expect(forge.getByText('3 materials')).toBeVisible();
+  for (let index = 0; index < 3; index += 1) {
+    await forge.locator('.material-card:not(:disabled)').first().click();
+  }
+  await expect(forge.getByLabel('Fusion preview')).toBeVisible();
+  await forge.getByRole('button', { name: 'Fuse three materials' }).click();
+  await expect(forge.locator('.forge-result')).toBeVisible();
+  await expect(forge.getByText('0 materials')).toBeVisible();
 });

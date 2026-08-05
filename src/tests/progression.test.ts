@@ -11,28 +11,52 @@ function start(seed = 'progression-seed') {
   });
 }
 
+function advanceToTurn(seed: string, targetTurn: number) {
+  let state = start(seed);
+  while (state.turn < targetTurn) {
+    if (state.pendingPlan.situationChoiceId === null) {
+      state = applyGameCommand(state, {
+        type: 'CHOOSE_SITUATION',
+        choiceId: state.currentScenario!.choices[0]!.id,
+      });
+    }
+    state = applyGameCommand(state, { type: 'COMMIT_TURN' });
+  }
+  return state;
+}
+
+function battleStart(seed = 'progression-seed') {
+  return advanceToTurn(seed, 3);
+}
+
 describe('progression and management', () => {
-  it('turns the dangerous ferryman refusal into a secret battle', () => {
-    const seed = Array.from({ length: 40 }, (_, index) => `ferryman-${index}`).find((candidate) =>
-      start(candidate).campaignBible!.city.id.includes('underworld-tide'),
+  it('turns the dangerous ledger theft into a secret battle', () => {
+    const seed = Array.from({ length: 80 }, (_, index) => `ferryman-${index}`).find((candidate) => {
+      const scene = advanceToTurn(candidate, 8);
+      return (
+        scene.campaignBible!.city.id.includes('underworld-tide') &&
+        scene.currentScenario!.choices.some((choice) => choice.encounterId !== undefined)
+      );
+    })!;
+    expect(seed).toBeDefined();
+    const ledgerScene = advanceToTurn(seed, 8);
+    const battleCountBefore = ledgerScene.battleReports.length;
+    const refusal = ledgerScene.currentScenario!.choices.find(
+      (choice) => choice.encounterId !== undefined,
     )!;
-    const afterOpening = applyGameCommand(start(seed), { type: 'COMMIT_TURN' });
-    const refusal = afterOpening.currentScenario!.choices.find(
-      (choice) => choice.encounterId === 'secret-drowned-stair',
-    )!;
-    const planned = applyGameCommand(afterOpening, {
+    const planned = applyGameCommand(ledgerScene, {
       type: 'CHOOSE_SITUATION',
       choiceId: refusal.id,
     });
-    expect(planned.currentEncounter?.id).toBe('secret-drowned-stair');
+    expect(planned.currentEncounter?.id).toBe(refusal.encounterId);
     const resolved = applyGameCommand(planned, { type: 'COMMIT_TURN' });
-    expect(resolved.battleReports).toHaveLength(2);
-    expect(resolved.aftermathReports.at(-1)!.summary).toMatch(/drowned|ferryman|funeral bell/i);
+    expect(resolved.battleReports).toHaveLength(battleCountBefore + 1);
+    expect(resolved.aftermathReports.at(-1)!.summary).toMatch(/drowned|guards|page|boat/i);
   });
 
-  it('grants battle resources and never reports a duplicate equipment drop', () => {
+  it('grants battle resources and named monster materials', () => {
     let state = start('reward-cadence-seed');
-    const granted: string[] = [];
+    const grantedMaterials: string[] = [];
     while (state.turn <= 20) {
       if (state.pendingPlan.situationChoiceId === null) {
         state = applyGameCommand(state, {
@@ -41,16 +65,17 @@ describe('progression and management', () => {
         });
       }
       state = applyGameCommand(state, { type: 'COMMIT_TURN' });
-      granted.push(...state.aftermathReports.at(-1)!.itemIdsGranted);
+      grantedMaterials.push(...state.aftermathReports.at(-1)!.materialIdsGranted);
     }
-    expect(new Set(granted).size).toBe(granted.length);
     expect(state.coins).toBeGreaterThan(30);
-    expect(state.relicDust).toBeGreaterThan(0);
-    expect(state.inventoryIds).toEqual(expect.arrayContaining(granted));
+    expect(Object.values(state.materials).reduce((sum, count) => sum + count, 0)).toBe(
+      grantedMaterials.length,
+    );
+    expect(state.inventoryIds).toHaveLength(0);
   });
 
   it('records relationships and Bestiary intelligence after resolution', () => {
-    const initial = start();
+    const initial = battleStart();
     const resolved = applyGameCommand(initial, { type: 'COMMIT_TURN' });
     const encountered = new Set(initial.currentEncounter!.enemyIds);
     expect(
@@ -69,7 +94,11 @@ describe('progression and management', () => {
     const choice = personal.currentScenario!.choices[0]!;
     personal = applyGameCommand(personal, { type: 'CHOOSE_SITUATION', choiceId: choice.id });
     personal = applyGameCommand(personal, { type: 'COMMIT_TURN' });
-    expect(personal.relationships).toEqual(resolved.relationships);
+    const changedRelationships = personal.relationships.filter(
+      (relationship, index) =>
+        relationship.factIds.length !== resolved.relationships[index]!.factIds.length,
+    );
+    expect(changedRelationships.length).toBeGreaterThan(0);
 
     let pairedScene = personal;
     while (
@@ -102,12 +131,21 @@ describe('progression and management', () => {
     expect(relationshipAfter.factIds).toContain(`fact-scenario-result-${pairedScene.turn}`);
   });
 
-  it('equips recovered rewards and persists the slot in canonical state', () => {
-    const resolved = applyGameCommand(start('rules-seed'), { type: 'COMMIT_TURN' });
-    expect(resolved.inventoryIds.length).toBeGreaterThan(0);
-    const hero = resolved.generatedDefinitions.characters[0]!;
-    const itemId = resolved.inventoryIds[0]!;
-    const equipped = applyGameCommand(resolved, {
+  it('equips a forged reward and persists the slot in canonical state', () => {
+    const initial = battleStart('rules-seed');
+    const eligible = CanonicalGameStateSchema.parse({
+      ...initial,
+      materials: { 'grave-hound-fang': 2, 'augur-thread': 1 },
+    });
+    const forged = applyGameCommand(eligible, {
+      type: 'FUSE_MATERIALS',
+      materialIds: ['grave-hound-fang', 'grave-hound-fang', 'augur-thread'],
+    });
+    const hero = forged.generatedDefinitions.characters.find(
+      (candidate) => candidate.id === forged.leadCharacterId,
+    )!;
+    const itemId = forged.inventoryIds[0]!;
+    const equipped = applyGameCommand(forged, {
       type: 'EQUIP_ITEM',
       characterId: hero.id,
       itemId,
@@ -117,8 +155,10 @@ describe('progression and management', () => {
   });
 
   it('models Calling mastery as a development unlock rather than a combat technique', () => {
-    const initial = start('learning-seed');
-    const hero = initial.generatedDefinitions.characters[0]!;
+    const initial = battleStart('learning-seed');
+    const hero = initial.generatedDefinitions.characters.find(
+      (candidate) => candidate.id === initial.leadCharacterId,
+    )!;
     const member = initial.partyState[hero.id]!;
     const eligible = CanonicalGameStateSchema.parse({
       ...initial,
@@ -129,7 +169,7 @@ describe('progression and management', () => {
     expect(unlock).toEqual(
       expect.objectContaining({
         id: techniqueId,
-        name: `${hero.callingName} Mastery`,
+        name: `${hero.callingName} Awakening`,
         unlockCondition: expect.stringContaining(hero.awakeningCondition),
       }),
     );
@@ -146,7 +186,7 @@ describe('progression and management', () => {
   });
 
   it('makes equipment and Calling mastery change authoritative combat events', () => {
-    const initial = start('management-impact-seed');
+    const initial = battleStart('management-impact-seed');
     const striker = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'striker',
     )!;
@@ -180,7 +220,7 @@ describe('progression and management', () => {
   });
 
   it('uses an equipment counter tag in authoritative damage resolution', () => {
-    const initial = start('equipment-counter-seed');
+    const initial = battleStart('equipment-counter-seed');
     const vanguard = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'vanguard',
     )!;
@@ -202,7 +242,7 @@ describe('progression and management', () => {
   });
 
   it('advances Calling and squad rank and spends supplies on between-operation recovery', () => {
-    let state = start('rank-and-recovery-seed');
+    let state = battleStart('rank-and-recovery-seed');
     state = applyGameCommand(state, { type: 'COMMIT_TURN' });
     const afterOperation = state;
     const choice = state.currentScenario!.choices[0]!;
@@ -213,7 +253,7 @@ describe('progression and management', () => {
         Math.min(state.partyState[hero.id]!.maxHp, afterOperation.partyState[hero.id]!.hp + 4),
       );
     }
-    while (state.turn < 6) {
+    while (state.turn < 7) {
       if (state.currentScenario!.category !== 'operation') {
         const nextChoice = state.currentScenario!.choices[0]!;
         state = applyGameCommand(state, {
@@ -224,14 +264,13 @@ describe('progression and management', () => {
       state = applyGameCommand(state, { type: 'COMMIT_TURN' });
     }
     expect(state.rank).toBe('Bronze');
-    expect(Object.values(state.partyState).every((member) => member.callingRank >= 2)).toBe(true);
-    expect(Object.values(state.partyState).every((member) => member.trainingPoints >= 1)).toBe(
-      true,
-    );
+    const recruits = state.recruitedCharacterIds.map((id) => state.partyState[id]!);
+    expect(recruits.every((member) => member.callingRank >= 2)).toBe(true);
+    expect(recruits.every((member) => member.trainingPoints >= 1)).toBe(true);
   });
 
   it('turns situation consequences into authoritative reputation changes', () => {
-    const afterOperation = applyGameCommand(start('reputation-choice-seed'), {
+    const afterOperation = applyGameCommand(battleStart('reputation-choice-seed'), {
       type: 'COMMIT_TURN',
     });
     const [publicChoice, privateChoice] = afterOperation.currentScenario!.choices;
@@ -250,8 +289,8 @@ describe('progression and management', () => {
     expect(publicResult.aftermathReports.at(-1)!.reputationDelta).toBe(
       publicChoice!.effects.renownDelta,
     );
-    expect(privateResult.battleReports.length).toBeGreaterThanOrEqual(
-      privateChoice!.encounterId === undefined ? 1 : 2,
+    expect(privateResult.battleReports.length).toBe(
+      afterOperation.battleReports.length + (privateChoice!.encounterId === undefined ? 0 : 1),
     );
     expect(publicChoice!.effects).not.toEqual(privateChoice!.effects);
   });

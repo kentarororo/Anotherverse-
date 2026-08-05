@@ -1,12 +1,17 @@
 import { useAppStore } from '../../app/store';
 
-function titleCase(value: string) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
+const heroRoleLabels = {
+  vanguard: 'Tank',
+  striker: 'Damage',
+  support: 'Support',
+  controller: 'Control',
+} as const;
 
 export function CampaignCreationScreen() {
   const draft = useAppStore((state) => state.campaignDraft);
   const confirmCampaign = useAppStore((state) => state.confirmCampaign);
+  const selectedLeadId = useAppStore((state) => state.selectedLeadId);
+  const selectLead = useAppStore((state) => state.selectLead);
   const regenerateCampaign = useAppStore((state) => state.regenerateCampaign);
   const cancelCampaignDraft = useAppStore((state) => state.cancelCampaignDraft);
   if (draft === null) return null;
@@ -37,20 +42,32 @@ export function CampaignCreationScreen() {
         </div>
       </section>
 
-      <section className="dossier-grid" aria-label="Generated squad dossiers">
+      <section className="creation-choice-heading" aria-labelledby="choose-hero-title">
+        <p className="eyebrow">Your first decision</p>
+        <h2 id="choose-hero-title">Choose your first hero</h2>
+        <p>
+          The other two heroes are somewhere in this world. You may find them if you survive the
+          opening chapters.
+        </p>
+      </section>
+
+      <section className="dossier-grid" aria-label="Choose one starting hero">
         {draft.characters.map((hero) => (
-          <article className={`dossier role-${hero.role}`} key={hero.id}>
+          <article
+            className={`dossier role-${hero.role}${selectedLeadId === hero.id ? ' dossier-selected' : ''}`}
+            key={hero.id}
+          >
             <div className="dossier-heading">
               <div>
-                <span>{titleCase(hero.role)}</span>
+                <span>{heroRoleLabels[hero.role]}</span>
                 <h2>{hero.name}</h2>
               </div>
-              <strong>{hero.callingName} Path</strong>
+              <strong>{hero.callingName}</strong>
             </div>
             <div className="class-path-line">
               <strong>{hero.pathClassName}</strong>
               <span>{hero.pathClassSummary}</span>
-              <small>Unique Path: {hero.callingName}</small>
+              <small>Mythic Awakening: {hero.callingName}</small>
             </div>
             <section className="dossier-story" aria-label={`${hero.name} story`}>
               <p>{hero.story.portrait}</p>
@@ -119,6 +136,16 @@ export function CampaignCreationScreen() {
                 </article>
               ))}
             </section>
+            <button
+              className={`button hero-choice-button${selectedLeadId === hero.id ? ' button-primary' : ''}`}
+              type="button"
+              aria-pressed={selectedLeadId === hero.id}
+              onClick={() => selectLead(hero.id)}
+            >
+              {selectedLeadId === hero.id
+                ? `${hero.name} selected`
+                : `Begin as ${heroRoleLabels[hero.role]}`}
+            </button>
           </article>
         ))}
       </section>
@@ -130,8 +157,13 @@ export function CampaignCreationScreen() {
         <button className="button" type="button" onClick={regenerateCampaign}>
           Regenerate Campaign
         </button>
-        <button className="button button-primary" type="button" onClick={confirmCampaign}>
-          Start Campaign
+        <button
+          className="button button-primary"
+          type="button"
+          onClick={confirmCampaign}
+          disabled={selectedLeadId === null}
+        >
+          {selectedLeadId === null ? 'Choose a hero first' : 'Start Campaign'}
         </button>
       </footer>
     </main>

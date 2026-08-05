@@ -55,7 +55,7 @@ export function evaluateHeroActionPolicy(context: HeroPolicyContext): HeroAction
       candidate(context.firstTechniqueId, 'heal', 100, [
         [context.resource >= context.firstTechniqueCost, 'Insufficient action resource.'],
         [context.firstTechniqueReady, 'Technique is cooling down.'],
-        [!conserve, 'Conserve Path Power reserves this resource.'],
+        [!conserve, 'Conserve Awakening Power reserves this resource.'],
         [
           context.woundedAllyRatio < threshold,
           `No ally is below the ${threshold * 100}% threshold.`,
@@ -132,7 +132,8 @@ export function selectHeroAction(context: HeroPolicyContext): HeroActionCandidat
 }
 
 export function explainCurrentHeroPolicies(state: CanonicalGameState) {
-  const heroes = state.generatedDefinitions.characters;
+  const recruitedIds = new Set(state.recruitedCharacterIds);
+  const heroes = state.generatedDefinitions.characters.filter((hero) => recruitedIds.has(hero.id));
   const woundedAllyRatio = heroes.reduce((lowest, hero) => {
     const member = state.partyState[hero.id];
     return member === undefined ? lowest : Math.min(lowest, member.hp / member.maxHp);

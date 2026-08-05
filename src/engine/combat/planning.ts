@@ -68,7 +68,7 @@ export const PRIORITY_RULES: readonly PlanningRule<TeamPriorityId>[] = [
   },
   {
     id: 'conserve-power',
-    label: 'Conserve Path Power',
+    label: 'Conserve Awakening Power',
     effect: 'Heroes reserve AP and use basic attacks, which restore 1 AP when resolved.',
   },
 ];
@@ -95,7 +95,7 @@ export function buildHeroActionPreview(state: CanonicalGameState) {
         ? 'Shield Strike'
         : hero.role === 'striker'
           ? 'Hunter’s Cut'
-          : 'Path Bolt');
+          : 'Spirit Bolt');
     return {
       characterId: hero.id,
       characterName: hero.name,

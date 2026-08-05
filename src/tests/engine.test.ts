@@ -14,8 +14,22 @@ function start(seed = 'fixed-seed-001') {
   });
 }
 
+function battleStart(seed = 'fixed-seed-001') {
+  let state = start(seed);
+  while (state.turn < 3) {
+    if (state.pendingPlan.situationChoiceId === null) {
+      state = applyGameCommand(state, {
+        type: 'CHOOSE_SITUATION',
+        choiceId: state.currentScenario!.choices[0]!.id,
+      });
+    }
+    state = applyGameCommand(state, { type: 'COMMIT_TURN' });
+  }
+  return state;
+}
+
 function applyAll(commands: GameCommand[], seed = 'combat-seed') {
-  return commands.reduce(applyGameCommand, start(seed));
+  return commands.reduce(applyGameCommand, battleStart(seed));
 }
 
 describe('canonical command reducer', () => {
@@ -45,7 +59,7 @@ describe('canonical command reducer', () => {
   });
 
   it('swaps occupied formation positions so all three remain unique', () => {
-    const initial = start();
+    const initial = battleStart();
     const striker = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'striker',
     )!;
@@ -76,7 +90,7 @@ describe('canonical command reducer', () => {
 
 describe('Milestone 1 battle', () => {
   it('is byte-equivalent for the same seed and command sequence', () => {
-    const initial = start('combat-seed');
+    const initial = battleStart('combat-seed');
     const vanguard = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'vanguard',
     )!;
@@ -89,7 +103,7 @@ describe('Milestone 1 battle', () => {
   });
 
   it('terminates by round 12 and traces every attack HP and resource change', () => {
-    const state = applyGameCommand(start('trace-seed'), { type: 'COMMIT_TURN' });
+    const state = applyGameCommand(battleStart('trace-seed'), { type: 'COMMIT_TURN' });
     const report = state.battleReports[0]!;
     expect(report.rounds).toBeGreaterThanOrEqual(1);
     expect(report.rounds).toBeLessThanOrEqual(12);
@@ -114,8 +128,8 @@ describe('Milestone 1 battle', () => {
   });
 
   it('makes formation, stance, and priority change the deterministic result', () => {
-    const baseline = applyGameCommand(start('plan-impact-seed'), { type: 'COMMIT_TURN' });
-    const initial = start('plan-impact-seed');
+    const baseline = applyGameCommand(battleStart('plan-impact-seed'), { type: 'COMMIT_TURN' });
+    const initial = battleStart('plan-impact-seed');
     const striker = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'striker',
     )!;
@@ -137,7 +151,7 @@ describe('Milestone 1 battle', () => {
   });
 
   it('uses signatures, limitations, and explicit status interactions', () => {
-    const state = applyGameCommand(start('rules-seed'), { type: 'COMMIT_TURN' });
+    const state = applyGameCommand(battleStart('rules-seed'), { type: 'COMMIT_TURN' });
     const events = state.battleReports[0]!.events;
     const triggers = events.flatMap((event) => event.ruleTriggers ?? []);
     const statuses = events.flatMap(
@@ -158,7 +172,7 @@ describe('Milestone 1 battle', () => {
   });
 
   it('requires the Oathward to hold Front before intercepting the rear', () => {
-    const initial = start('front-intercept-gate');
+    const initial = battleStart('front-intercept-gate');
     const vanguard = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'vanguard',
     )!;
@@ -176,7 +190,7 @@ describe('Milestone 1 battle', () => {
   });
 
   it('enforces the striker open-guard limitation when Aggressive at the front', () => {
-    const initial = start('open-guard-seed');
+    const initial = battleStart('open-guard-seed');
     const striker = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'striker',
     )!;
@@ -200,38 +214,59 @@ describe('Milestone 1 battle', () => {
   });
 
   it('executes every second starting technique under its visible plan condition', () => {
-    const initial = start('second-techniques-seed');
+    const initial = battleStart('second-techniques-seed');
     const striker = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'striker',
     )!;
     const support = initial.generatedDefinitions.characters.find(
       (hero) => hero.role === 'support',
     )!;
-    const planned = applyAll(
-      [
-        {
-          type: 'SET_TEAM_PRIORITY',
-          priorityId: 'protect-rear',
-        },
-        {
-          type: 'SET_POSITION',
-          characterId: striker.id,
-          position: 'rear',
-        },
-        {
-          type: 'SET_STANCE',
-          characterId: striker.id,
-          stanceId: 'tactical',
-        },
-        {
-          type: 'SET_STANCE',
-          characterId: support.id,
-          stanceId: 'tactical',
-        },
-        { type: 'COMMIT_TURN' },
-      ],
-      'second-techniques-seed',
+    const encounterIds = new Set(initial.currentEncounter!.enemyIds);
+    const durableEnemies = Object.fromEntries(
+      Object.entries(initial.generatedDefinitions.enemies).map(([id, enemy]) => [
+        id,
+        encounterIds.has(id)
+          ? {
+              ...enemy,
+              stats: { vitality: 40, power: 1, guard: 8, speed: 1, focus: 1 },
+            }
+          : enemy,
+      ]),
     );
+    const durableStart = CanonicalGameStateSchema.parse({
+      ...initial,
+      generatedDefinitions: {
+        ...initial.generatedDefinitions,
+        enemies: durableEnemies,
+        combatants: {
+          ...initial.generatedDefinitions.combatants,
+          ...Object.fromEntries([...encounterIds].map((id) => [id, durableEnemies[id]])),
+        },
+      },
+    });
+    const commands: GameCommand[] = [
+      {
+        type: 'SET_TEAM_PRIORITY',
+        priorityId: 'protect-rear',
+      },
+      {
+        type: 'SET_POSITION',
+        characterId: striker.id,
+        position: 'rear',
+      },
+      {
+        type: 'SET_STANCE',
+        characterId: striker.id,
+        stanceId: 'tactical',
+      },
+      {
+        type: 'SET_STANCE',
+        characterId: support.id,
+        stanceId: 'tactical',
+      },
+      { type: 'COMMIT_TURN' },
+    ];
+    const planned = commands.reduce(applyGameCommand, durableStart);
     const actions = new Set(planned.battleReports[0]!.events.map((event) => event.actionId));
     const statuses = planned.battleReports[0]!.events.flatMap(
       (event) => event.statusChanges?.map((change) => change.statusId) ?? [],
@@ -243,7 +278,7 @@ describe('Milestone 1 battle', () => {
   });
 
   it('sets authored technique cooldowns and prevents consecutive-round reuse', () => {
-    const resolved = applyGameCommand(start('cooldown-seed'), { type: 'COMMIT_TURN' });
+    const resolved = applyGameCommand(battleStart('cooldown-seed'), { type: 'COMMIT_TURN' });
     const report = resolved.battleReports[0]!;
     expect(
       report.events.some((event) =>
@@ -263,7 +298,7 @@ describe('Milestone 1 battle', () => {
   });
 
   it('calculates a plan-sensitive forecast without consuming combat RNG', () => {
-    const baseline = start('forecast-seed');
+    const baseline = battleStart('forecast-seed');
     const before = baseline.rngStreams?.combat.position;
     const first = calculateForecast(baseline);
     const changedPlan = applyGameCommand(baseline, {
@@ -277,7 +312,7 @@ describe('Milestone 1 battle', () => {
   });
 
   it('raises forecast confidence when Bestiary knowledge improves', () => {
-    const initial = start('bestiary-forecast-seed');
+    const initial = battleStart('bestiary-forecast-seed');
     expect(calculateForecast(initial).confidence).toBe('moderate');
     const resolved = applyGameCommand(initial, { type: 'COMMIT_TURN' });
     const nextOperation = CanonicalGameStateSchema.parse({

@@ -10,12 +10,14 @@ import {
   BestiaryEntrySchema,
   DevelopmentUnlockSchema,
   EquipmentDefinitionSchema,
+  FusionRecordSchema,
+  MaterialDefinitionSchema,
   RelationshipStateSchema,
 } from './progression';
 
-// Schema 12 adds player-owned coin and relic dust. Older snapshots cannot reconstruct the
-// battle rewards that should have produced those resources.
-export const GAME_SCHEMA_VERSION = 12 as const;
+// Schema 13 adds player-selected leads, earned companions, monster materials, and Forge history.
+// Older snapshots cannot reconstruct which heroes were recruited or which materials were spent.
+export const GAME_SCHEMA_VERSION = 13 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),
@@ -34,6 +36,7 @@ export const GeneratedDefinitionsSchema = z.object({
   combatants: z.record(z.string(), CombatantDefinitionSchema),
   enemies: z.record(z.string(), CombatantDefinitionSchema),
   items: z.record(z.string(), EquipmentDefinitionSchema),
+  materials: z.record(z.string(), MaterialDefinitionSchema),
   techniques: z.record(z.string(), DevelopmentUnlockSchema),
 });
 
@@ -42,6 +45,8 @@ export const CanonicalGameStateSchema = z.object({
   phase: z.enum(['title', 'command']),
   campaignSeed: z.string().min(1).nullable(),
   selectedDraftIndex: z.number().int().nonnegative().nullable(),
+  leadCharacterId: z.string().min(1).nullable(),
+  recruitedCharacterIds: z.array(z.string().min(1)).max(3),
   turn: z.number().int().positive(),
   rank: z.string().min(1),
   reputation: z.number().int().min(-100).max(100),
@@ -49,6 +54,7 @@ export const CanonicalGameStateSchema = z.object({
   supplies: z.number().int().nonnegative(),
   coins: z.number().int().nonnegative(),
   relicDust: z.number().int().nonnegative(),
+  materials: z.record(z.string(), z.number().int().nonnegative()),
   campaignBible: CampaignBibleSchema.nullable(),
   generatedDefinitions: GeneratedDefinitionsSchema,
   partyState: z.record(z.string(), PartyMemberStateSchema),
@@ -57,6 +63,7 @@ export const CanonicalGameStateSchema = z.object({
   scenarioFingerprints: z.array(z.string().min(1)),
   directorDebug: z.array(DirectorCandidateDebugSchema),
   inventoryIds: z.array(z.string().min(1)),
+  fusionHistory: z.array(FusionRecordSchema),
   relationships: z.array(RelationshipStateSchema),
   bestiary: z.record(z.string(), BestiaryEntrySchema),
   worldFacts: z.array(WorldFactSchema),
@@ -77,6 +84,8 @@ export function createEmptyGameState(contentManifestHash: string): CanonicalGame
     phase: 'title',
     campaignSeed: null,
     selectedDraftIndex: null,
+    leadCharacterId: null,
+    recruitedCharacterIds: [],
     turn: 1,
     rank: 'Unranked',
     reputation: 0,
@@ -84,12 +93,14 @@ export function createEmptyGameState(contentManifestHash: string): CanonicalGame
     supplies: 0,
     coins: 0,
     relicDust: 0,
+    materials: {},
     campaignBible: null,
     generatedDefinitions: {
       characters: [],
       combatants: {},
       enemies: {},
       items: {},
+      materials: {},
       techniques: {},
     },
     partyState: {},
@@ -98,6 +109,7 @@ export function createEmptyGameState(contentManifestHash: string): CanonicalGame
     scenarioFingerprints: [],
     directorDebug: [],
     inventoryIds: [],
+    fusionHistory: [],
     relationships: [],
     bestiary: {},
     worldFacts: [],

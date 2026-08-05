@@ -16,6 +16,18 @@ function start(seed = 'playwrite-slice') {
   });
 }
 
+function battleStart(seed = 'playwrite-slice') {
+  let state = start(seed);
+  while (state.turn < 3) {
+    state = applyGameCommand(state, {
+      type: 'CHOOSE_SITUATION',
+      choiceId: state.currentScenario!.choices[0]!.id,
+    });
+    state = applyGameCommand(state, { type: 'COMMIT_TURN' });
+  }
+  return state;
+}
+
 describe('canonical mythic playwrite slice', () => {
   it('binds whole mythic characters to exact, readable combat rules', () => {
     const draft = generateCampaignDraft('whole-character-kits');
@@ -36,7 +48,7 @@ describe('canonical mythic playwrite slice', () => {
   });
 
   it('previews what the opening plan will do before the player commits', () => {
-    const state = start();
+    const state = battleStart();
     const previews = buildHeroActionPreview(state);
     expect(previews).toHaveLength(3);
     expect(previews.every((preview) => preview.actionName.length > 3)).toBe(true);
@@ -46,7 +58,7 @@ describe('canonical mythic playwrite slice', () => {
   });
 
   it('turns the battle into pressure, plan, turning point, and remembered consequence', () => {
-    const state = start('causal-aftermath');
+    const state = battleStart('causal-aftermath');
     const resolved = applyGameCommand(state, { type: 'COMMIT_TURN' });
     const report = resolved.battleReports[0]!;
     const beats = buildBattleCausality(resolved, report);
@@ -56,7 +68,7 @@ describe('canonical mythic playwrite slice', () => {
       'Turning point',
     ]);
     expect(beats[1]!.detail).toMatch(/techniques? and triggered \d+ reactions?/);
-    const memory = resolved.worldFacts.find((fact) => fact.createdTurn === 1)!;
+    const memory = resolved.worldFacts.find((fact) => fact.createdTurn === 3)!;
     expect(memory.value).toBe(state.currentScenario!.choices[0]!.consequence);
     expect(resolved.currentScenario!.sceneBeats.cause).toBe(memory.value);
     expect(resolved.currentScenario!.premiseFactIds).toContain(memory.id);

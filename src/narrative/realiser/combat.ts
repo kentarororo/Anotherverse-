@@ -3,7 +3,7 @@ import type { BattleReport, CombatEvent } from '../../engine/reports/combat';
 const actionNames: Record<string, string> = {
   'shield-strike': 'Shield Strike',
   'vector-cut': 'Hunter’s Cut',
-  'lattice-bolt': 'Path Bolt',
+  'lattice-bolt': 'Awakening Bolt',
   'aegis-break': 'Guard Break',
   'arc-finish': 'Execution Arc',
   'binding-shot': 'Fate Binding',

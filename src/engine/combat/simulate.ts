@@ -388,36 +388,40 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
   const rngStartPosition = streams.combat.position;
   const events: CombatEvent[] = [];
   const definitions = state.generatedDefinitions.combatants;
-  const heroActors = state.generatedDefinitions.characters.map((hero) => {
-    const member = state.partyState[hero.id];
-    const baseDefinition = definitions[hero.id];
-    if (member === undefined || baseDefinition === undefined)
-      throw new Error(`Missing hero combat state: ${hero.id}`);
-    const equipped = Object.values(member.equipment).flatMap((id) => {
-      const item = id === null ? undefined : state.generatedDefinitions.items[id];
-      return item === undefined ? [] : [item];
+  const recruitedIds = new Set(state.recruitedCharacterIds);
+  const heroActors = state.generatedDefinitions.characters
+    .filter((hero) => recruitedIds.has(hero.id))
+    .map((hero) => {
+      const member = state.partyState[hero.id];
+      const baseDefinition = definitions[hero.id];
+      if (member === undefined || baseDefinition === undefined)
+        throw new Error(`Missing hero combat state: ${hero.id}`);
+      const equipped = Object.values(member.equipment).flatMap((id) => {
+        const item = id === null ? undefined : state.generatedDefinitions.items[id];
+        return item === undefined ? [] : [item];
+      });
+      const definition = {
+        ...baseDefinition,
+        stats: {
+          ...baseDefinition.stats,
+          power:
+            baseDefinition.stats.power + equipped.reduce((sum, item) => sum + item.powerBonus, 0),
+          guard:
+            baseDefinition.stats.guard + equipped.reduce((sum, item) => sum + item.guardBonus, 0),
+        },
+      };
+      return {
+        definition,
+        hp: member.hp,
+        maxHp: member.maxHp,
+        resource: member.resource,
+        statuses: member.statuses.map((status) => ({ ...status })),
+        mastered: member.learnedTechniqueIds.some((id) => id.endsWith('-awakening')),
+        equipmentCounterTags: equipped.map((item) => item.counterTag),
+        cooldowns: {},
+      };
     });
-    const definition = {
-      ...baseDefinition,
-      stats: {
-        ...baseDefinition.stats,
-        power:
-          baseDefinition.stats.power + equipped.reduce((sum, item) => sum + item.powerBonus, 0),
-        guard:
-          baseDefinition.stats.guard + equipped.reduce((sum, item) => sum + item.guardBonus, 0),
-      },
-    };
-    return {
-      definition,
-      hp: member.hp,
-      maxHp: member.maxHp,
-      resource: member.resource,
-      statuses: member.statuses.map((status) => ({ ...status })),
-      mastered: member.learnedTechniqueIds.some((id) => id.endsWith('-awakening')),
-      equipmentCounterTags: equipped.map((item) => item.counterTag),
-      cooldowns: {},
-    };
-  });
+  if (heroActors.length === 0) throw new Error('Combat requires at least one recruited hero.');
   const enemyActors = state.currentEncounter.enemyIds.map((id) => {
     const baseDefinition = definitions[id];
     if (baseDefinition === undefined) throw new Error(`Missing enemy definition: ${id}`);
@@ -677,7 +681,7 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
     hpAtEnd,
   };
   const experience = outcome === 'victory' ? 25 : 8;
-  const partyState = Object.fromEntries(
+  const progressedRecruits = Object.fromEntries(
     heroActors.map((actor) => {
       const previous = state.partyState[actor.definition.id]!;
       const endingHp = Math.max(outcome === 'defeat' ? Math.ceil(actor.maxHp * 0.35) : 1, actor.hp);
@@ -700,6 +704,7 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       ];
     }),
   );
+  const partyState = { ...state.partyState, ...progressedRecruits };
   const aftermath: AftermathReport = {
     id: `aftermath-turn-${state.turn}`,
     turn: state.turn,
@@ -708,6 +713,8 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       heroActors.map((actor) => [actor.definition.id, experience]),
     ),
     itemIdsGranted: [],
+    materialIdsGranted: [],
+    characterIdsRecruited: [],
     factIdsWritten: [`fact-trial-result-${state.turn}`],
     threadIdsChanged: [],
     hpByCharacter: Object.fromEntries(
@@ -717,6 +724,8 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
       heroActors.map((actor) => [actor.definition.id, partyState[actor.definition.id]!.readiness]),
     ),
     suppliesDelta: outcome === 'victory' ? 2 : 0,
+    coinsDelta: 0,
+    relicDustDelta: 0,
     reputationDelta: outcome === 'victory' ? 3 : outcome === 'defeat' ? -2 : 0,
     dangerDelta: outcome === 'victory' ? 3 : outcome === 'defeat' ? 8 : 5,
     bondDelta: 0,

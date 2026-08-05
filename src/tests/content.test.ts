@@ -10,7 +10,7 @@ describe('production content manifest', () => {
     expect(CONTENT_MANIFEST_HASH).toMatch(/^fnv1a-[0-9a-f]{8}$/);
   });
 
-  it('ties every generated hero background to an original class and unique Mythic Path', () => {
+  it('ties every generated hero background to an original class and unique Mythic Awakening', () => {
     const heroes = createGeneratedCampaignState('class-background-contract').draft.characters;
     expect(heroes).toHaveLength(3);
     for (const hero of heroes) {
@@ -26,7 +26,7 @@ describe('production content manifest', () => {
 
   it('enumerates Milestone 4 content through the production manifest', () => {
     const packs = Object.values(contentManifest.packs);
-    expect(packs).toHaveLength(8);
+    expect(packs).toHaveLength(9);
     expect(contentManifest.milestone).toBe('M4');
     expect(contentManifest.packs.characters.moduleIds).toContain('lyra-vale');
     expect(contentManifest.packs.characters.moduleIds).toContain('tarin-sol');
@@ -35,6 +35,8 @@ describe('production content manifest', () => {
     expect(contentManifest.packs.enemies.moduleIds).toHaveLength(10);
     expect(contentManifest.packs.equipment.moduleIds).toHaveLength(10);
     expect(contentManifest.packs.equipment.moduleIds).toContain('funeral-bell');
+    expect(contentManifest.packs.materials.moduleIds).toHaveLength(10);
+    expect(contentManifest.packs.materials.moduleIds).toContain('grave-hound-fang');
     expect(contentManifest.packs.combatLanguage.moduleIds).toHaveLength(7);
     expect(contentManifest.packs.combatLanguage.moduleIds).toContain('resource-frame-1');
     expect(contentManifest.packs.story.moduleIds).toHaveLength(6);

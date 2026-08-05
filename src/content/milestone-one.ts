@@ -7,7 +7,7 @@ import type {
 } from '../engine/model/combat';
 import type { Position } from '../engine/model/commands';
 import { maximumHp } from '../engine/combat/stats';
-import type { EquipmentDefinition } from '../engine/model/progression';
+import type { EquipmentDefinition, MaterialDefinition } from '../engine/model/progression';
 
 export const TEMPORARY_HERO_IDS = ['mira-vale', 'dax-ren', 'sorrel-voss'] as const;
 
@@ -41,7 +41,7 @@ export const temporaryCharacters: CharacterBlueprint[] = [
       reaction:
         'Each interception leaves a brief resonance around Mira, as though the defence remembers where she stood.',
       limitation:
-        'The Calling loses force when Mira turns its protective geometry toward harm alone.',
+        'The Awakening loses force when Mira turns its protective geometry toward harm alone.',
     },
     stats: { vitality: 12, power: 7, guard: 12, speed: 6, focus: 8 },
     signatureRuleId: 'rear-intercept',
@@ -429,7 +429,7 @@ export const temporaryEncounter: EncounterState = {
     'A Grave Hound charges whoever holds the front while a Pale Augur marks the rear hero with a funeral omen. Formation and target priority decide which legend controls the opening rounds.',
   enemyIds: ['rift-hound', 'glass-weaver', 'signal-leech'],
   signature: 'Grave Charge pressures the front; Funeral Omen hunts the rear.',
-  rewardPreview: 'Hunter experience, two Provisions, and three Renown on victory.',
+  rewardPreview: 'Three monster materials, Coin, relic dust, and hunter experience on victory.',
 };
 
 export const operationEncounters: EncounterState[] = [
@@ -441,7 +441,7 @@ export const operationEncounters: EncounterState[] = [
       'A Storm Jackal crosses the ruined shrine in sudden bursts while an Echo Leech steals its battle cry. The largest threat and the rear line demand different counters.',
     enemyIds: ['storm-jackal', 'signal-leech', 'rift-hound'],
     signature: 'Surge Pounce pressures the front; Borrowed Voice marks the rear.',
-    rewardPreview: 'Hunter experience, Provisions, and Bestiary knowledge.',
+    rewardPreview: 'Three monster materials, Coin, relic dust, and Bestiary knowledge.',
   },
   {
     id: 'm4-split-concourse',
@@ -450,7 +450,7 @@ export const operationEncounters: EncounterState[] = [
       'An Ironback Minotaur controls the narrow path while a Name-Eater erases the runes leading home. Breaking guard quickly competes with protecting the rear.',
     enemyIds: ['ironback-mauler', 'veil-scribe', 'storm-jackal'],
     signature: 'Labyrinth Charge holds the front; Erasure Mark attacks the rear hero.',
-    rewardPreview: 'Hunter experience, Provisions, and a restored true-name glyph.',
+    rewardPreview: 'Three monster materials, Coin, relic dust, and a true-name clue.',
   },
   {
     id: 'm4-closure-under-watch',
@@ -459,7 +459,7 @@ export const operationEncounters: EncounterState[] = [
       'A Crown Beast charges for the Veiled Court while a Mirror Oracle turns the trio’s doubts against the rear line. The plan will also shape public Renown.',
     enemyIds: ['survey-beast', 'mirror-oracle', 'ironback-mauler'],
     signature: 'Claimant Rush pressures the front; Reflected Verdict marks the rear.',
-    rewardPreview: 'Hunter experience, Provisions, a relic, and Renown.',
+    rewardPreview: 'Three monster materials, Coin, relic dust, and Renown.',
   },
   {
     id: 'secret-drowned-stair',
@@ -467,7 +467,7 @@ export const operationEncounters: EncounterState[] = [
     brief: 'A Drowned Lancer holds the front steps while a Bell Wraith hunts whoever stays behind.',
     enemyIds: ['drowned-lancer', 'bell-wraith', 'veil-scribe'],
     signature: 'Undertow Charge hits the front; Funeral Toll marks the rear.',
-    rewardPreview: 'Coin, relic dust, and drowned equipment.',
+    rewardPreview: 'Three drowned materials, Coin, relic dust, and hunter experience.',
   },
   {
     id: 'secret-awakened-ward',
@@ -475,7 +475,7 @@ export const operationEncounters: EncounterState[] = [
     brief: 'The stolen clue wakes an Ironback Minotaur and a Name-Eater behind it.',
     enemyIds: ['ironback-mauler', 'veil-scribe', 'glass-weaver'],
     signature: 'Labyrinth Charge locks the front; Erasure Mark hunts the rear.',
-    rewardPreview: 'Coin, relic dust, and ward equipment.',
+    rewardPreview: 'Three ward materials, Coin, relic dust, and hunter experience.',
   },
   {
     id: 'secret-waking-guardian',
@@ -483,7 +483,7 @@ export const operationEncounters: EncounterState[] = [
     brief: 'Taking the chain wakes a Crown Beast while a Mirror Oracle reads the squad’s escape.',
     enemyIds: ['survey-beast', 'mirror-oracle', 'bell-wraith'],
     signature: 'Claimant Rush hits the front; Reflected Verdict marks the rear.',
-    rewardPreview: 'Coin, relic dust, and guardian equipment.',
+    rewardPreview: 'Three guardian materials, Coin, relic dust, and hunter experience.',
   },
 ];
 
@@ -591,6 +591,93 @@ export const prototypeEquipment: EquipmentDefinition[] = [
   },
 ];
 
+export const prototypeMaterials: MaterialDefinition[] = [
+  {
+    id: 'grave-hound-fang',
+    name: 'Grave Hound Fang',
+    description: 'A heavy fang that still carries the force of a charge.',
+    sourceEnemyId: 'rift-hound',
+    forgeName: 'Godbone',
+    weights: { power: 5, guard: 2, weapon: 5, support: 1, charger: 5, hexer: 1 },
+  },
+  {
+    id: 'augur-thread',
+    name: 'Augur Thread',
+    description: 'A pale thread that tightens before a curse is spoken.',
+    sourceEnemyId: 'glass-weaver',
+    forgeName: 'Augur',
+    weights: { power: 2, guard: 5, weapon: 1, support: 5, charger: 1, hexer: 5 },
+  },
+  {
+    id: 'storm-jackal-claw',
+    name: 'Storm Jackal Claw',
+    description: 'A bright claw made for fast, decisive weapons.',
+    sourceEnemyId: 'storm-jackal',
+    forgeName: 'Stormhook',
+    weights: { power: 5, guard: 1, weapon: 5, support: 1, charger: 4, hexer: 2 },
+  },
+  {
+    id: 'echo-leech-shell',
+    name: 'Echo Leech Shell',
+    description: 'A dark shell that muffles hostile voices and spells.',
+    sourceEnemyId: 'signal-leech',
+    forgeName: 'Echo',
+    weights: { power: 2, guard: 4, weapon: 2, support: 5, charger: 1, hexer: 5 },
+  },
+  {
+    id: 'ironback-horn',
+    name: 'Ironback Horn',
+    description: 'A plated horn that holds its shape under crushing force.',
+    sourceEnemyId: 'ironback-mauler',
+    forgeName: 'Ironback',
+    weights: { power: 2, guard: 5, weapon: 2, support: 5, charger: 5, hexer: 1 },
+  },
+  {
+    id: 'true-name-glyph',
+    name: 'True-Name Glyph',
+    description: 'A surviving mark that refuses to let its bearer be erased.',
+    sourceEnemyId: 'veil-scribe',
+    forgeName: 'True-Name',
+    weights: { power: 3, guard: 4, weapon: 2, support: 5, charger: 1, hexer: 5 },
+  },
+  {
+    id: 'crown-beast-chain',
+    name: 'Crown Beast Chain',
+    description: 'A broken royal link that pulls a weapon toward charging prey.',
+    sourceEnemyId: 'survey-beast',
+    forgeName: 'Crownchain',
+    weights: { power: 5, guard: 2, weapon: 5, support: 2, charger: 5, hexer: 1 },
+  },
+  {
+    id: 'mirror-oracle-shard',
+    name: 'Mirror Oracle Shard',
+    description: 'A silver shard that catches a curse before it reaches the skin.',
+    sourceEnemyId: 'mirror-oracle',
+    forgeName: 'Mirror',
+    weights: { power: 2, guard: 5, weapon: 2, support: 5, charger: 1, hexer: 5 },
+  },
+  {
+    id: 'drowned-lancer-bone',
+    name: 'Drowned Lancer Bone',
+    description: 'A salt-black bone that remembers the weight of a spear thrust.',
+    sourceEnemyId: 'drowned-lancer',
+    forgeName: 'Tidebone',
+    weights: { power: 5, guard: 2, weapon: 5, support: 1, charger: 5, hexer: 2 },
+  },
+  {
+    id: 'bell-wraith-clapper',
+    name: 'Bell Wraith Clapper',
+    description: 'A cold iron tongue that rings when a hex draws near.',
+    sourceEnemyId: 'bell-wraith',
+    forgeName: 'Funeral Bell',
+    weights: { power: 2, guard: 5, weapon: 1, support: 5, charger: 1, hexer: 5 },
+  },
+];
+
+export const materialIdByEnemyId: Readonly<Record<string, string>> = Object.fromEntries(
+  prototypeMaterials.map((material) => [material.sourceEnemyId, material.id]),
+);
+
 export const rewardPoolByEncounterId: Readonly<Record<string, readonly string[]>> = {
   'm1-fallen-god-trial': ['houndglass-edge', 'weaver-ward'],
   'm4-east-junction': ['stormhook-sabre', 'echo-shell'],
@@ -637,12 +724,13 @@ export function createMilestoneOneDefinitions(characters = temporaryCharacters) 
     combatants: Object.fromEntries(all.map((definition) => [definition.id, definition])),
     enemies: Object.fromEntries(temporaryEnemies.map((definition) => [definition.id, definition])),
     items: Object.fromEntries(prototypeEquipment.map((item) => [item.id, item])),
+    materials: Object.fromEntries(prototypeMaterials.map((material) => [material.id, material])),
     techniques: Object.fromEntries(
       characters.map((character) => [
         `${character.callingId}-awakening`,
         {
           id: `${character.callingId}-awakening`,
-          name: `${character.callingName} Mastery`,
+          name: `${character.callingName} Awakening`,
           storyDescription: `The next form of ${character.callingName} waits behind the choice that has shaped ${character.name} from the beginning.`,
           unlockCondition: `Progress toward: ${character.awakeningCondition}`,
         },

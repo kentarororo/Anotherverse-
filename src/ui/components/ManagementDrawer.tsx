@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../../app/store';
 import { explainCurrentHeroPolicies } from '../../engine/combat/policy';
 import type { DevelopmentUnlock } from '../../engine/model/progression';
+import { previewMaterialFusion, type FusionMaterialIds } from '../../engine/progression/crafting';
 
 export function ManagementDrawer() {
   const drawer = useAppStore((state) => state.drawer);
@@ -9,6 +10,8 @@ export function ManagementDrawer() {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const equipItem = useAppStore((state) => state.equipItem);
   const learnTechnique = useAppStore((state) => state.learnTechnique);
+  const fuseMaterials = useAppStore((state) => state.fuseMaterials);
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (drawer === null) return;
@@ -21,12 +24,30 @@ export function ManagementDrawer() {
     };
   }, [drawer, closeDrawer]);
 
+  useEffect(() => {
+    setSelectedMaterialIds([]);
+  }, [drawer?.type]);
+
   if (drawer === null) return null;
   const hero = game.generatedDefinitions.characters.find((candidate) => candidate.id === drawer.id);
   const member = hero === undefined ? undefined : game.partyState[hero.id];
   const developmentUnlocks = Object.values(
     game.generatedDefinitions.techniques,
   ) as DevelopmentUnlock[];
+  const fusionMaterials = Object.values(game.generatedDefinitions.materials);
+  const selectedFusionMaterials =
+    selectedMaterialIds.length === 3 ? (selectedMaterialIds as FusionMaterialIds) : null;
+  const fusionPreview =
+    selectedFusionMaterials === null
+      ? null
+      : previewMaterialFusion(selectedFusionMaterials, game.generatedDefinitions.materials);
+
+  const addMaterial = (materialId: string) => {
+    const owned = game.materials[materialId] ?? 0;
+    const selected = selectedMaterialIds.filter((id) => id === materialId).length;
+    if (selectedMaterialIds.length >= 3 || selected >= owned) return;
+    setSelectedMaterialIds([...selectedMaterialIds, materialId]);
+  };
 
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={closeDrawer}>
@@ -82,7 +103,7 @@ export function ManagementDrawer() {
                 </dd>
               </div>
               <div>
-                <dt>Path rank</dt>
+                <dt>Awakening stage</dt>
                 <dd>{member.callingRank}</dd>
               </div>
               <div>
@@ -90,7 +111,7 @@ export function ManagementDrawer() {
                 <dd>{member.trainingPoints}</dd>
               </div>
               <div>
-                <dt>Awakening</dt>
+                <dt>Awakening Trial</dt>
                 <dd>{hero.awakeningCondition}</dd>
               </div>
               <div>
@@ -138,7 +159,7 @@ export function ManagementDrawer() {
                 </div>
               </article>
             ))}
-            <h3>Path development</h3>
+            <h3>Awakening techniques</h3>
             {developmentUnlocks
               .filter((unlock) => unlock.id.startsWith(hero.callingId))
               .map((unlock) => {
@@ -181,20 +202,126 @@ export function ManagementDrawer() {
                     <p>{item.description}</p>
                   </div>
                   <div className="equip-actions">
-                    {game.generatedDefinitions.characters.map((character) => (
-                      <button
-                        className="button"
-                        type="button"
-                        onClick={() => equipItem(character.id, item.id)}
-                        key={character.id}
-                      >
-                        Equip · {character.name}
-                      </button>
-                    ))}
+                    {game.generatedDefinitions.characters
+                      .filter((character) => game.recruitedCharacterIds.includes(character.id))
+                      .map((character) => (
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={() => equipItem(character.id, item.id)}
+                          key={character.id}
+                        >
+                          Equip · {character.name}
+                        </button>
+                      ))}
                   </div>
                 </article>
               );
             })}
+          </div>
+        )}
+
+        {drawer.type === 'forge' && (
+          <div className="drawer-content forge-drawer">
+            <p>
+              Fuse any three monster materials. Their nature changes the odds; the exact relic is
+              revealed only when the forge answers.
+            </p>
+            <div className="forge-resources" aria-label="Forge resources">
+              <span>
+                {Object.values(game.materials).reduce((sum, count) => sum + count, 0)} materials
+              </span>
+              <span>{game.coins} Coin</span>
+              <span>{game.relicDust} Dust</span>
+            </div>
+            <h3>Monster materials</h3>
+            <div className="material-grid">
+              {fusionMaterials.map((material) => {
+                const owned = game.materials[material.id] ?? 0;
+                const selected = selectedMaterialIds.filter((id) => id === material.id).length;
+                const source = game.generatedDefinitions.enemies[material.sourceEnemyId];
+                return (
+                  <button
+                    className="material-card"
+                    type="button"
+                    disabled={owned <= selected || selectedMaterialIds.length >= 3}
+                    onClick={() => addMaterial(material.id)}
+                    key={material.id}
+                  >
+                    <span>
+                      {owned} owned · {selected} in forge
+                    </span>
+                    <strong>{material.name}</strong>
+                    <small>{source?.name ?? 'Unknown monster'}</small>
+                    <p>{material.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+            <h3>Fusion bowl · {selectedMaterialIds.length} / 3</h3>
+            <div className="fusion-bowl" aria-label="Selected forge materials">
+              {selectedMaterialIds.length === 0 && <span>Choose three materials above.</span>}
+              {selectedMaterialIds.map((materialId, index) => (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedMaterialIds(
+                      selectedMaterialIds.filter((_, selectedIndex) => selectedIndex !== index),
+                    )
+                  }
+                  key={`${materialId}-${index}`}
+                >
+                  {game.generatedDefinitions.materials[materialId]?.name} ×
+                </button>
+              ))}
+            </div>
+            {fusionPreview !== null && (
+              <section className="fusion-preview" aria-label="Fusion preview">
+                <span>Likely result</span>
+                <h3>
+                  {fusionPreview.slot === 'weapon' ? 'Weapon' : 'Support relic'} ·{' '}
+                  {fusionPreview.affinity} counter
+                </h3>
+                <p>{fusionPreview.description}</p>
+                <strong>
+                  Likely +{fusionPreview.likelyBonuses.powerBonus} Power · +
+                  {fusionPreview.likelyBonuses.guardBonus} Guard
+                </strong>
+                <div className="fusion-odds">
+                  {fusionPreview.candidates.map((candidate) => (
+                    <small key={`${candidate.slot}-${candidate.affinity}`}>
+                      {candidate.slot} / {candidate.affinity}: {Math.round(candidate.chance * 100)}%
+                    </small>
+                  ))}
+                </div>
+              </section>
+            )}
+            <button
+              className="button button-primary forge-action"
+              type="button"
+              disabled={selectedFusionMaterials === null}
+              onClick={() => {
+                if (selectedFusionMaterials === null) return;
+                fuseMaterials(selectedFusionMaterials);
+                setSelectedMaterialIds([]);
+              }}
+            >
+              Fuse three materials
+            </button>
+            {game.fusionHistory.at(-1) !== undefined &&
+              (() => {
+                const record = game.fusionHistory.at(-1)!;
+                const item = game.generatedDefinitions.items[record.itemId];
+                return (
+                  <article className="forge-result">
+                    <span>Last fusion</span>
+                    <strong>
+                      {record.duplicate ? `${record.relicDustGranted} Dust recovered` : item?.name}
+                    </strong>
+                    {!record.duplicate && item !== undefined && <p>{item.description}</p>}
+                  </article>
+                );
+              })()}
           </div>
         )}
 
@@ -247,7 +374,7 @@ export function ManagementDrawer() {
             <h3>Trio standing</h3>
             <article className="drawer-item">
               <div>
-                <strong>{game.rank} Path Rank</strong>
+                <strong>{game.rank} Hunter Rank</strong>
                 <p>
                   Renown {game.reputation >= 0 ? '+' : ''}
                   {game.reputation} · guilds and rivals react to this standing
@@ -255,40 +382,49 @@ export function ManagementDrawer() {
               </div>
             </article>
             <h3>Relationships</h3>
-            {game.relationships.map((relationship) => (
-              <article className="drawer-item" key={relationship.pairId}>
-                <div>
-                  <strong>
-                    {relationship.characterIds
-                      .map(
-                        (id) =>
-                          game.generatedDefinitions.characters.find((hero) => hero.id === id)?.name,
-                      )
-                      .join(' / ')}
-                  </strong>
-                  <p>
-                    Bond {relationship.value >= 0 ? '+' : ''}
-                    {relationship.value} · {relationship.factIds.length} shared chapters
-                  </p>
-                </div>
-              </article>
-            ))}
+            {game.relationships
+              .filter((relationship) =>
+                relationship.characterIds.every((id) => game.recruitedCharacterIds.includes(id)),
+              )
+              .map((relationship) => (
+                <article className="drawer-item" key={relationship.pairId}>
+                  <div>
+                    <strong>
+                      {relationship.characterIds
+                        .map(
+                          (id) =>
+                            game.generatedDefinitions.characters.find((hero) => hero.id === id)
+                              ?.name,
+                        )
+                        .join(' / ')}
+                    </strong>
+                    <p>
+                      Bond {relationship.value >= 0 ? '+' : ''}
+                      {relationship.value} · {relationship.factIds.length} shared chapters
+                    </p>
+                  </div>
+                </article>
+              ))}
             <h3>Hero stories</h3>
-            {game.storyThreads.map((thread) => (
-              <article className="drawer-item" key={thread.id}>
-                <div>
-                  <strong>
-                    {game.generatedDefinitions.characters.find((hero) =>
-                      thread.castIds.includes(hero.id),
-                    )?.name ?? 'Hero story'}
-                  </strong>
-                  <p>
-                    Chapter {thread.stage + 1} ·{' '}
-                    {thread.status === 'resolved' ? 'Complete' : 'Unfinished'}
-                  </p>
-                </div>
-              </article>
-            ))}
+            {game.storyThreads
+              .filter((thread) =>
+                thread.castIds.every((id) => game.recruitedCharacterIds.includes(id)),
+              )
+              .map((thread) => (
+                <article className="drawer-item" key={thread.id}>
+                  <div>
+                    <strong>
+                      {game.generatedDefinitions.characters.find((hero) =>
+                        thread.castIds.includes(hero.id),
+                      )?.name ?? 'Hero story'}
+                    </strong>
+                    <p>
+                      Chapter {thread.stage + 1} ·{' '}
+                      {thread.status === 'resolved' ? 'Complete' : 'Unfinished'}
+                    </p>
+                  </div>
+                </article>
+              ))}
             <h3>Quest journal</h3>
             {[...game.worldFacts]
               .filter((fact) => fact.createdTurn > 0)

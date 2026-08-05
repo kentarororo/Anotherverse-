@@ -8,6 +8,7 @@ export const GameCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('START_CAMPAIGN'),
     seed: z.string().trim().min(1),
     selectedDraftIndex: z.number().int().nonnegative(),
+    leadCharacterId: z.string().min(1).optional(),
   }),
   z.object({
     type: z.literal('SET_POSITION'),
@@ -36,6 +37,10 @@ export const GameCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('LEARN_TECHNIQUE'),
     characterId: z.string().min(1),
     techniqueId: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal('FUSE_MATERIALS'),
+    materialIds: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]),
   }),
   z.object({ type: z.literal('COMMIT_TURN') }),
 ]);

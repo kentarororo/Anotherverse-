@@ -13,6 +13,13 @@ function start(seed: string) {
 
 function openingOutcome(seed: string, badPlan: boolean) {
   let state = start(seed);
+  while (state.turn < 3) {
+    state = applyGameCommand(state, {
+      type: 'CHOOSE_SITUATION',
+      choiceId: state.currentScenario!.choices[0]!.id,
+    });
+    state = applyGameCommand(state, { type: 'COMMIT_TURN' });
+  }
   if (badPlan) {
     const striker = state.generatedDefinitions.characters.find((hero) => hero.role === 'striker')!;
     state = applyGameCommand(state, {

@@ -17,7 +17,7 @@ export interface PathClassDefinition {
   coverageTags: readonly ('defence' | 'control' | 'damage' | 'sustain' | 'resource')[];
 }
 
-/** The base class owns the combat job; the hero's Mythic Path owns their personal legend. */
+/** The base class owns the combat job; the hero's Mythic Awakening owns their personal legend. */
 export const PATH_CLASSES: Readonly<Record<MythicRole, PathClassDefinition>> = {
   vanguard: {
     id: 'oathward',
@@ -46,7 +46,7 @@ export const PATH_CLASSES: Readonly<Record<MythicRole, PathClassDefinition>> = {
     signatureRuleId: 'exploit-exposed',
     signature: 'Deal +3 damage to Exposed enemies.',
     signatureStory:
-      "The Path recognises the instant a monster's legend falters and turns that opening into a killing line.",
+      "The Awakening recognises the instant a monster's legend falters and turns that opening into a killing line.",
     reactionRuleId: 'finisher-surge',
     reaction: 'After a finisher, gain Inspired for 2 rounds.',
     reactionStory:
@@ -65,11 +65,11 @@ export const PATH_CLASSES: Readonly<Record<MythicRole, PathClassDefinition>> = {
     signatureRuleId: 'mending-ward',
     signature: 'Healing techniques also grant 3 Ward.',
     signatureStory:
-      'The Path does more than close a wound; it leaves a visible promise that the next blow will not reopen it.',
+      'The Awakening does more than close a wound; it leaves a visible promise that the next blow will not reopen it.',
     reactionRuleId: 'recovery-loop',
     reaction: 'The first heal each battle restores 1 AP.',
     reactionStory:
-      'When a life steadies beneath the Path, some of the power spent to save it returns.',
+      'When a life steadies beneath the Awakening, some of the power spent to save it returns.',
     limitationRuleId: 'low-direct-output',
     limitation: 'Attacks deal 2 less damage.',
     limitationStory: 'A gift shaped to preserve life resists being reduced to a weapon.',

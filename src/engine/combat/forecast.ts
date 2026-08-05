@@ -10,7 +10,8 @@ const stanceScores: Record<StanceId, number> = {
 };
 
 export function calculateForecast(state: CanonicalGameState): ScenarioForecast {
-  const heroes = state.generatedDefinitions.characters;
+  const recruitedIds = new Set(state.recruitedCharacterIds);
+  const heroes = state.generatedDefinitions.characters.filter((hero) => recruitedIds.has(hero.id));
   const enemyIds = state.currentEncounter?.enemyIds ?? [];
   const enemies = enemyIds.flatMap((id) => {
     const enemy = state.generatedDefinitions.enemies[id];

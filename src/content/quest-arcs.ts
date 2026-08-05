@@ -191,7 +191,7 @@ const fallenHeavens: QuestArcDefinition = {
       title: 'The Wounded Shrinekeeper',
       hook: 'The wounded shrinekeeper knows {lead} and repeats a memory the hero has never shared: {leadMemory}',
       stakes:
-        'She can guide the trio to the sealed heart, but only if {lead} explains why the Path answered on the night their home fell.',
+        'She can guide the trio to the sealed heart, but only if {lead} explains why the Awakening answered on the night their home fell.',
       decision: 'Will {lead} tell the truth in front of the squad or speak to her alone?',
       choices: [
         choice(
@@ -598,7 +598,7 @@ const underworldTide: QuestArcDefinition = {
     { title: 'The Drowned Road', objective: 'reach the bell chamber before {faction}' },
     {
       title: 'The King’s Shadow',
-      objective: 'stop {faction} from crowning a Path bearer in the underworld',
+      objective: 'stop {faction} from crowning an awakened hunter in the underworld',
     },
     { title: 'Dawn’s Price', objective: 'decide what Morcant must pay when the sea returns' },
   ],
@@ -860,7 +860,7 @@ const underworldTide: QuestArcDefinition = {
       title: 'The King’s First Bargain',
       hook: 'The hidden message says the living king opened the tide to bury an army beneath his palace.',
       stakes:
-        '{faction} needs one marked Path bearer to ring the final bell and place the drowned army under a new crown.',
+        '{faction} needs one marked awakened hunter to ring the final bell and place the drowned army under a new crown.',
       decision: 'Will the trio break the bell-rope or use it to call the faction leader out?',
       choices: [
         choice(
@@ -1291,7 +1291,7 @@ export const QUEST_CHAPTER_VARIANTS: Readonly<
     13: [
       {
         title: 'The Fourth Hunter’s Letter',
-        hook: '{lead} finds a letter sealed inside the heart-key and addressed to the next three Path bearers.',
+        hook: '{lead} finds a letter sealed inside the heart-key and addressed to the next three awakened hunters.',
         stakes:
           'It names a traitor in the guild, but reading it aloud will reveal the squad’s position to {faction}.',
         decision: 'Will the trio read the letter now or carry it unopened to Ilyan?',

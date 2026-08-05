@@ -114,12 +114,12 @@ const WORLDS: readonly WorldTemplate[] = [
     subtitle: 'Dead gods became dungeons, and mortals learned to climb through their bones.',
     opening: [
       'Eight years ago, the moon cracked and three gods fell out of the sky. Their bodies struck the kingdom of Orison and became vast dungeons called Godgraves. Monsters crawl from them each winter, but so do relics that can turn a shepherd into a ranked hunter. The strongest guilds now own every road to the graves. Tonight, a fourth star is falling.',
-      'Everyone in Orison knows the five hunter ranks: Ash, Bronze, Silver, Gold, and Divine. Most Ash-ranks spend their lives carrying torches for stronger parties. A rare few awaken a Mythic Path and hear the Book of Deeds announce their victories. No one has reached Divine rank since the moon broke. The nameless thing descending through the clouds may be the reason why.',
+      'Everyone in Orison knows the five hunter ranks: Ash, Bronze, Silver, Gold, and Divine. Most Ash-ranks spend their lives carrying torches for stronger parties. A rare few experience a Mythic Awakening and hear the Book of Deeds announce their victories. No one has reached Divine rank since the moon broke. The nameless thing descending through the clouds may be the reason why.',
     ],
     mythLaw:
       'A dead god cannot speak its own name, but it can lend one fragment of its legend to a mortal who completes its unfinished trial.',
     progressionLaw:
-      'Stats rise through battle, but a Mythic Path evolves only when its bearer makes the same kind of choice that created the legend.',
+      'Stats rise through battle, but a Mythic Awakening evolves only when its bearer makes the same kind of choice that created the legend.',
     rankNames: ['Ash', 'Bronze', 'Silver', 'Gold', 'Divine'],
     roleBonds: {
       vanguard:
@@ -200,7 +200,7 @@ const WORLDS: readonly WorldTemplate[] = [
     mythLaw:
       'Nothing crosses the Underworld Tide for free; a relic, a life, or a true memory must remain behind whenever the sea closes.',
     progressionLaw:
-      'A Mythic Path gains a new form when its bearer pays a meaningful price without surrendering the reason they chose to descend.',
+      'A Mythic Awakening gains a new form when its bearer pays a meaningful price without surrendering the reason they chose to descend.',
     rankNames: ['Shell', 'Coral', 'Pearl', 'Abyss', 'Crown'],
     roleBonds: {
       vanguard:

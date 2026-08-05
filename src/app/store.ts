@@ -18,13 +18,15 @@ interface AppStore {
   game: CanonicalGameState;
   appScreen: 'title' | 'creation' | 'command';
   campaignDraft: CampaignDraft | null;
+  selectedLeadId: string | null;
   drawer: {
-    type: 'character' | 'equipment' | 'bestiary' | 'world' | 'logs' | 'debug';
+    type: 'character' | 'equipment' | 'forge' | 'bestiary' | 'world' | 'logs' | 'debug';
     id?: string;
   } | null;
   saveStatus: SaveLoadResult;
   turnView: 'planning' | 'aftermath';
   startCampaign: (seed: string) => void;
+  selectLead: (characterId: string) => void;
   confirmCampaign: () => void;
   regenerateCampaign: () => void;
   cancelCampaignDraft: () => void;
@@ -41,6 +43,7 @@ interface AppStore {
   closeDrawer: () => void;
   equipItem: (characterId: string, itemId: string) => void;
   learnTechnique: (characterId: string, techniqueId: string) => void;
+  fuseMaterials: (materialIds: [string, string, string]) => void;
 }
 
 const initialSave = saveRepository.load();
@@ -50,19 +53,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
   game: createEmptyGameState(CONTENT_MANIFEST_HASH),
   appScreen: 'title',
   campaignDraft: null,
+  selectedLeadId: null,
   drawer: null,
   saveStatus: initialSave,
   turnView: 'planning',
   startCampaign: (seed) => {
-    set({ campaignDraft: generateCampaignDraft(seed), appScreen: 'creation' });
+    set({
+      campaignDraft: generateCampaignDraft(seed),
+      selectedLeadId: null,
+      appScreen: 'creation',
+    });
   },
+  selectLead: (characterId) => set({ selectedLeadId: characterId }),
   confirmCampaign: () => {
     const draft = get().campaignDraft;
-    if (draft === null) return;
+    const leadCharacterId = get().selectedLeadId;
+    if (draft === null || leadCharacterId === null) return;
     const nextState = applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
       type: 'START_CAMPAIGN',
       seed: draft.seed,
       selectedDraftIndex: 0,
+      leadCharacterId,
     });
     saveRepository.save(nextState);
     set({
@@ -71,12 +82,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       turnView: 'planning',
       appScreen: 'command',
       campaignDraft: null,
+      selectedLeadId: null,
     });
   },
   regenerateCampaign: () => {
-    set({ campaignDraft: generateCampaignDraft(createCampaignSeed()) });
+    set({ campaignDraft: generateCampaignDraft(createCampaignSeed()), selectedLeadId: null });
   },
-  cancelCampaignDraft: () => set({ campaignDraft: null, appScreen: 'title' }),
+  cancelCampaignDraft: () => set({ campaignDraft: null, selectedLeadId: null, appScreen: 'title' }),
   continueCampaign: () => {
     const saveStatus = get().saveStatus;
     if (saveStatus.status === 'ok') {
@@ -136,6 +148,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       characterId,
       techniqueId,
     });
+    saveRepository.save(nextState);
+    set({ game: nextState, saveStatus: { status: 'ok', state: nextState } });
+  },
+  fuseMaterials: (materialIds) => {
+    const nextState = applyGameCommand(get().game, { type: 'FUSE_MATERIALS', materialIds });
     saveRepository.save(nextState);
     set({ game: nextState, saveStatus: { status: 'ok', state: nextState } });
   },

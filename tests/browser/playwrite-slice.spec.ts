@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
-test('makes the mythic brief, plan, battle cause, and memory legible as one loop', async ({
+test('chooses a lead, recruits two companions, then explains the first trio battle', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -17,13 +17,48 @@ test('makes the mythic brief, plan, battle cause, and memory legible as one loop
   await page.getByRole('button', { name: 'New Campaign' }).click();
 
   await expect(page.getByText('A new legend')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose your first hero' })).toBeVisible();
   await expect(page.locator('.dossier')).toHaveCount(3);
+  await expect(page.locator('.creation-screen')).toContainText('Mythic Awakening');
   await expect(page.locator('.creation-screen')).not.toContainText(
-    /telemetry|licen[cs]e|bureau|network|contract squad/i,
+    /telemetry|licen[cs]e|bureau|network|contract squad|Mythic Path|Calling/i,
   );
+  await page
+    .getByRole('button', { name: /Begin as/ })
+    .first()
+    .click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
 
-  await expect(page.getByRole('heading', { name: 'The Mythic Trio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
+  await expect(page.locator('.trio-panel .badge')).toHaveText('1 / 3');
+  await expect(page.getByLabel('Story situation')).toContainText('Gather the Trio');
+  await expect(page.getByLabel('Story situation')).toContainText(/travelling alone/);
+  await expect(page.getByLabel('Story situation')).toContainText('Choose');
+  await page.getByRole('radio').first().click();
+  await page.getByRole('button', { name: 'Take Action' }).click();
+
+  await expect(page.getByText('Companion joined')).toBeVisible();
+  await expect(page.locator('.trio-panel .badge')).toHaveText('2 / 3');
+  await expect(page.getByText('Chapter 1 complete')).toBeVisible();
+  await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
+
+  await expect(page.locator('.trio-panel .badge')).toHaveText('2 / 3');
+  await expect(page.getByLabel('Story situation')).toContainText('Previously');
+  await expect(page.getByLabel('Story situation')).toContainText('Mythic Awakening');
+  await expect(page.getByLabel('Story situation')).toContainText('Choose');
+  await page.getByRole('radio').first().click();
+  await page.getByRole('button', { name: 'Take Action' }).click();
+
+  await expect(page.getByText('Companion joined')).toBeVisible();
+  await expect(page.locator('.trio-panel .badge')).toHaveText('3 / 3');
+  await expect(page.getByText('Chapter 2 complete')).toBeVisible();
+  await page.getByRole('button', { name: 'Continue to Turn 3' }).click();
+
+  await expect(page.locator('.trio-panel .badge')).toHaveText('3 / 3');
+  await expect(page.getByLabel('Story situation')).toContainText(
+    'first time all three Mythic Awakenings',
+  );
+  await expect(page.locator('.command-screen')).not.toContainText(/â|Â|Ã|ð/);
   await expect(page.getByText('Order', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Expected opening actions').locator('p')).toHaveCount(3);
   const breakThreatActions = await page
@@ -55,14 +90,12 @@ test('makes the mythic brief, plan, battle cause, and memory legible as one loop
   await expect(causalReview).toContainText('Enemy pressure');
   await expect(causalReview).toContainText('Your plan');
   await expect(causalReview).toContainText('Turning point');
-  await expect(page.getByText('Chapter 1 complete')).toBeVisible();
+  await expect(page.getByText('Chapter 3 complete')).toBeVisible();
   await page.screenshot({ path: 'test-results/playwrite-aftermath.png', fullPage: true });
 
-  await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
+  await page.getByRole('button', { name: 'Continue to Turn 4' }).click();
   await expect(page.getByLabel('Story situation')).toContainText('Previously');
-  await expect(page.getByLabel('Story situation')).toContainText('At stake');
-  await expect(page.getByLabel('Story situation')).toContainText('Choose');
   await expect(page.getByLabel('Story situation')).toContainText(
-    /The trio (?:defeated|silenced|drove|broke)/i,
+    /The new trio (?:defeated|drove)|The guardians broke|The drowned broke|The trial ended|Dawn ended/i,
   );
 });
