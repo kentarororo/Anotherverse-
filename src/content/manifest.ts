@@ -30,8 +30,8 @@ export const contentManifest = ContentManifestSchema.parse({
   schemaVersion: 1,
   milestone: 'M4',
   packs: {
-    campaign: pack('campaign-mythic-v2', ['fallen-heavens', 'underworld-tide']),
-    characters: pack('characters-mythic-v2', [
+    campaign: pack('campaign-mythic-v3', ['fallen-heavens', 'underworld-tide']),
+    characters: pack('characters-mythic-v3', [
       ...PATH_CLASS_IDS,
       'lyra-vale',
       'doran-vey',
@@ -100,7 +100,7 @@ export const contentManifest = ContentManifestSchema.parse({
         (eventType) => `${eventType}-frame-1`,
       ),
     ),
-    story: pack('story-authoring-mythic-v4', [
+    story: pack('story-authoring-mythic-v5', [
       'mythic-opening-turns-1-3',
       'causal-scene-beats',
       'truthful-choice-effects',

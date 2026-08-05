@@ -52,9 +52,14 @@ export function CommandScreen() {
   const showingAftermath = turnView === 'aftermath' && aftermath !== undefined;
   const displayedTurn = showingAftermath ? aftermath.turn : game.turn;
   const scenario = game.currentScenario;
-  const recruitedHeroes = game.generatedDefinitions.characters.filter((hero) =>
-    game.recruitedCharacterIds.includes(hero.id),
-  );
+  const recruitedHeroes = game.generatedDefinitions.characters.filter((hero) => {
+    if (!game.recruitedCharacterIds.includes(hero.id)) return false;
+    if (!showingAftermath || hero.id === game.leadCharacterId) return true;
+    const recruitment = game.worldFacts.find(
+      (fact) => fact.id === `fact-recruited-${hero.id}` && fact.relation === 'joined-party',
+    );
+    return recruitment !== undefined && recruitment.createdTurn <= displayedTurn;
+  });
   const selectedChoice = scenario?.choices.find(
     (choice) => choice.id === game.pendingPlan.situationChoiceId,
   );

@@ -4,7 +4,12 @@ import {
   createMilestoneOnePartyState,
   temporaryEncounter,
 } from '../../content/milestone-one';
-import { generateMythicReviewDraft, type MythicHero } from '../../content/mythic-review';
+import {
+  generateMythicCompanion,
+  generateMythicReviewDraft,
+  type MythicHero,
+  type MythicRole,
+} from '../../content/mythic-review';
 import { PATH_CLASSES } from '../../content/path-classes';
 import { QUEST_ARCS, questWorldId } from '../../content/quest-arcs';
 import type { CharacterBlueprint } from '../model/character';
@@ -288,13 +293,34 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     seed,
     bible,
     premise: `${campaignRealmName}: ${openingLaw}\n\n${openingDisruption}`,
-    campaignQuestion: `What awakened these three heroes, and what price will the realm demand when their legend outgrows its gods?`,
+    campaignQuestion: `What awakened this hunter, and what price will the realm demand as their legend grows?`,
     questTitle: quest.title,
     questObjective: quest.acts[0].objective.replace('{faction}', faction.name),
     questActs: quest.acts.map((act) => act.title),
     characters,
     semanticFingerprint: `${mythic.fingerprint}|seed:${seed}`,
     rngStreams,
+  };
+}
+
+export function generateCampaignCompanion(
+  initialStreams: RngStreamsState,
+  worldId: 'fallen-heavens' | 'underworld-tide',
+  role: MythicRole,
+  excludedHeroIds: readonly string[],
+  usedOriginNames: readonly string[],
+): { character: CharacterBlueprint; streams: RngStreamsState } {
+  const generated = generateMythicCompanion(initialStreams, worldId, role, excludedHeroIds);
+  const availableOrigins = ORIGINS[worldId].filter(
+    (origin) => !usedOriginNames.includes(origin.name),
+  );
+  if (availableOrigins.length === 0) {
+    throw new Error(`No unused ${worldId} origin remains for a new companion.`);
+  }
+  const originDraw = drawInteger(generated.streams, 'characters', 0, availableOrigins.length - 1);
+  return {
+    character: createCharacter(generated.hero, availableOrigins[originDraw.value]!),
+    streams: originDraw.streams,
   };
 }
 

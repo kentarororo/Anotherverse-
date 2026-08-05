@@ -91,7 +91,7 @@ describe('generated campaigns and trios', () => {
         campaign = applyGameCommand(campaign, { type: 'COMMIT_TURN' });
       }
       const resolved = applyGameCommand(campaign, { type: 'COMMIT_TURN' });
-      const report = resolved.battleReports[0]!;
+      const report = resolved.battleReports.at(-1)!;
       expect(report.rounds).toBeLessThanOrEqual(12);
       expect(report.events.length).toBeGreaterThan(0);
       for (const hero of campaign.generatedDefinitions.characters) {

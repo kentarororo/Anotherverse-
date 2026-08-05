@@ -60,7 +60,7 @@ describe('canonical mythic playwrite slice', () => {
   it('turns the battle into pressure, plan, turning point, and remembered consequence', () => {
     const state = battleStart('causal-aftermath');
     const resolved = applyGameCommand(state, { type: 'COMMIT_TURN' });
-    const report = resolved.battleReports[0]!;
+    const report = resolved.battleReports.at(-1)!;
     const beats = buildBattleCausality(resolved, report);
     expect(beats.map((beat) => beat.label)).toEqual([
       'Enemy pressure',
@@ -68,8 +68,11 @@ describe('canonical mythic playwrite slice', () => {
       'Turning point',
     ]);
     expect(beats[1]!.detail).toMatch(/techniques? and triggered \d+ reactions?/);
-    const memory = resolved.worldFacts.find((fact) => fact.createdTurn === 3)!;
-    expect(memory.value).toBe(state.currentScenario!.choices[0]!.consequence);
+    const memory = resolved.worldFacts.find((fact) => fact.id === 'fact-scenario-result-3')!;
+    const choice = state.currentScenario!.choices[0]!;
+    expect([choice.consequence, ...Object.values(choice.outcomeConsequences ?? {})]).toContain(
+      memory.value,
+    );
     expect(resolved.currentScenario!.sceneBeats.cause).toBe(memory.value);
     expect(resolved.currentScenario!.premiseFactIds).toContain(memory.id);
   });

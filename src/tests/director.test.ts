@@ -33,11 +33,10 @@ function sequence(seed: string) {
 }
 
 describe('world quest director', () => {
-  it('honours the chosen lead and recruits one authored companion on each of the first two turns', () => {
+  it('starts with only the chosen lead and generates balanced companions when they enter the story', () => {
     const seed = 'chosen-lead-opening';
     const draft = generateCampaignDraft(seed);
     const chosenLead = draft.characters[2]!;
-    const companions = draft.characters.filter((hero) => hero.id !== chosenLead.id);
     let state = applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
       type: 'START_CAMPAIGN',
       seed,
@@ -47,32 +46,33 @@ describe('world quest director', () => {
 
     expect(state.leadCharacterId).toBe(chosenLead.id);
     expect(state.recruitedCharacterIds).toEqual([chosenLead.id]);
-    expect(state.currentScenario!.category).toBe('social');
-    expect(state.currentScenario!.castIds).toEqual([chosenLead.id, companions[0]!.id]);
+    expect(state.generatedDefinitions.characters).toEqual([chosenLead]);
+    expect(state.currentScenario!.category).toBe('operation');
+    expect(state.currentScenario!.castIds).toEqual([chosenLead.id]);
     expect(state.currentScenario!.sceneBeats.hook).toContain(chosenLead.name);
-    expect(state.currentScenario!.sceneBeats.hook).toContain(companions[0]!.name);
 
     state = choose(state);
-    expect(state.aftermathReports[0]!.characterIdsRecruited).toEqual([companions[0]!.id]);
-    expect(state.recruitedCharacterIds).toEqual([chosenLead.id, companions[0]!.id]);
+    const firstCompanion = state.generatedDefinitions.characters[1]!;
+    expect(state.aftermathReports[0]!.characterIdsRecruited).toEqual([]);
+    expect(state.recruitedCharacterIds).toEqual([chosenLead.id]);
     expect(state.currentScenario!.category).toBe('personal');
-    expect(state.currentScenario!.castIds).toEqual([
-      chosenLead.id,
-      companions[0]!.id,
-      companions[1]!.id,
-    ]);
+    expect(state.currentScenario!.castIds).toEqual([chosenLead.id, firstCompanion.id]);
+    expect(state.selectionCandidateIds).not.toContain(firstCompanion.id);
 
     state = choose(state);
-    expect(state.aftermathReports[1]!.characterIdsRecruited).toEqual([companions[1]!.id]);
+    const secondCompanion = state.generatedDefinitions.characters[2]!;
+    expect(state.aftermathReports[1]!.characterIdsRecruited).toEqual([firstCompanion.id]);
     expect(state.recruitedCharacterIds).toEqual([
       chosenLead.id,
-      companions[0]!.id,
-      companions[1]!.id,
+      firstCompanion.id,
+      secondCompanion.id,
     ]);
+    expect(state.selectionCandidateIds).not.toContain(secondCompanion.id);
+    expect(new Set(state.generatedDefinitions.characters.map((hero) => hero.role)).size).toBe(3);
     expect(state.currentScenario!.category).toBe('operation');
     expect(state.currentScenario!.quest.chapter).toBe(3);
     expect(state.currentScenario!.castIds).toHaveLength(3);
-    expect(state.currentScenario!.sceneBeats.stakes).toContain('all three Mythic Awakenings');
+    expect(state.currentScenario!.sceneBeats.hook).toContain(secondCompanion.name);
   });
 
   it('plays one readable four-act quest across twenty unique chapters', () => {
@@ -206,7 +206,7 @@ describe('world quest director', () => {
     const operationTurns = sequence('operation-spine-seed')
       .scenarios.filter((scenario) => scenario.category === 'operation')
       .map((scenario) => scenario.quest.chapter);
-    expect(operationTurns).toEqual([3, 6, 11, 20]);
+    expect(operationTurns).toEqual([1, 3, 6, 11, 20]);
   });
 
   it('replays the same quest byte-for-byte from the same seed and commands', () => {

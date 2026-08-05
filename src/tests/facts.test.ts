@@ -16,7 +16,7 @@ describe('world fact realiser', () => {
       state.generatedDefinitions.characters.find((hero) => hero.id === origin.subjectId)!.name,
     );
     state = applyGameCommand(state, { type: 'COMMIT_TURN' });
-    const choiceFact = state.worldFacts.at(-1)!;
+    const choiceFact = state.worldFacts.find((fact) => fact.id === 'fact-scenario-result-1')!;
     expect(renderWorldFact(state, choiceFact)).toMatch(/^Turn 1: .+ chose “.+”\.$/);
   });
 });

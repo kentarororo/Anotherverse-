@@ -4,14 +4,14 @@ Open the deployed [100-paragraph review harness](https://kentarororo.github.io/A
 for the separate corpus read-aloud gate. It tracks the required 95 grammatically natural and 85
 contextually coherent thresholds in local browser storage.
 
-Start a New Campaign on the deployed schema-13 build, choose one starting hero, and play through
+Start a New Campaign on the deployed schema-14 build, choose one starting hero, and play through
 Turn 20. Record the seed and any turn where the cause, choice, or result is unclear.
 
 ## Required observations
 
 - Can you explain what makes each hero mechanically distinct?
-- Does the chosen lead appear alone at first, with the other two companions joining naturally in
-  Chapters 1 and 2?
+- Does the chosen lead fight alone in Chapter 1, meet a newly generated companion in Chapter 2,
+  and meet a second newly generated companion when the Chapter 3 battle begins?
 - Before each operation, can you identify one useful formation, stance, or priority change?
 - Can you identify all five combatants, the active actor and target, HP change or status, and the
   selected plan without opening the exact battle log?

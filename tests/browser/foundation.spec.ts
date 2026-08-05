@@ -5,7 +5,7 @@ test.use({ viewport: { width: 1365, height: 768 } });
 
 async function recruitOpeningTrio(page: Page) {
   for (const nextTurn of [2, 3]) {
-    await page.getByRole('radio').first().click();
+    if (nextTurn === 3) await page.getByRole('radio').first().click();
     await page.getByRole('button', { name: 'Take Action' }).click();
     await expect(page.getByRole('heading', { name: 'Aftermath' })).toBeVisible();
     await page.getByRole('button', { name: `Continue to Turn ${nextTurn}` }).click();
@@ -230,12 +230,21 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByText('A new legend')).toBeVisible();
   await expect(page.locator('.dossier')).toHaveCount(3);
   const heroNames = await page.locator('.dossier h2').allTextContents();
-  const [vanguardName, strikerName] = heroNames;
-  expect(vanguardName).toBeTruthy();
-  expect(strikerName).toBeTruthy();
+  expect(heroNames[0]).toBeTruthy();
   await page.locator('.hero-choice-button').first().click();
   await page.getByRole('button', { name: 'Start Campaign' }).click();
   await recruitOpeningTrio(page);
+  const { vanguardName, strikerName } = await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem('anotherverse.prototype.autosave')!).state;
+    return {
+      vanguardName: state.generatedDefinitions.characters.find(
+        (hero: { role: string }) => hero.role === 'vanguard',
+      ).name as string,
+      strikerName: state.generatedDefinitions.characters.find(
+        (hero: { role: string }) => hero.role === 'striker',
+      ).name as string,
+    };
+  });
 
   await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
   const authoredOperationTitle = page.locator('.operation-content h2');
@@ -275,7 +284,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   const savedTotals = await page.evaluate(() => {
     const envelope = JSON.parse(localStorage.getItem('anotherverse.prototype.autosave')!);
     const state = envelope.state;
-    const firstAttack = state.battleReports[0].events.find(
+    const report = state.battleReports.at(-1);
+    const firstAttack = report.events.find(
       (event: { eventType: string }) => event.eventType === 'attack',
     ) as { rawAmount: number; mitigatedAmount: number; finalAmount: number };
     return {
@@ -285,8 +295,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
         xp: state.aftermathReports.at(-1).experienceByCharacter[hero.id],
       })),
       firstAttack,
-      combatants: Object.entries(state.battleReports[0].hpAtEnd).map(([id, hp]) => ({
-        name: state.battleReports[0].combatantNames[id],
+      combatants: Object.entries(report.hpAtEnd).map(([id, hp]) => ({
+        name: report.combatantNames[id],
         hp,
         maxHp: 16 + state.generatedDefinitions.combatants[id].stats.vitality * 2,
       })),

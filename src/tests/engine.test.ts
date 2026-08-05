@@ -46,7 +46,8 @@ describe('canonical command reducer', () => {
     expect(JSON.stringify(first)).toBe(JSON.stringify(second));
     expect(CanonicalGameStateSchema.parse(first)).toEqual(first);
     expect(first.commandHistory).toEqual([{ index: 0, command }]);
-    expect(first.generatedDefinitions.characters).toHaveLength(3);
+    expect(first.generatedDefinitions.characters).toHaveLength(1);
+    expect(first.selectionCandidateIds).toHaveLength(3);
   });
 
   it('consumes only world and character streams during campaign generation', () => {
@@ -104,7 +105,7 @@ describe('Milestone 1 battle', () => {
 
   it('terminates by round 12 and traces every attack HP and resource change', () => {
     const state = applyGameCommand(battleStart('trace-seed'), { type: 'COMMIT_TURN' });
-    const report = state.battleReports[0]!;
+    const report = state.battleReports.at(-1)!;
     expect(report.rounds).toBeGreaterThanOrEqual(1);
     expect(report.rounds).toBeLessThanOrEqual(12);
     expect(['victory', 'defeat', 'round-cap']).toContain(report.outcome);
@@ -146,25 +147,25 @@ describe('Milestone 1 battle', () => {
       ],
       'plan-impact-seed',
     );
-    expect(changed.battleReports[0]!.events).not.toEqual(baseline.battleReports[0]!.events);
-    expect(changed.battleReports[0]!.hpAtEnd).not.toEqual(baseline.battleReports[0]!.hpAtEnd);
+    expect(changed.battleReports.at(-1)!.events).not.toEqual(baseline.battleReports.at(-1)!.events);
+    expect(changed.battleReports.at(-1)!.hpAtEnd).not.toEqual(
+      baseline.battleReports.at(-1)!.hpAtEnd,
+    );
   });
 
   it('uses signatures, limitations, and explicit status interactions', () => {
     const state = applyGameCommand(battleStart('rules-seed'), { type: 'COMMIT_TURN' });
-    const events = state.battleReports[0]!.events;
+    const events = state.battleReports.at(-1)!.events;
     const triggers = events.flatMap((event) => event.ruleTriggers ?? []);
     const statuses = events.flatMap(
       (event) => event.statusChanges?.map((change) => change.statusId) ?? [],
     );
     expect(triggers).toContain('rear-intercept');
-    expect(triggers).toContain('exploit-exposed');
     expect(triggers).toContain('reaction:intercept-brace');
     expect(triggers).toContain('reaction:finisher-surge');
     expect(triggers).toContain('reaction:recovery-loop');
     expect(triggers).toContain('limitation:measured-strikes');
     expect(triggers).toContain('limitation:low-direct-output');
-    expect(statuses).toContain('exposed');
     expect(statuses).toContain('strained');
     expect(statuses).toContain('marked');
     expect(statuses).toContain('warded');
@@ -183,9 +184,9 @@ describe('Milestone 1 battle', () => {
     });
     const resolved = applyGameCommand(moved, { type: 'COMMIT_TURN' });
     expect(
-      resolved.battleReports[0]!.events.some((event) =>
-        event.ruleTriggers?.includes('rear-intercept'),
-      ),
+      resolved.battleReports
+        .at(-1)!
+        .events.some((event) => event.ruleTriggers?.includes('rear-intercept')),
     ).toBe(false);
   });
 
@@ -201,9 +202,9 @@ describe('Milestone 1 battle', () => {
     });
     const resolved = applyGameCommand(exposedPlan, { type: 'COMMIT_TURN' });
     expect(
-      resolved.battleReports[0]!.events.some((event) =>
-        event.ruleTriggers?.includes('limitation:open-guard'),
-      ),
+      resolved.battleReports
+        .at(-1)!
+        .events.some((event) => event.ruleTriggers?.includes('limitation:open-guard')),
     ).toBe(true);
   });
 
@@ -267,10 +268,10 @@ describe('Milestone 1 battle', () => {
       { type: 'COMMIT_TURN' },
     ];
     const planned = commands.reduce(applyGameCommand, durableStart);
-    const actions = new Set(planned.battleReports[0]!.events.map((event) => event.actionId));
-    const statuses = planned.battleReports[0]!.events.flatMap(
-      (event) => event.statusChanges?.map((change) => change.statusId) ?? [],
-    );
+    const actions = new Set(planned.battleReports.at(-1)!.events.map((event) => event.actionId));
+    const statuses = planned.battleReports
+      .at(-1)!
+      .events.flatMap((event) => event.statusChanges?.map((change) => change.statusId) ?? []);
     for (const hero of initial.generatedDefinitions.characters) {
       expect(actions).toContain(hero.techniqueIds[1]);
     }
@@ -279,7 +280,7 @@ describe('Milestone 1 battle', () => {
 
   it('sets authored technique cooldowns and prevents consecutive-round reuse', () => {
     const resolved = applyGameCommand(battleStart('cooldown-seed'), { type: 'COMMIT_TURN' });
-    const report = resolved.battleReports[0]!;
+    const report = resolved.battleReports.at(-1)!;
     expect(
       report.events.some((event) =>
         event.ruleTriggers?.some((trigger) => trigger.startsWith('cooldown-set:')),

@@ -485,6 +485,22 @@ export const operationEncounters: EncounterState[] = [
     signature: 'Claimant Rush hits the front; Reflected Verdict marks the rear.',
     rewardPreview: 'Three guardian materials, Coin, relic dust, and hunter experience.',
   },
+  {
+    id: 'opening-starfall-hound',
+    title: 'The Hound on Starfall Road',
+    brief: 'A lone Grave Hound blocks the pilgrims’ escape from the fallen star.',
+    enemyIds: ['rift-hound'],
+    signature: 'Grave Charge punishes an exposed front position.',
+    rewardPreview: 'A Grave Hound Fang, Coin, relic dust, and hunter experience.',
+  },
+  {
+    id: 'opening-drowned-lancer',
+    title: 'The Lancer at the Last Bell',
+    brief: 'A lone Drowned Lancer charges the families crossing the bare seabed.',
+    enemyIds: ['drowned-lancer'],
+    signature: 'Undertow Charge strains the front position.',
+    rewardPreview: 'A Drowned Lancer Bone, Coin, relic dust, and hunter experience.',
+  },
 ];
 
 export function encounterForOperationTemplate(templateId: string): EncounterState {

@@ -16,9 +16,12 @@ import { createMythicOpeningScenario } from './mythic-scenario';
 const SLOT_PATTERN = /\{([A-Za-z][A-Za-z0-9]*)\}/g;
 
 function latestDecision(state: CanonicalGameState): WorldFact {
-  const fact = [...state.worldFacts]
-    .filter((candidate) => candidate.active && candidate.createdTurn > 0)
-    .sort((left, right) => right.createdTurn - left.createdTurn)[0];
+  const fact = state.worldFacts.find(
+    (candidate) =>
+      candidate.active &&
+      candidate.id === `fact-scenario-result-${state.turn - 1}` &&
+      candidate.createdTurn === state.turn - 1,
+  );
   if (fact === undefined) throw new Error('A quest chapter requires the previous authored result.');
   return fact;
 }
@@ -54,10 +57,11 @@ function foundationFact(
   leadId: string,
 ) {
   const fact = state.worldFacts.find((candidate) => {
-    if (!candidate.active || candidate.createdTurn !== 0) return false;
+    if (!candidate.active) return false;
     if (chapter.category === 'personal') {
       return candidate.subjectId === leadId && candidate.relation === 'comes-from';
     }
+    if (candidate.createdTurn !== 0) return false;
     if (chapter.category === 'discovery' || chapter.category === 'social') {
       return candidate.relation === 'is-squad-city';
     }

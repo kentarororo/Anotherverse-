@@ -1,4 +1,4 @@
-import { encounterForOperationTemplate } from '../../content/milestone-one';
+import { encounterForId, encounterForOperationTemplate } from '../../content/milestone-one';
 import { OPENING_JOURNEYS } from '../../content/opening-recruitment';
 import { QUEST_ARCS, questWorldId } from '../../content/quest-arcs';
 import type { CanonicalGameState } from '../model/state';
@@ -59,25 +59,33 @@ export function createMythicOpeningScenario(
   const companions = state.generatedDefinitions.characters.filter((hero) => hero.id !== lead.id);
   const firstCompanion = companions[0];
   const secondCompanion = companions[1];
-  if (firstCompanion === undefined || secondCompanion === undefined) {
-    throw new Error('The authored opening requires two recruitable companions.');
-  }
+  if (turn >= 2 && firstCompanion === undefined)
+    throw new Error('Opening Turn 2 requires its newly generated companion.');
+  if (turn >= 3 && secondCompanion === undefined)
+    throw new Error('Opening Turn 3 requires its newly generated companion.');
 
   const worldId = questWorldId(state.campaignBible.city.id);
   const journey = OPENING_JOURNEYS[worldId];
   const chapter = journey.chapters[turn - 1];
   if (chapter === undefined) return null;
+  const chapterEncounterId = chapter.choices.find(
+    (candidate) => candidate.encounterId !== undefined,
+  )?.encounterId;
   const encounter =
-    chapter.category === 'operation' ? encounterForOperationTemplate(chapter.templateId) : null;
+    chapter.category === 'operation'
+      ? chapterEncounterId === undefined
+        ? encounterForOperationTemplate(chapter.templateId)
+        : encounterForId(chapterEncounterId)
+      : null;
   const enemies =
     encounter?.enemyIds.map((id) => state.generatedDefinitions.enemies[id]?.name ?? id) ?? [];
   const slots = {
     lead: lead.name,
     leadAwakening: lead.callingName,
-    firstCompanion: firstCompanion.name,
-    firstAwakening: firstCompanion.callingName,
-    secondCompanion: secondCompanion.name,
-    secondAwakening: secondCompanion.callingName,
+    firstCompanion: firstCompanion?.name ?? '',
+    firstAwakening: firstCompanion?.callingName ?? '',
+    secondCompanion: secondCompanion?.name ?? '',
+    secondAwakening: secondCompanion?.callingName ?? '',
     enemyOne: enemies[0] ?? 'the charging guardian',
     enemyTwo: enemies[1] ?? 'the watching seer',
   };
@@ -106,6 +114,7 @@ export function createMythicOpeningScenario(
             roundCap: bind(candidate.outcomeConsequences.roundCap, slots),
           },
     effects: candidate.effects,
+    encounterId: candidate.encounterId,
   }));
   const arc = QUEST_ARCS[worldId];
   const premiseFactIds =
@@ -114,10 +123,10 @@ export function createMythicOpeningScenario(
       : [foundationFacts[(turn - 1) % foundationFacts.length]!.id, priorDecision.id];
   const castIds =
     turn === 1
-      ? [lead.id, firstCompanion.id]
+      ? [lead.id]
       : turn === 2
-        ? [lead.id, firstCompanion.id, secondCompanion.id]
-        : state.generatedDefinitions.characters.map((hero) => hero.id);
+        ? [lead.id, firstCompanion!.id]
+        : [lead.id, firstCompanion!.id, secondCompanion!.id];
 
   return ScenarioBlueprintSchema.parse({
     id: `scenario-turn-${turn}`,
@@ -145,10 +154,10 @@ export function createMythicOpeningScenario(
       confidence: chapter.category === 'operation' ? 'moderate' : 'high',
     },
     advancesThreadId:
-      turn === 1
-        ? `thread-personal-${firstCompanion.id}`
-        : turn === 2
-          ? `thread-personal-${secondCompanion.id}`
+      turn === 2
+        ? `thread-personal-${firstCompanion!.id}`
+        : turn === 3
+          ? `thread-personal-${secondCompanion!.id}`
           : undefined,
     semanticFingerprint: `${journey.id}:${chapter.turn}:${lead.id}`,
   });

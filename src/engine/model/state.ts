@@ -15,9 +15,9 @@ import {
   RelationshipStateSchema,
 } from './progression';
 
-// Schema 13 adds player-selected leads, earned companions, monster materials, and Forge history.
-// Older snapshots cannot reconstruct which heroes were recruited or which materials were spent.
-export const GAME_SCHEMA_VERSION = 13 as const;
+// Schema 14 separates creation candidates from the canonical campaign roster. Older snapshots
+// already contain the two unchosen candidates and cannot safely reconstruct earned companions.
+export const GAME_SCHEMA_VERSION = 14 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),
@@ -46,6 +46,7 @@ export const CanonicalGameStateSchema = z.object({
   campaignSeed: z.string().min(1).nullable(),
   selectedDraftIndex: z.number().int().nonnegative().nullable(),
   leadCharacterId: z.string().min(1).nullable(),
+  selectionCandidateIds: z.array(z.string().min(1)).max(3),
   recruitedCharacterIds: z.array(z.string().min(1)).max(3),
   turn: z.number().int().positive(),
   rank: z.string().min(1),
@@ -85,6 +86,7 @@ export function createEmptyGameState(contentManifestHash: string): CanonicalGame
     campaignSeed: null,
     selectedDraftIndex: null,
     leadCharacterId: null,
+    selectionCandidateIds: [],
     recruitedCharacterIds: [],
     turn: 1,
     rank: 'Unranked',

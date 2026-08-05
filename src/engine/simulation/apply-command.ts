@@ -6,17 +6,22 @@ import {
   createEmptyGameState,
 } from '../model/state';
 import {
+  createMilestoneOneDefinitions,
+  createMilestoneOnePartyState,
   createDefaultPositions,
   createDefaultStances,
   encounterForId,
   encounterForOperationTemplate,
   materialIdByEnemyId,
 } from '../../content/milestone-one';
+import type { MythicRole } from '../../content/mythic-review';
+import { questWorldId } from '../../content/quest-arcs';
 import { StanceIdSchema, TeamPriorityIdSchema } from '../model/combat';
 import { simulateBattle } from '../combat/simulate';
-import { createGeneratedCampaignState } from '../generation/campaign';
+import { createGeneratedCampaignState, generateCampaignCompanion } from '../generation/campaign';
 import { selectNextScenario } from '../director/scenario-director';
 import { resolveMaterialFusion } from '../progression/crafting';
+import { drawInteger } from '../rng/streams';
 
 export class MilestoneNotReadyError extends Error {
   public readonly commandType: GameCommand['type'];
@@ -62,11 +67,121 @@ function openingCompanionIds(state: CanonicalGameState): string[] {
 }
 
 function characterRecruitedOnTurn(state: CanonicalGameState): string | null {
-  if (state.turn < 1 || state.turn > 2) return null;
-  const characterId = openingCompanionIds(state)[state.turn - 1];
+  if (state.turn < 2 || state.turn > 3) return null;
+  const characterId = openingCompanionIds(state)[state.turn - 2];
   return characterId === undefined || state.recruitedCharacterIds.includes(characterId)
     ? null
     : characterId;
+}
+
+const BALANCED_PARTY_ROLES: readonly MythicRole[] = ['vanguard', 'striker', 'support'];
+
+function generateOpeningCompanion(state: CanonicalGameState): CanonicalGameState {
+  if (
+    state.turn < 2 ||
+    state.turn > 3 ||
+    state.rngStreams === null ||
+    state.campaignBible === null ||
+    state.generatedDefinitions.characters.length >= state.turn
+  ) {
+    return state;
+  }
+  const existingCharacters = state.generatedDefinitions.characters;
+  const missingRoles = BALANCED_PARTY_ROLES.filter(
+    (role) => !existingCharacters.some((character) => character.role === role),
+  );
+  if (missingRoles.length === 0) return state;
+  const roleDraw = drawInteger(state.rngStreams, 'characters', 0, missingRoles.length - 1);
+  const generated = generateCampaignCompanion(
+    roleDraw.streams,
+    questWorldId(state.campaignBible.city.id),
+    missingRoles[roleDraw.value]!,
+    [...state.selectionCandidateIds, ...existingCharacters.map((character) => character.id)],
+    existingCharacters.map((character) => character.origin),
+  );
+  const character = generated.character;
+  const additions = createMilestoneOneDefinitions([character]);
+  const member = createMilestoneOnePartyState([character]);
+  const originFactId = `fact-origin-${character.id}`;
+  const joinsAtBattleStart = state.turn === 3;
+  const arrivalFact = {
+    id: `fact-recruited-${character.id}`,
+    kind: 'party-recruitment',
+    subjectId: character.id,
+    relation: 'joined-party',
+    value: `${character.name} joined the company at the crater gate.`,
+    createdTurn: state.turn,
+    sourceEventId: `opening-arrival-${state.turn}`,
+    tags: ['character', 'recruitment', character.role],
+    active: true,
+  };
+
+  return CanonicalGameStateSchema.parse({
+    ...state,
+    rngStreams: generated.streams,
+    generatedDefinitions: {
+      ...state.generatedDefinitions,
+      characters: [...existingCharacters, character],
+      combatants: {
+        ...state.generatedDefinitions.combatants,
+        [character.id]: additions.combatants[character.id],
+      },
+      techniques: {
+        ...state.generatedDefinitions.techniques,
+        ...additions.techniques,
+      },
+    },
+    recruitedCharacterIds: joinsAtBattleStart
+      ? [...state.recruitedCharacterIds, character.id]
+      : state.recruitedCharacterIds,
+    partyState: { ...state.partyState, ...member },
+    worldFacts: [
+      ...state.worldFacts,
+      {
+        id: originFactId,
+        kind: 'character-origin',
+        subjectId: character.id,
+        relation: 'comes-from',
+        value: character.origin,
+        createdTurn: state.turn,
+        sourceEventId: `opening-arrival-${state.turn}`,
+        tags: ['character', character.role],
+        active: true,
+      },
+      ...(joinsAtBattleStart ? [arrivalFact] : []),
+    ],
+    storyThreads: [
+      ...state.storyThreads,
+      {
+        id: `thread-personal-${character.id}`,
+        arcId: 'mythic-awakening-arc',
+        stage: 0,
+        castIds: [character.id],
+        factIds: [originFactId],
+        urgency: 35,
+        status: 'open',
+        nextEligibleTurn: state.turn,
+      },
+    ],
+    relationships: [
+      ...state.relationships,
+      ...existingCharacters.map((existing) => ({
+        pairId: [existing.id, character.id].sort().join(':'),
+        characterIds: [existing.id, character.id],
+        value: 0,
+        factIds: [],
+      })),
+    ],
+    pendingPlan: {
+      ...state.pendingPlan,
+      positions: joinsAtBattleStart
+        ? { ...state.pendingPlan.positions, ...createDefaultPositions([character]) }
+        : state.pendingPlan.positions,
+      stanceIds: joinsAtBattleStart
+        ? { ...state.pendingPlan.stanceIds, ...createDefaultStances([character]) }
+        : state.pendingPlan.stanceIds,
+    },
+  });
 }
 
 function materialRewardsForVictory(state: CanonicalGameState, victory: boolean): string[] {
@@ -116,6 +231,7 @@ export function applyGameCommand(
       characters.find((character) => character.id === command.leadCharacterId) ??
       (command.leadCharacterId === undefined ? firstCharacter : undefined);
     if (lead === undefined) throw new Error('The selected lead is not part of this campaign.');
+    const leadDefinitions = createMilestoneOneDefinitions([lead]);
     const foundation = CanonicalGameStateSchema.parse({
       ...nextState,
       phase: 'command',
@@ -126,12 +242,13 @@ export function applyGameCommand(
       campaignSeed: command.seed,
       selectedDraftIndex: command.selectedDraftIndex,
       leadCharacterId: lead.id,
+      selectionCandidateIds: characters.map((character) => character.id),
       recruitedCharacterIds: [lead.id],
       campaignBible: generated.draft.bible,
       rngStreams: generated.draft.rngStreams,
-      generatedDefinitions: generated.generatedDefinitions,
-      partyState: generated.partyState,
-      currentEncounter: generated.currentEncounter,
+      generatedDefinitions: leadDefinitions,
+      partyState: createMilestoneOnePartyState([lead]),
+      currentEncounter: null,
       worldFacts: [
         {
           id: 'fact-campaign-city',
@@ -155,40 +272,33 @@ export function applyGameCommand(
           tags: ['faction'],
           active: true,
         },
-        ...characters.map((character) => ({
-          id: `fact-origin-${character.id}`,
+        {
+          id: `fact-origin-${lead.id}`,
           kind: 'character-origin',
-          subjectId: character.id,
+          subjectId: lead.id,
           relation: 'comes-from',
-          value: character.origin,
+          value: lead.origin,
           createdTurn: 0,
           sourceEventId: 'campaign-generation',
-          tags: ['character', character.role],
+          tags: ['character', lead.role],
           active: true,
-        })),
+        },
       ],
-      storyThreads: characters.map((character) => ({
-        id: `thread-personal-${character.id}`,
-        arcId: 'mythic-path-arc',
-        stage: 0,
-        castIds: [character.id],
-        factIds: [`fact-origin-${character.id}`],
-        urgency: 35,
-        status: 'open',
-        nextEligibleTurn: 2,
-      })),
-      relationships: [
-        { first: firstCharacter, second: secondCharacter },
-        { first: firstCharacter, second: thirdCharacter },
-        { first: secondCharacter, second: thirdCharacter },
-      ].map((pair) => ({
-        pairId: [pair.first.id, pair.second.id].sort().join(':'),
-        characterIds: [pair.first.id, pair.second.id],
-        value: 0,
-        factIds: [],
-      })),
+      storyThreads: [
+        {
+          id: `thread-personal-${lead.id}`,
+          arcId: 'mythic-awakening-arc',
+          stage: 0,
+          castIds: [lead.id],
+          factIds: [`fact-origin-${lead.id}`],
+          urgency: 35,
+          status: 'open',
+          nextEligibleTurn: 2,
+        },
+      ],
+      relationships: [],
       bestiary: Object.fromEntries(
-        Object.values(generated.generatedDefinitions.enemies).map((enemy) => [
+        Object.values(leadDefinitions.enemies).map((enemy) => [
           enemy.id,
           { enemyId: enemy.id, knowledge: 1, revealedTags: [enemy.policyId] },
         ]),
@@ -473,6 +583,8 @@ export function applyGameCommand(
           activeCharacterIds.has(member.characterId)
             ? {
                 ...member,
+                hp: Math.min(member.maxHp, member.hp + 4),
+                readiness: Math.min(100, member.readiness + 10),
                 experience: member.experience + experience,
                 level: 1 + Math.floor((member.experience + experience) / 50),
                 callingRank:
@@ -620,11 +732,16 @@ export function applyGameCommand(
         situationChoiceId: null,
       },
     });
-    const next = selectNextScenario(resolvedBase, resolvedBase.turn, resolvedBase.rngStreams!);
+    const rosterReadyBase = generateOpeningCompanion(resolvedBase);
+    const next = selectNextScenario(
+      rosterReadyBase,
+      rosterReadyBase.turn,
+      rosterReadyBase.rngStreams!,
+    );
     return CanonicalGameStateSchema.parse(
       appendCommand(
         {
-          ...resolvedBase,
+          ...rosterReadyBase,
           rngStreams: next.streams,
           currentScenario: next.scenario,
           currentEncounter:
@@ -633,7 +750,7 @@ export function applyGameCommand(
               : null,
           directorDebug: next.debug,
           pendingPlan: {
-            ...resolvedBase.pendingPlan,
+            ...rosterReadyBase.pendingPlan,
             situationChoiceId:
               next.scenario.category === 'operation'
                 ? (next.scenario.choices[0]?.id ?? null)

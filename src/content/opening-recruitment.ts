@@ -6,11 +6,8 @@ export interface OpeningChoiceDefinition {
   label: string;
   description: string;
   consequence: string;
-  outcomeConsequences?: {
-    victory: string;
-    defeat: string;
-    roundCap: string;
-  };
+  encounterId?: string;
+  outcomeConsequences?: { victory: string; defeat: string; roundCap: string };
   effects: {
     renownDelta: number;
     provisionsDelta: number;
@@ -48,73 +45,69 @@ const effects = (
 
 const OPENING_JOURNEYS_SOURCE: Record<QuestWorldId, OpeningJourneyDefinition> = {
   'fallen-heavens': {
-    id: 'opening-starfall-trio',
+    id: 'opening-starfall-road',
     worldId: 'fallen-heavens',
     chapters: [
       {
         turn: 1,
-        category: 'social',
-        templateId: 'opening-recruit-1',
-        title: 'A Stranger on Starfall Road',
-        actTitle: 'Gather the Trio',
-        objective: 'Find two companions before the fourth Godgrave opens.',
-        hook: 'The fourth star breaks open above Starfall Road while {lead} is still travelling alone. {firstCompanion} is holding a pilgrim cart against a slope of falling godbone.',
+        category: 'operation',
+        templateId: 'opening-solo-fallen',
+        title: 'The Hound on Starfall Road',
+        actTitle: 'A Star Falls',
+        objective: 'Protect the pilgrims and reach the new crater.',
+        hook: '{lead} is alone on Starfall Road when a star tears across the afternoon sky. Its impact throws a pilgrim cart onto its side, and a Grave Hound climbs from the smoking earth.',
         cause:
-          'The guild accepted {lead} for the Bronze trial, but no hunter may enter a Godgrave without two companions.',
+          'The road to the Bronze trial now runs through the crater, and no guild hunter has arrived to help.',
         stakes:
-          'The cart wheel is splitting. If it falls, the families inside will be trapped before the crater road closes.',
-        decision: 'Will {lead} trust {firstCompanion} at once, or take command of the rescue?',
+          'The beast stands between the cart and the only safe path down the mountain. The trapped pilgrims cannot move until it falls.',
+        decision: 'Choose a stance and face the Grave Hound.',
         choices: [
           {
-            id: 'fallen-opening-t1-trust',
-            label: 'Lift together',
-            description:
-              'Trust the stranger with half the weight. The rescue is riskier, but it begins as a partnership.',
+            id: 'fallen-opening-t1-fight',
+            label: 'Face the hound',
+            description: 'Set your stance and let the battle play out.',
+            encounterId: 'opening-starfall-hound',
             consequence:
-              '{lead} took one beam while {firstCompanion} took the other. They pulled the cart clear as the road split beneath them. After seeing the Mythic Awakening called {leadAwakening} answer their own {firstAwakening}, {firstCompanion} asked to face the falling god together.',
-            effects: effects(0, 0, 1, 2),
-          },
-          {
-            id: 'fallen-opening-t1-lead',
-            label: 'Call the rescue',
-            description:
-              'Set the order and keep everyone moving. The road is safer, but the stranger must choose to follow your lead.',
-            consequence:
-              '{lead} set the rope, named each move, and brought the cart across without losing anyone. {firstCompanion} saw the Mythic Awakening called {leadAwakening} hold steady beside {firstAwakening}, then agreed to join the trial under one clear condition: every companion gets a voice.',
-            effects: effects(1, 0, 0, 1),
+              '{lead} drove the hound away from the cart. One pilgrim saw a masked hunter carry a burning shard toward the crater.',
+            outcomeConsequences: {
+              victory:
+                '{lead} killed the hound and freed the pilgrims. One of them saw a masked hunter carry a burning shard toward the crater.',
+              defeat:
+                '{lead} was forced back, but the pilgrims escaped while the hound gave chase. One of them saw a masked hunter carry a burning shard toward the crater.',
+              roundCap:
+                'The hound fled when the fallen star shook the road again. The pilgrims were safe, and one had seen a masked hunter carry a burning shard toward the crater.',
+            },
+            effects: effects(0, 0, 1, 0),
           },
         ],
       },
       {
         turn: 2,
         category: 'personal',
-        templateId: 'opening-recruit-2',
-        title: 'The Third Hunter in the God-Rib',
-        actTitle: 'Gather the Trio',
-        objective: 'Recruit one more companion and reach the newborn Godgrave.',
-        hook: 'At the crater rim, {lead} and {firstCompanion} find {secondCompanion} inside a split god-rib, holding a passage open for three trapped trial hunters. The Mythic Awakening called {secondAwakening} flares each time the bone tries to close.',
-        cause:
-          '{lead} and {firstCompanion} reached the crater as a pair after the rescue on Starfall Road.',
+        templateId: 'opening-recruit-1',
+        title: 'The Broken Bridge',
+        actTitle: 'A Star Falls',
+        objective: 'Cross the ravine before the crater road closes.',
+        hook: 'At the broken bridge, {lead} finds {firstCompanion} lowering stranded children across the ravine. Each use of the Mythic Awakening {firstAwakening} pulls another stone loose.',
+        cause: 'The fight on Starfall Road pointed {lead} toward the crater.',
         stakes:
-          'One hunter is still inside, and the rib is cooling into stone. If it seals, the last safe route to the trial seals with it.',
-        decision:
-          'Will the pair enter the closing rib beside {secondCompanion}, or hold it open from outside?',
+          'Three children remain on the far side. The bridge will not survive another heavy crossing.',
+        decision: 'Will {lead} cross to help, or secure the ropes from this side?',
         choices: [
           {
-            id: 'fallen-opening-t2-enter',
-            label: 'Enter the closing rib',
-            description: 'Share the immediate danger and guide the last hunter out from within.',
+            id: 'fallen-opening-t2-cross',
+            label: 'Cross the bridge',
+            description: 'Share the danger and bring the children over together.',
             consequence:
-              '{lead} and {firstCompanion} entered the rib while {secondCompanion} held the bone apart. All three brought the final hunter out. {secondCompanion} joined them before the passage closed, and the new trio reached the trial gate as guardians climbed from the crater.',
+              '{lead} crossed before the centre gave way. Together, {lead} and {firstCompanion} brought every child to safety. {firstCompanion} then joined the road to the crater.',
             effects: effects(1, 0, 1, 2),
           },
           {
             id: 'fallen-opening-t2-anchor',
-            label: 'Hold the rib from outside',
-            description:
-              'Build a safer anchor and trust the stranger to bring the last hunter back.',
+            label: 'Secure the ropes',
+            description: 'Build a safer line and guide the rescue from solid ground.',
             consequence:
-              '{lead} and {firstCompanion} anchored the rib while {secondCompanion} carried the last hunter through. The plan held. {secondCompanion} joined them at the trial gate, where guardians were already climbing from the crater toward the waiting candidates.',
+              '{lead} tied the bridge to an old shrine while {firstCompanion} led the children across. The plan held. {firstCompanion} then joined the road to the crater.',
             effects: effects(0, 0, 0, 1),
           },
         ],
@@ -122,141 +115,135 @@ const OPENING_JOURNEYS_SOURCE: Record<QuestWorldId, OpeningJourneyDefinition> = 
       {
         turn: 3,
         category: 'operation',
-        templateId: 'operation-1',
-        title: 'The Fourth God Falls',
+        templateId: 'opening-recruit-2',
+        title: 'The Guardians at the Crater',
         actTitle: 'A Star Falls',
-        objective: 'Survive the first battle and learn what fell from the sky.',
-        hook: '{lead}, {firstCompanion}, and {secondCompanion} reach the trial gate as {enemyOne} drives the other candidates toward a cliff and {enemyTwo} marks anyone who tries to flee.',
+        objective: 'Reach the buried shrine and follow the stolen shard.',
+        hook: '{lead} and {firstCompanion} reach the crater as its guardians attack {secondCompanion} at the buried shrine. The Mythic Awakening {secondAwakening} holds the doorway, but cannot hold it alone.',
         cause:
-          'Two rescues turned three lone hunters into a trio just before the newborn Godgrave released its guardians.',
+          'The broken bridge led the two hunters to the crater before the mountain path closed.',
         stakes:
-          'Breaking the charger first leaves the mark unanswered. Hunting the seer leaves the cliff without a shield. This is the first time all three Mythic Awakenings must work as one.',
-        decision: "Set the trio's formation and choose which threat they will stop first.",
+          'The masked thief’s trail runs through the shrine. If the guardians take the doorway, the trail and the trapped hunter will be lost.',
+        decision: 'Set the three hunters’ formation and break through the guardians.',
         choices: [
           {
             id: 'fallen-opening-t3-fight',
-            label: 'Stand together',
-            description:
-              'Set formation, stances, and team priority before the new trio enters its first battle.',
+            label: 'Fight for the shrine',
+            description: 'Set formation, stances, and priority before the battle begins.',
+            encounterId: 'm1-fallen-god-trial',
             consequence:
-              "The new trio defeated the guardians and entered the fourth Godgrave. Behind an empty altar, they found a fresh human name cut into the god's rib.",
+              'The three hunters reached the shrine and found the masked thief’s trail beside a fresh human name carved into godbone.',
             outcomeConsequences: {
               victory:
-                "The new trio defeated the guardians and entered the fourth Godgrave. Behind an empty altar, they found a fresh human name cut into the god's rib.",
+                'The three hunters defeated the guardians. Inside the shrine, they found the masked thief’s trail beside a fresh human name carved into godbone.',
               defeat:
-                "The guardians broke the new formation, but the trio escaped through the same rib they had kept open together. Behind an empty altar, they found a fresh human name cut into the god's rib.",
+                'The guardians drove the hunters from the doorway, but {secondCompanion} opened a narrow way inside. There they found the masked thief’s trail beside a fresh human name carved into godbone.',
               roundCap:
-                'The trial ended before either side won. The trio withdrew through the same rib they had kept open together and found a fresh human name cut inside it.',
+                'The crater shifted before either side could win. The hunters slipped into the shrine and found the masked thief’s trail beside a fresh human name carved into godbone.',
             },
-            effects: effects(0, 0, 0, 0),
+            effects: effects(0, 0, 0, 1),
           },
         ],
       },
     ],
   },
   'underworld-tide': {
-    id: 'opening-early-tide-trio',
+    id: 'opening-early-tide',
     worldId: 'underworld-tide',
     chapters: [
       {
         turn: 1,
-        category: 'social',
-        templateId: 'opening-recruit-1',
-        title: 'A Stranger at the Last Bell',
-        actTitle: 'Gather the Trio',
-        objective: 'Find two companions before the early tide cuts off the shore.',
-        hook: 'The sea withdraws three nights early while {lead} is still travelling alone. At the last wet bell, {firstCompanion} holds a rescue skiff against the pull of the exposed Underworld stair.',
+        category: 'operation',
+        templateId: 'opening-solo-tide',
+        title: 'The Lancer at the Last Bell',
+        actTitle: 'The Early Tide',
+        objective: 'Protect the shore and reach the black stair.',
+        hook: '{lead} is travelling alone when the sea retreats three nights early. A Drowned Lancer rises beside the last bell and charges the families crossing the bare seabed.',
         cause:
-          'The Tide Guild granted {lead} a descent token, but the black stair admits only trios and dawn is already approaching.',
+          'The black stair has opened without warning, and the Tide Guild has not reached the shore.',
         stakes:
-          'Three families are stranded on the newly bare seabed. If the skiff breaks loose, the returning drowned will reach them first.',
-        decision: 'Will {lead} take the second oar beside {firstCompanion}, or clear a path ahead?',
+          'The returning water will trap anyone still on the seabed. The lancer blocks the shortest road home.',
+        decision: 'Choose a stance and stop the Drowned Lancer.',
         choices: [
           {
-            id: 'tide-opening-t1-oar',
-            label: 'Take the second oar',
-            description:
-              'Trust the stranger to set the rhythm and pull every family back together.',
+            id: 'tide-opening-t1-fight',
+            label: 'Hold the road',
+            description: 'Set your stance and let the battle play out.',
+            encounterId: 'opening-drowned-lancer',
             consequence:
-              "{lead} matched {firstCompanion} stroke for stroke until the skiff reached dry ground. When the Mythic Awakening called {leadAwakening} answered {firstAwakening} across the oars, {firstCompanion} chose to follow the bell below the sea at {lead}'s side.",
-            effects: effects(0, 0, 1, 2),
-          },
-          {
-            id: 'tide-opening-t1-path',
-            label: 'Clear the path ahead',
-            description:
-              'Guide the skiff around the drowned and bring the families home by the safer line.',
-            consequence:
-              "{lead} cleared each pale shape from the skiff's path while {firstCompanion} brought the families ashore. Seeing {leadAwakening} and {firstAwakening} hold the same line, {firstCompanion} agreed to join the descent and make the temporary alliance a true pair.",
-            effects: effects(1, 0, 0, 1),
+              '{lead} held the road until the families reached shore. A ferryman saw a masked hunter descend the black stair with the dead king’s seal.',
+            outcomeConsequences: {
+              victory:
+                '{lead} broke the lancer’s charge and brought the families ashore. A ferryman saw a masked hunter descend the black stair with the dead king’s seal.',
+              defeat:
+                '{lead} was driven back, but the fight bought enough time for the families to escape. A ferryman saw a masked hunter descend the black stair with the dead king’s seal.',
+              roundCap:
+                'The returning tide pulled the lancer away before either side fell. The families escaped, and a ferryman saw a masked hunter descend with the dead king’s seal.',
+            },
+            effects: effects(0, 0, 1, 0),
           },
         ],
       },
       {
         turn: 2,
         category: 'personal',
-        templateId: 'opening-recruit-2',
-        title: 'The Hunter the Tide Forgot',
-        actTitle: 'Gather the Trio',
-        objective: 'Recruit one more companion and reach the black stair.',
-        hook: 'Below the last bell, {lead} and {firstCompanion} find {secondCompanion} kneeling beside a returned hunter who has forgotten their own name. The Mythic Awakening called {secondAwakening} keeps one bright syllable alive above the water.',
-        cause:
-          '{lead} and {firstCompanion} reached the black stair as a pair after bringing the rescue skiff home.',
+        templateId: 'opening-recruit-1',
+        title: 'The Skiff in the Mud',
+        actTitle: 'The Early Tide',
+        objective: 'Free the rescue skiff before the water returns.',
+        hook: 'Below the last bell, {lead} finds {firstCompanion} trying to drag a rescue skiff from the mud. The Mythic Awakening {firstAwakening} keeps the drowned away, but the boat will not move.',
+        cause: 'The fight at the bell revealed where the masked hunter went.',
         stakes:
-          'The next bell will wash the syllable away. Saving it costs precious rations; leaving now gives the hunters time to reach the stair before the drowned surround it.',
-        decision:
-          'Will the pair help {secondCompanion} restore the name, or mark a road that can bring the returned hunter home later?',
+          'The skiff carries medicine for the cliff village. If it remains stuck, the returning tide will smash it against the stair.',
+        decision: 'Will {lead} pull the skiff free, or clear a channel to the sea?',
         choices: [
           {
-            id: 'tide-opening-t2-name',
-            label: 'Restore the lost name',
-            description:
-              'Spend one ration on the rite and return one true memory before moving on.',
+            id: 'tide-opening-t2-pull',
+            label: 'Pull together',
+            description: 'Use strength and bring the skiff free at once.',
             consequence:
-              '{lead} and {firstCompanion} gave up a ration while {secondCompanion} spoke the bright syllable back into the hunter. The hunter remembered the way home. {secondCompanion} joined the pair, and all three reached the stair as drowned guardians rose between them and the bell.',
-            effects: effects(1, -1, 0, 2),
+              '{lead} and {firstCompanion} pulled until the mud released the skiff. With the medicine safe, {firstCompanion} joined the descent to the black stair.',
+            effects: effects(1, 0, 1, 2),
           },
           {
-            id: 'tide-opening-t2-road',
-            label: 'Mark the road home',
-            description:
-              'Keep the rations and leave a path the returned hunter can follow after the fight.',
+            id: 'tide-opening-t2-channel',
+            label: 'Clear a channel',
+            description: 'Take more time and let the returning water lift the boat.',
             consequence:
-              '{lead} and {firstCompanion} carved a line of names toward the shore while {secondCompanion} kept the last syllable alive. {secondCompanion} joined them to defend that road, and the new trio reached the stair as drowned guardians rose beneath the bell.',
-            effects: effects(0, 0, 1, 1),
+              '{lead} cut a channel while {firstCompanion} held back the drowned. The first wave lifted the skiff safely. {firstCompanion} then joined the descent to the black stair.',
+            effects: effects(0, 0, 0, 1),
           },
         ],
       },
       {
         turn: 3,
         category: 'operation',
-        templateId: 'operation-5',
-        title: 'The Sea Opens Early',
+        templateId: 'opening-recruit-2',
+        title: 'The Guardians Below the Bell',
         actTitle: 'The Early Tide',
-        objective: 'Protect the shore and learn why the sea opened early.',
-        hook: '{lead}, {firstCompanion}, and {secondCompanion} reach the black stair as {enemyOne} charges the waiting families and {enemyTwo} begins stealing names from the rear of the line.',
-        cause:
-          'Two rescues turned three lone hunters into a trio just before the early tide sent its guardians toward the shore.',
+        objective: 'Enter the black stair and follow the stolen seal.',
+        hook: '{lead} and {firstCompanion} reach the black stair as drowned guardians close around {secondCompanion}. The Mythic Awakening {secondAwakening} keeps one survivor’s name alive, but the water is still rising.',
+        cause: 'Saving the skiff gave the two hunters a safe route to the stair.',
         stakes:
-          'Stopping the charger first leaves its omen alive. Hunting the name-thief leaves the families exposed. This is the first time all three Mythic Awakenings must work as one.',
-        decision: "Set the trio's formation and choose which threat they will stop first.",
+          'The survivor knows where the masked hunter went. The three hunters must hold the landing long enough to save that memory.',
+        decision: 'Set the three hunters’ formation and clear the landing.',
         choices: [
           {
             id: 'tide-opening-t3-fight',
-            label: 'Hold the shore together',
-            description:
-              'Set formation, stances, and team priority before the new trio enters its first battle.',
+            label: 'Hold the landing',
+            description: 'Set formation, stances, and priority before the battle begins.',
+            encounterId: 'secret-drowned-stair',
             consequence:
-              "The new trio drove the guardians from the shore and entered the black stair. Below the first landing, they found the dead king's royal seal nailed beneath the bell.",
+              'The three hunters saved the survivor. One memory remained: a masked thief carrying the dead king’s seal below the stair.',
             outcomeConsequences: {
               victory:
-                "The new trio drove the guardians from the shore and entered the black stair. Below the first landing, they found the dead king's royal seal nailed beneath the bell.",
+                'The three hunters drove the drowned from the landing. The survivor remembered a masked thief carrying the dead king’s seal below the stair.',
               defeat:
-                "The drowned broke the new formation, but the trio escaped along the road of names they had made together. Beneath the last bell, they found the dead king's royal seal.",
+                'The drowned broke the formation, but the hunters carried the survivor above the flood. One memory remained: a masked thief carrying the dead king’s seal below the stair.',
               roundCap:
-                "Dawn ended the fight before either side won. The trio withdrew along the road of names and found the dead king's royal seal beneath the last bell.",
+                'The returning tide ended the fight. The hunters saved the survivor, who remembered a masked thief carrying the dead king’s seal below the stair.',
             },
-            effects: effects(0, 0, 0, 0),
+            effects: effects(0, 0, 1, 1),
           },
         ],
       },
@@ -274,16 +261,15 @@ const OPENING_SLOTS = new Set([
   'enemyOne',
   'enemyTwo',
 ]);
-
 const SLOT_PATTERN = /\{([A-Za-z][A-Za-z0-9]*)\}/g;
 
 for (const journey of Object.values(OPENING_JOURNEYS_SOURCE)) {
   journey.chapters.forEach((chapter, index) => {
     if (chapter.turn !== index + 1) throw new Error(`${journey.id} has a broken chapter order.`);
-    if (chapter.turn === 3 ? chapter.category !== 'operation' : chapter.category === 'operation') {
+    if (chapter.turn === 2 ? chapter.category === 'operation' : chapter.category !== 'operation') {
       throw new Error(`${journey.id} has combat in the wrong opening chapter.`);
     }
-    if (chapter.turn === 3 ? chapter.choices.length !== 1 : chapter.choices.length !== 2) {
+    if (chapter.turn === 2 ? chapter.choices.length !== 2 : chapter.choices.length !== 1) {
       throw new Error(`${journey.id} has the wrong number of choices on Turn ${chapter.turn}.`);
     }
     const prose = [
@@ -294,13 +280,13 @@ for (const journey of Object.values(OPENING_JOURNEYS_SOURCE)) {
       chapter.cause,
       chapter.stakes,
       chapter.decision,
-      ...chapter.choices.flatMap((candidate) => [
-        candidate.label,
-        candidate.description,
-        candidate.consequence,
-        ...(candidate.outcomeConsequences === undefined
+      ...chapter.choices.flatMap((choice) => [
+        choice.label,
+        choice.description,
+        choice.consequence,
+        ...(choice.outcomeConsequences === undefined
           ? []
-          : Object.values(candidate.outcomeConsequences)),
+          : Object.values(choice.outcomeConsequences)),
       ]),
     ].join(' ');
     const unsupportedSlots = [...prose.matchAll(SLOT_PATTERN)]

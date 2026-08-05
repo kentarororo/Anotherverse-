@@ -6,15 +6,16 @@ describe('authored recruitment opening', () => {
     for (const journey of Object.values(OPENING_JOURNEYS)) {
       expect(journey.chapters.map((chapter) => chapter.turn)).toEqual([1, 2, 3]);
       expect(journey.chapters.map((chapter) => chapter.category)).toEqual([
-        'social',
+        'operation',
         'personal',
         'operation',
       ]);
-      expect(journey.chapters[0].choices).toHaveLength(2);
+      expect(journey.chapters[0].choices).toHaveLength(1);
       expect(journey.chapters[1].choices).toHaveLength(2);
       expect(journey.chapters[2].choices).toHaveLength(1);
-      expect(journey.chapters[2].templateId).toMatch(/^operation-\d+$/);
-      expect(journey.chapters[2].stakes).toContain('all three Mythic Awakenings');
+      expect(journey.chapters[0].choices[0]!.encounterId).toMatch(/^opening-/);
+      expect(journey.chapters[2].choices[0]!.encounterId).toBeDefined();
+      expect(journey.chapters[2].decision).toContain('three hunters');
     }
   });
 
@@ -51,12 +52,14 @@ describe('authored recruitment opening', () => {
     const fallen = OPENING_JOURNEYS['fallen-heavens'];
     const tide = OPENING_JOURNEYS['underworld-tide'];
     expect(fallen.chapters[0].hook).toContain('Starfall Road');
-    expect(fallen.chapters[1].hook).toContain('god-rib');
-    expect(fallen.chapters[2].choices[0]!.consequence).toContain('Godgrave');
-    expect(tide.chapters[0].hook).toContain('sea withdraws');
-    expect(tide.chapters[1].hook).toContain('forgotten their own name');
-    expect(tide.chapters[2].choices[0]!.consequence).toContain('royal seal');
-    expect(fallen.chapters[2].templateId).not.toBe(tide.chapters[2].templateId);
+    expect(fallen.chapters[1].hook).toContain('broken bridge');
+    expect(fallen.chapters[2].choices[0]!.consequence).toContain('godbone');
+    expect(tide.chapters[0].hook).toContain('sea retreats');
+    expect(tide.chapters[1].hook).toContain('rescue skiff');
+    expect(tide.chapters[2].choices[0]!.consequence).toContain('dead king');
+    expect(fallen.chapters[2].choices[0]!.encounterId).not.toBe(
+      tide.chapters[2].choices[0]!.encounterId,
+    );
     expect(fallen.chapters.map((chapter) => chapter.title)).not.toEqual(
       tide.chapters.map((chapter) => chapter.title),
     );

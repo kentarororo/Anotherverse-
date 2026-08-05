@@ -69,8 +69,7 @@ export function TitleScreen() {
       <section className="title-panel" aria-labelledby="game-title">
         <h1 id="game-title">ANOTHERVERSE</h1>
         <p className="title-deck">
-          Guide three awakened hunters into the ruins of forgotten gods. Choose their plan, watch
-          the battle unfold, and carry every victory, wound, and promise into the next chapter.
+          Choose a hunter. Enter a changing myth. Let every battle shape the story.
         </p>
 
         <div className="title-actions">
@@ -180,7 +179,7 @@ export function TitleScreen() {
           </div>
         )}
 
-        <footer className="version">Tactical Slice v0.10.0 · Save Schema 12</footer>
+        <footer className="version">Playable Slice v0.12.0 · Save Schema 14</footer>
       </section>
     </main>
   );

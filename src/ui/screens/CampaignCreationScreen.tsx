@@ -1,12 +1,5 @@
 import { useAppStore } from '../../app/store';
 
-const heroRoleLabels = {
-  vanguard: 'Tank',
-  striker: 'Damage',
-  support: 'Support',
-  controller: 'Control',
-} as const;
-
 export function CampaignCreationScreen() {
   const draft = useAppStore((state) => state.campaignDraft);
   const confirmCampaign = useAppStore((state) => state.confirmCampaign);
@@ -45,10 +38,7 @@ export function CampaignCreationScreen() {
       <section className="creation-choice-heading" aria-labelledby="choose-hero-title">
         <p className="eyebrow">Your first decision</p>
         <h2 id="choose-hero-title">Choose your first hero</h2>
-        <p>
-          The other two heroes are somewhere in this world. You may find them if you survive the
-          opening chapters.
-        </p>
+        <p>Choose the person whose story you want to begin.</p>
       </section>
 
       <section className="dossier-grid" aria-label="Choose one starting hero">
@@ -59,7 +49,7 @@ export function CampaignCreationScreen() {
           >
             <div className="dossier-heading">
               <div>
-                <span>{heroRoleLabels[hero.role]}</span>
+                <span>Awakened hunter</span>
                 <h2>{hero.name}</h2>
               </div>
               <strong>{hero.callingName}</strong>
@@ -142,9 +132,7 @@ export function CampaignCreationScreen() {
               aria-pressed={selectedLeadId === hero.id}
               onClick={() => selectLead(hero.id)}
             >
-              {selectedLeadId === hero.id
-                ? `${hero.name} selected`
-                : `Begin as ${heroRoleLabels[hero.role]}`}
+              {`Begin as ${hero.name}`}
             </button>
           </article>
         ))}

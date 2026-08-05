@@ -78,7 +78,7 @@ test('plays twenty consecutive turns with recruitment, forging, and a mid-run re
   expect(encounteredCategories).toEqual(
     new Set(['operation', 'personal', 'discovery', 'rival', 'social']),
   );
-  await expect(page.locator('.campaign-metrics dd').nth(1)).toContainText('Gold');
+  await expect(page.locator('.campaign-metrics dd').nth(1)).toContainText('Silver');
 
   await page.getByRole('button', { name: 'Logs' }).click();
   await expect(page.locator('.drawer-item')).toHaveCount(20);

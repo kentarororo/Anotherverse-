@@ -1,7 +1,7 @@
 # Anotherverse
 
 A deterministic browser prototype for a three-character auto-battle RPG management simulation.
-The project is a clean-room implementation and currently contains **v0.11: Awakening & Forge Slice**.
+The project is a clean-room implementation and currently contains **v0.12: Living Company Slice**.
 
 **Web playtest:** <https://kentarororo.github.io/Anotherverse-/>
 
@@ -10,11 +10,12 @@ The project is a clean-room implementation and currently contains **v0.11: Awake
 - A clean title screen with New Campaign, Continue, accessible display settings, version, and an
   advanced seed input.
 - A deterministic campaign generator with two mythology-first realms, six complete hero identities,
-  and three distinct, colourful origins per generated squad.
-- A campaign creation screen where the player chooses one of three complete starting heroes: Tank,
-  Damage, or Support.
-- Two world-specific opening journeys in which the chosen lead earns one named companion in Chapter
-  1, earns the final companion in Chapter 2, and enters the trio's first battle in Chapter 3.
+  distinct colourful origins, and balanced internal class archetypes.
+- A campaign creation screen where the player chooses one of three complete starting heroes without
+  being shown a Tank, Damage, or Support label.
+- The two unchosen candidates never enter canonical campaign state. Chapter 1 starts with a solo
+  autobattle, Chapter 2 generates and introduces the first companion, and Chapter 3 generates the
+  second companion before the first full-company battle.
 - Original Oathward, Doomseeker, and Fateweaver classes beneath each hero's unique Mythic Awakening, with executable signatures, limitations,
   reactions, six starting techniques, authored conditions/costs/cooldowns, hooks, and awakening
   conditions.
@@ -32,8 +33,8 @@ The project is a clean-room implementation and currently contains **v0.11: Awake
   authoritative combat events.
 - Contextual character, inventory, Bestiary, world-memory, archived-log, and development inspector
   drawers.
-- Four core battles and three choice-bound secret encounters with ten enemy modules and ten named
-  monster materials, played through the real Command screen.
+- Two solo opening encounters, four core battles, and three choice-bound secret encounters with ten
+  enemy modules and ten named monster materials, played through the real Command screen.
 - A deterministic Forge that consumes any three monster materials. Each material changes visible
   weapon/support and charger/hexer odds; one seeded reward draw creates an equippable relic.
 - Formation, stance, and team-priority controls that measurably change target selection, action
@@ -61,8 +62,8 @@ The project is a clean-room implementation and currently contains **v0.11: Awake
   combat/aftermath reports, content manifest, and save envelopes.
 - One LocalStorage autosave behind a replaceable `SaveRepository` interface, including explicit
   corrupt and incompatible-save results.
-- Save schema 13 deliberately rejects older campaigns that cannot reconstruct the selected lead,
-  recruited companions, material inventory, and Forge history.
+- Save schema 14 deliberately rejects older campaigns that pre-created unchosen heroes or cannot
+  reconstruct the selected lead, generated companions, material inventory, and Forge history.
 - A corpus renderer contract that can later be joined by an optional LLM renderer without changing
   authoritative mechanics.
 

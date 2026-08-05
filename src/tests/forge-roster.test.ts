@@ -33,30 +33,41 @@ describe('lead ownership and opening recruitment', () => {
     (role) => {
       const initial = startWithLead(`lead-${role}`, role);
       const leadId = initial.leadCharacterId!;
-      const companions = initial.generatedDefinitions.characters
-        .filter((hero) => hero.id !== leadId)
-        .map((hero) => hero.id);
 
       expect(initial.recruitedCharacterIds).toEqual([leadId]);
+      expect(initial.generatedDefinitions.characters.map((hero) => hero.id)).toEqual([leadId]);
       expect(Object.keys(initial.pendingPlan.positions)).toEqual([leadId]);
       expect(Object.keys(initial.pendingPlan.stanceIds)).toEqual([leadId]);
-      expect(initial.currentEncounter).toBeNull();
+      expect(initial.currentEncounter).not.toBeNull();
 
       const afterFirst = resolveCurrentTurn(initial);
-      expect(afterFirst.recruitedCharacterIds).toEqual([leadId, companions[0]]);
-      expect(afterFirst.aftermathReports.at(-1)!.characterIdsRecruited).toEqual([companions[0]]);
-      expect(Object.keys(afterFirst.pendingPlan.positions)).toHaveLength(2);
+      const firstCompanion = afterFirst.generatedDefinitions.characters[1]!;
+      expect(afterFirst.recruitedCharacterIds).toEqual([leadId]);
+      expect(afterFirst.aftermathReports.at(-1)!.characterIdsRecruited).toEqual([]);
+      expect(Object.keys(afterFirst.pendingPlan.positions)).toHaveLength(1);
+      expect(initial.selectionCandidateIds).not.toContain(firstCompanion.id);
 
       const afterSecond = resolveCurrentTurn(afterFirst);
-      expect(afterSecond.recruitedCharacterIds).toEqual([leadId, ...companions]);
-      expect(afterSecond.aftermathReports.at(-1)!.characterIdsRecruited).toEqual([companions[1]]);
+      const secondCompanion = afterSecond.generatedDefinitions.characters[2]!;
+      expect(afterSecond.recruitedCharacterIds).toEqual([
+        leadId,
+        firstCompanion.id,
+        secondCompanion.id,
+      ]);
+      expect(afterSecond.aftermathReports.at(-1)!.characterIdsRecruited).toEqual([
+        firstCompanion.id,
+      ]);
       expect(Object.keys(afterSecond.pendingPlan.positions)).toHaveLength(3);
       expect(afterSecond.currentEncounter).not.toBeNull();
+      expect(initial.selectionCandidateIds).not.toContain(secondCompanion.id);
+      expect(
+        new Set(afterSecond.generatedDefinitions.characters.map((hero) => hero.role)).size,
+      ).toBe(3);
     },
   );
 
   it('rejects management commands for a hero who has not joined', () => {
-    const state = startWithLead('locked-companion', 'support');
+    const state = resolveCurrentTurn(startWithLead('locked-companion', 'support'));
     const locked = state.generatedDefinitions.characters.find(
       (hero) => !state.recruitedCharacterIds.includes(hero.id),
     )!;

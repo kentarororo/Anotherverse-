@@ -615,6 +615,71 @@ function bind(text: string, values: Record<string, string>) {
   return result;
 }
 
+function realiseHero(
+  template: HeroTemplate,
+  world: WorldTemplate,
+  initialStreams: RngStreamsState,
+): { hero: MythicHero; streams: RngStreamsState } {
+  let streams = initialStreams;
+  const techniques = template.techniques.map((technique) => {
+    const visualPick = pick(streams, 'characters', technique.visualVariants);
+    streams = visualPick.streams;
+    return {
+      id: technique.id,
+      name: technique.name,
+      visibleAction: visualPick.value,
+      tacticalPurpose: technique.tacticalPurpose,
+      mechanicRule: technique.mechanicRule,
+      cost: technique.cost,
+      cooldown: technique.cooldown,
+    };
+  }) as [MythicTechnique, MythicTechnique];
+  return {
+    hero: {
+      id: template.id,
+      name: template.name,
+      role: template.role,
+      pathName: template.pathName,
+      pronouns: template.pronouns,
+      introduction: `${template.biography} ${bind(world.roleBonds[template.role], {
+        hero: template.name,
+        path: template.pathName,
+      })}`,
+      definingChoice: template.definingChoice,
+      desire: template.desire,
+      bond: template.bond,
+      flaw: template.flaw,
+      awakeningTrial: template.awakeningTrial,
+      voiceLine: template.voiceLine,
+      stats: template.stats,
+      techniques,
+    },
+    streams,
+  };
+}
+
+/**
+ * Generates a whole, world-compatible hero kit for a later recruitment scene. Exclusions keep
+ * discarded character-selection candidates from quietly returning as companions.
+ */
+export function generateMythicCompanion(
+  initialStreams: RngStreamsState,
+  worldId: string,
+  role: MythicRole,
+  excludedHeroIds: readonly string[],
+): { hero: MythicHero; streams: RngStreamsState } {
+  const world = WORLDS.find((candidate) => candidate.id === worldId);
+  if (world === undefined) throw new Error(`Unknown mythic world: ${worldId}.`);
+  const eligible = HEROES.filter(
+    (hero) => hero.role === role && !excludedHeroIds.includes(hero.id),
+  );
+  if (eligible.length === 0) {
+    throw new Error(`No unseen ${role} hero remains for the recruitment scene.`);
+  }
+  const heroPick = pick(initialStreams, 'characters', eligible);
+  return realiseHero(heroPick.value, world, heroPick.streams);
+}
+
 export interface MythicReviewDraft {
   seed: string;
   world: {

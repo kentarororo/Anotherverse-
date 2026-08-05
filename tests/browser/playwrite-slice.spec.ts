@@ -19,6 +19,11 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
   await expect(page.getByText('A new legend')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Choose your first hero' })).toBeVisible();
   await expect(page.locator('.dossier')).toHaveCount(3);
+  await expect(page.locator('.dossier-heading > div > span')).toHaveText([
+    'Awakened hunter',
+    'Awakened hunter',
+    'Awakened hunter',
+  ]);
   await expect(page.locator('.creation-screen')).toContainText('Mythic Awakening');
   await expect(page.locator('.creation-screen')).not.toContainText(
     /telemetry|licen[cs]e|bureau|network|contract squad|Mythic Path|Calling/i,
@@ -31,18 +36,17 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
 
   await expect(page.getByRole('heading', { name: 'Your Trio' })).toBeVisible();
   await expect(page.locator('.trio-panel .badge')).toHaveText('1 / 3');
-  await expect(page.getByLabel('Story situation')).toContainText('Gather the Trio');
-  await expect(page.getByLabel('Story situation')).toContainText(/travelling alone/);
+  await expect(page.getByLabel('Story situation')).toContainText('A Star Falls');
+  await expect(page.getByLabel('Story situation')).toContainText(/alone on Starfall Road/);
   await expect(page.getByLabel('Story situation')).toContainText('Choose');
-  await page.getByRole('radio').first().click();
   await page.getByRole('button', { name: 'Take Action' }).click();
 
-  await expect(page.getByText('Companion joined')).toBeVisible();
-  await expect(page.locator('.trio-panel .badge')).toHaveText('2 / 3');
+  await expect(page.getByText('Companion joined')).toHaveCount(0);
+  await expect(page.locator('.trio-panel .badge')).toHaveText('1 / 3');
   await expect(page.getByText('Chapter 1 complete')).toBeVisible();
   await page.getByRole('button', { name: 'Continue to Turn 2' }).click();
 
-  await expect(page.locator('.trio-panel .badge')).toHaveText('2 / 3');
+  await expect(page.locator('.trio-panel .badge')).toHaveText('1 / 3');
   await expect(page.getByLabel('Story situation')).toContainText('Previously');
   await expect(page.getByLabel('Story situation')).toContainText('Mythic Awakening');
   await expect(page.getByLabel('Story situation')).toContainText('Choose');
@@ -50,14 +54,12 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
   await page.getByRole('button', { name: 'Take Action' }).click();
 
   await expect(page.getByText('Companion joined')).toBeVisible();
-  await expect(page.locator('.trio-panel .badge')).toHaveText('3 / 3');
+  await expect(page.locator('.trio-panel .badge')).toHaveText('2 / 3');
   await expect(page.getByText('Chapter 2 complete')).toBeVisible();
   await page.getByRole('button', { name: 'Continue to Turn 3' }).click();
 
   await expect(page.locator('.trio-panel .badge')).toHaveText('3 / 3');
-  await expect(page.getByLabel('Story situation')).toContainText(
-    'first time all three Mythic Awakenings',
-  );
+  await expect(page.getByLabel('Story situation')).toContainText('three hunters');
   await expect(page.locator('.command-screen')).not.toContainText(/â|Â|Ã|ð/);
   await expect(page.getByText('Order', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Expected opening actions').locator('p')).toHaveCount(3);
@@ -96,6 +98,6 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
   await page.getByRole('button', { name: 'Continue to Turn 4' }).click();
   await expect(page.getByLabel('Story situation')).toContainText('Previously');
   await expect(page.getByLabel('Story situation')).toContainText(
-    /The new trio (?:defeated|drove)|The guardians broke|The drowned broke|The trial ended|Dawn ended/i,
+    /The three hunters|The guardians drove|The drowned broke|The crater shifted|The returning tide/i,
   );
 });

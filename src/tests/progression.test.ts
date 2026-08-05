@@ -207,8 +207,10 @@ describe('progression and management', () => {
       characterId: striker.id,
       techniqueId: `${striker.callingId}-awakening`,
     });
-    const baselineReport = applyGameCommand(initial, { type: 'COMMIT_TURN' }).battleReports[0]!;
-    const improvedReport = applyGameCommand(mastered, { type: 'COMMIT_TURN' }).battleReports[0]!;
+    const baselineReport = applyGameCommand(initial, { type: 'COMMIT_TURN' }).battleReports.at(-1)!;
+    const improvedReport = applyGameCommand(mastered, { type: 'COMMIT_TURN' }).battleReports.at(
+      -1,
+    )!;
     expect(improvedReport.events).not.toEqual(baselineReport.events);
     const peakRaw = (events: typeof baselineReport.events) =>
       Math.max(
@@ -235,13 +237,13 @@ describe('progression and management', () => {
     });
     const resolved = applyGameCommand(equipped, { type: 'COMMIT_TURN' });
     expect(
-      resolved.battleReports[0]!.events.some((event) =>
-        event.ruleTriggers?.includes('equipment-counter:hexer'),
-      ),
+      resolved.battleReports
+        .at(-1)!
+        .events.some((event) => event.ruleTriggers?.includes('equipment-counter:hexer')),
     ).toBe(true);
   });
 
-  it('advances Calling and squad rank and spends supplies on between-operation recovery', () => {
+  it('advances Calling and squad rank and recovers between operations', () => {
     let state = battleStart('rank-and-recovery-seed');
     state = applyGameCommand(state, { type: 'COMMIT_TURN' });
     const afterOperation = state;
