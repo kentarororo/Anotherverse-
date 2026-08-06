@@ -29,7 +29,9 @@ export function CorpusReviewScreen() {
   const reviewedCount = entries.filter(
     (entry) => scores[entry.id]?.natural !== undefined || scores[entry.id]?.coherent !== undefined,
   ).length;
-  const passed = naturalCount >= 95 && coherentCount >= 85;
+  const naturalGate = Math.ceil(entries.length * 0.95);
+  const coherentGate = Math.ceil(entries.length * 0.85);
+  const passed = naturalCount >= naturalGate && coherentCount >= coherentGate;
 
   useEffect(() => {
     globalThis.localStorage.setItem(storageKey, JSON.stringify(scores));
@@ -51,24 +53,30 @@ export function CorpusReviewScreen() {
       <header className="review-summary">
         <div>
           <p className="eyebrow">Milestone 4 · Human acceptance</p>
-          <h1>100-paragraph read-aloud review</h1>
+          <h1>{entries.length}-chapter read-aloud review</h1>
           <p>
-            Read each fixed paragraph aloud with its two source facts. Judge grammar independently
-            from contextual coherence; scores remain in this browser.
+            Read each fixed chapter aloud with its source facts. Judge grammar independently from
+            contextual coherence; scores remain in this browser.
           </p>
         </div>
         <dl className="review-metrics">
           <div>
             <dt>Reviewed</dt>
-            <dd>{reviewedCount}/100</dd>
+            <dd>
+              {reviewedCount}/{entries.length}
+            </dd>
           </div>
           <div>
             <dt>Natural</dt>
-            <dd className={naturalCount >= 95 ? 'review-pass' : ''}>{naturalCount}/100 · 95</dd>
+            <dd className={naturalCount >= naturalGate ? 'review-pass' : ''}>
+              {naturalCount}/{entries.length} · {naturalGate}
+            </dd>
           </div>
           <div>
             <dt>Coherent</dt>
-            <dd className={coherentCount >= 85 ? 'review-pass' : ''}>{coherentCount}/100 · 85</dd>
+            <dd className={coherentCount >= coherentGate ? 'review-pass' : ''}>
+              {coherentCount}/{entries.length} · {coherentGate}
+            </dd>
           </div>
           <div>
             <dt>Gate</dt>
@@ -97,7 +105,7 @@ export function CorpusReviewScreen() {
             <div className="review-entry-heading">
               <div>
                 <span>
-                  Paragraph {index + 1} · {entry.category} · Turn {entry.turn}
+                  Chapter {index + 1} · {entry.category} · Turn {entry.turn}
                 </span>
                 <h2>{entry.title}</h2>
               </div>

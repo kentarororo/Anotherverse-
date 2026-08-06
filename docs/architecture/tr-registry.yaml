@@ -1,0 +1,79 @@
+schemaVersion: 1
+lastUpdated: 2026-08-06
+authority:
+  architecture: docs/architecture/adr-0001-campaign-compiler.md
+  design: design/gdd/systems/content-generation.md
+
+requirements:
+  - id: TR-content-001
+    layer: foundation
+    system: content-generation
+    requirement: Authored modules use stable IDs, versions, compatibility tags, fact requirements, fact outputs, exclusions, and executable mechanic references.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-002
+    layer: foundation
+    system: content-generation
+    requirement: Generation uses independent named deterministic RNG streams and never uses ambient entropy.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-003
+    layer: core
+    system: content-generation
+    requirement: A single world thesis governs cosmology, power law, naming, factions, threat, creatures, materials, and vocabulary for the run.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-004
+    layer: core
+    system: content-generation
+    requirement: The compiler creates an immutable typed six-turn causal plan before Turn 1.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-005
+    layer: core
+    system: content-generation
+    requirement: Every major choice has a later consequence and every promise has a payoff or explicit continuation.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-006
+    layer: core
+    system: content-generation
+    requirement: Whole-plan validation rejects chronology, cast, vocabulary, reference, mechanics, prose, and reachability errors before publication.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-007
+    layer: core
+    system: content-generation
+    requirement: Invalid search exhaustions use a complete prevalidated fallback and never expose a partial campaign.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-008
+    layer: core
+    system: content-generation
+    requirement: Miracles are rare authored exceptions with triggers, executable benefits, visible costs or complications, and world compatibility.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-009
+    layer: core
+    system: content-generation
+    requirement: The canonical 1,000-seed corpus yields at least 500 structural signatures and 100 mechanical hero-kit fingerprints.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-010
+    layer: feature
+    system: content-generation
+    requirement: Saves persist versions, seed, selected modules, normalized signatures, compiled plan, and separate runtime facts without silent recompilation.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-011
+    layer: presentation
+    system: content-generation
+    requirement: Review mode exposes the thesis, modules, causal graph, bindings, signatures, and bounded rejection diagnostics.
+    adr: ADR-0001
+    status: traced
+  - id: TR-content-012
+    layer: core
+    system: content-generation
+    requirement: Six-turn compilation completes within 50 ms p95 on the reference desktop browser and never runs in battle animation frames.
+    adr: ADR-0001
+    status: traced

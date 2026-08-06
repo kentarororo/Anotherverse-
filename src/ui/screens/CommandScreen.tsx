@@ -21,6 +21,10 @@ function titleCase(value: string) {
   return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function sceneKindLabel(value: string) {
+  return value === 'operation' ? 'Battle' : titleCase(value);
+}
+
 function signed(value: number) {
   if (value > 0) return `+${value}`;
   if (value < 0) return `−${Math.abs(value)}`;
@@ -314,7 +318,7 @@ export function CommandScreen() {
             })}
           </div>
           <div className="synergy-strip">
-            <span>Squad synergy</span>
+            <span>Party synergy</span>
             <strong>Break → Exploit → Ward</strong>
           </div>
         </section>
@@ -327,8 +331,8 @@ export function CommandScreen() {
           <div className="turn-state-label">{showingAftermath ? 'Result' : 'Plan'}</div>
           <div className="operation-content">
             <p className="eyebrow">
-              {scenario?.quest.title ?? 'Main Quest'} · Act {scenario?.quest.act ?? 1} of 4 ·
-              Chapter {displayedTurn} of 20
+              {scenario?.quest.title ?? 'Main Quest'} · Act {scenario?.quest.act ?? 1} of 3 ·
+              Chapter {displayedTurn} of 6
             </p>
             <h2 id="operation-title">{showingAftermath ? 'Aftermath' : scenario?.title}</h2>
             {showingAftermath ? (
@@ -392,7 +396,7 @@ export function CommandScreen() {
               <div className="battle-stage" aria-label="Enemy forecast">
                 {!hasBattle && scenario !== null && (
                   <article className="situation-card">
-                    <span>{titleCase(scenario.category)}</span>
+                    <span>{sceneKindLabel(scenario.category)}</span>
                     <strong>{scenario.title}</strong>
                     <p>{scenario.forecast.likelyBenefit}</p>
                   </article>
@@ -412,7 +416,7 @@ export function CommandScreen() {
                     ? 'Resolved'
                     : titleCase(report.outcome)
                   : hasBattle
-                    ? 'Ready the squad'
+                    ? 'Ready the party'
                     : 'Choose a response'}
               </h2>
             </div>
@@ -454,7 +458,7 @@ export function CommandScreen() {
                 <div className="aftermath-battle-review">
                   <span>Plan result</span>
                   <strong>
-                    {totalBattleHpEnd}/{totalBattleHpStart} squad HP retained / {report.rounds}{' '}
+                    {totalBattleHpEnd}/{totalBattleHpStart} party HP retained / {report.rounds}{' '}
                     rounds
                   </strong>
                   <small>
@@ -523,7 +527,7 @@ export function CommandScreen() {
             <>
               {hasBattle ? (
                 <>
-                  {scenario?.category !== 'operation' && alternateChoice !== undefined && (
+                  {alternateChoice !== undefined && (
                     <button
                       className="choice-change-button"
                       type="button"
@@ -634,7 +638,7 @@ export function CommandScreen() {
             type="button"
             onClick={
               showingAftermath
-                ? aftermath.turn >= 20
+                ? aftermath.turn >= 6
                   ? returnToTitle
                   : continueToPlanning
                 : commitTurn
@@ -645,7 +649,7 @@ export function CommandScreen() {
             }
           >
             {showingAftermath
-              ? aftermath.turn >= 20
+              ? aftermath.turn >= 6
                 ? 'Finish Campaign'
                 : `Continue to Turn ${game.turn}`
               : 'Take Action'}
@@ -696,7 +700,7 @@ export function CommandScreen() {
               <>
                 <li>
                   <time>T{String(game.turn).padStart(2, '0')}</time>
-                  <span>The squad has reviewed the danger. No resources have been spent.</span>
+                  <span>The party has reviewed the danger. No resources have been spent.</span>
                 </li>
                 <li>
                   <time>T{String(game.turn).padStart(2, '0')}</time>

@@ -124,16 +124,105 @@ function selectHeroTarget(
 }
 
 function chooseEnemyTarget(
-  policyId: CombatantDefinition['policyId'],
+  definition: CombatantDefinition,
   heroes: RuntimeCombatant[],
   positions: Record<string, Position>,
 ): RuntimeCombatant {
-  const direction = policyId === 'hexer' ? -1 : 1;
+  const exposedFront = heroes.find(
+    (hero) => positions[hero.definition.id] === 'front' && hero.definition.policyId !== 'vanguard',
+  );
+  if (exposedFront !== undefined) return exposedFront;
+  const behavior =
+    definition.behaviorId ??
+    (definition.policyId === 'hexer' ? 'status-controller' : 'front-breaker');
+  if (behavior === 'executioner' || behavior === 'swarm') {
+    return [...heroes].sort(
+      (a, b) => a.hp / a.maxHp - b.hp / b.maxHp || a.definition.id.localeCompare(b.definition.id),
+    )[0]!;
+  }
+  const direction = behavior === 'rear-hunter' || behavior === 'status-controller' ? -1 : 1;
   return [...heroes].sort(
     (a, b) =>
       direction *
       (positionRank(positions[a.definition.id]) - positionRank(positions[b.definition.id])),
   )[0]!;
+}
+
+function resolveEnemyAid(
+  events: CombatEvent[],
+  actor: RuntimeCombatant,
+  allies: RuntimeCombatant[],
+  round: number,
+): boolean {
+  const behavior = actor.definition.behaviorId;
+  if (behavior !== 'healer' && behavior !== 'protector') return false;
+  const target = [...allies].sort(
+    (a, b) => a.hp / a.maxHp - b.hp / b.maxHp || a.definition.id.localeCompare(b.definition.id),
+  )[0];
+  if (target === undefined) return false;
+  if (behavior === 'healer') {
+    if (target.hp === target.maxHp) return false;
+    const hpBefore = target.hp;
+    const amount = Math.max(3, Math.floor(actor.definition.stats.focus / 2));
+    target.hp = Math.min(target.maxHp, target.hp + amount);
+    appendEvent(events, {
+      round,
+      actorId: actor.definition.id,
+      actionId: 'grave-mending',
+      targetIds: [target.definition.id],
+      eventType: 'heal',
+      rawAmount: amount,
+      finalAmount: target.hp - hpBefore,
+      hpBefore,
+      hpAfter: target.hp,
+      ruleTriggers: ['enemy-behavior:healer'],
+      tags: ['enemies', 'recovery'],
+    });
+    return true;
+  }
+  const statusChange = applyStatus(target, 'warded', 2);
+  appendEvent(events, {
+    round,
+    actorId: actor.definition.id,
+    actionId: 'iron-hide',
+    targetIds: [target.definition.id],
+    eventType: 'guard',
+    finalAmount: 3,
+    statusChanges: [statusChange],
+    ruleTriggers: ['enemy-behavior:protector'],
+    tags: ['enemies', 'protection'],
+  });
+  return true;
+}
+
+function enemySpecial(
+  actor: RuntimeCombatant,
+  target: RuntimeCombatant,
+  enemyCount: number,
+): { actionId: string; bonus: number; status?: { id: string; duration: number } } {
+  const behavior =
+    actor.definition.behaviorId ??
+    (actor.definition.policyId === 'hexer' ? 'status-controller' : 'front-breaker');
+  if (behavior === 'rear-hunter') {
+    return { actionId: 'shadow-pounce', bonus: 3, status: { id: 'marked', duration: 2 } };
+  }
+  if (behavior === 'ritual-charger') {
+    return { actionId: 'ritual-charge', bonus: 6, status: { id: 'strained', duration: 2 } };
+  }
+  if (behavior === 'swarm') {
+    return { actionId: 'pack-frenzy', bonus: Math.min(5, enemyCount) };
+  }
+  if (behavior === 'executioner') {
+    return {
+      actionId: 'death-stroke',
+      bonus: target.hp / target.maxHp <= 0.4 ? 6 : 2,
+      status: { id: 'marked', duration: 1 },
+    };
+  }
+  if (behavior === 'status-controller') {
+    return { actionId: 'binding-curse', bonus: 2, status: { id: 'marked', duration: 2 } };
+  }
+  return { actionId: 'line-break', bonus: 4, status: { id: 'strained', duration: 2 } };
 }
 
 function appendEvent(events: CombatEvent[], event: Omit<CombatEvent, 'index'>) {
@@ -173,6 +262,12 @@ function resolveAttack(
   const inspiredBonus = getStatus(actor, 'inspired') === undefined ? 0 : 2;
   const markedBonus = getStatus(target, 'marked') === undefined ? 0 : 2;
   const limitationPenalty = directDamageLimitationPenalty(actor.definition.limitationRuleId);
+  const formationExposure =
+    actor.definition.side === 'enemies' &&
+    targetPosition === 'front' &&
+    target.definition.policyId !== 'vanguard'
+      ? 30
+      : 0;
   const exposedExploit =
     actor.definition.signatureRuleId === 'exploit-exposed' &&
     getStatus(target, 'exposed') !== undefined
@@ -183,6 +278,7 @@ function resolveAttack(
         1,
         actor.definition.stats.power +
           rawBonus +
+          formationExposure +
           aggressiveBonus +
           inspiredBonus +
           markedBonus +
@@ -232,6 +328,7 @@ function resolveAttack(
   if (target.definition.limitationRuleId === 'open-guard' && targetStance === 'aggressive') {
     triggers.push('limitation:open-guard');
   }
+  if (formationExposure > 0) triggers.push('formation-break:unprotected-front');
   if (equipmentReduction > 0) triggers.push(`equipment-counter:${actor.definition.policyId}`);
 
   appendEvent(events, {
@@ -589,7 +686,10 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         );
       } else {
         const heroes = living(actors, 'heroes');
-        let target = chooseEnemyTarget(actor.definition.policyId, heroes, positions);
+        const enemies = living(actors, 'enemies');
+        const special = round % 3 === 1;
+        if (special && resolveEnemyAid(events, actor, enemies, round)) continue;
+        let target = chooseEnemyTarget(actor.definition, heroes, positions);
         const triggers: string[] = [];
         const rearTargeted = positions[target.definition.id] === 'rear';
         const interceptor = heroes.find(
@@ -622,18 +722,10 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
         }
         if (rearTargeted && state.pendingPlan.teamPriorityId === 'protect-rear')
           triggers.push('protect-rear');
-        const special = round % 3 === 1;
-        const actionId = special
-          ? actor.definition.policyId === 'charger'
-            ? 'breach-charge'
-            : 'rending-hex'
-          : actor.definition.basicActionId;
-        const statusToApply = special
-          ? {
-              id: actor.definition.policyId === 'charger' ? 'strained' : 'marked',
-              duration: 2,
-            }
-          : undefined;
+        const specialAction = enemySpecial(actor, target, enemies.length);
+        const actionId = special ? specialAction.actionId : actor.definition.basicActionId;
+        const statusToApply = special ? specialAction.status : undefined;
+        triggers.push(`enemy-behavior:${actor.definition.behaviorId ?? actor.definition.policyId}`);
         streams = resolveAttack(
           events,
           actor,
@@ -645,7 +737,7 @@ export function simulateBattle(state: CanonicalGameState): SimulationResult {
           (stances[target.definition.id] as StanceId | undefined) ?? null,
           null,
           positions[target.definition.id] ?? 'centre',
-          special ? 4 : 0,
+          special ? specialAction.bonus : 0,
           statusToApply,
           triggers,
         );

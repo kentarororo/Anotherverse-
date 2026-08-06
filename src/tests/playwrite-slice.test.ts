@@ -73,7 +73,8 @@ describe('canonical mythic playwrite slice', () => {
     expect([choice.consequence, ...Object.values(choice.outcomeConsequences ?? {})]).toContain(
       memory.value,
     );
-    expect(resolved.currentScenario!.sceneBeats.cause).toBe(memory.value);
+    expect(resolved.currentScenario!.sceneBeats.cause).not.toBe(memory.value);
+    expect(resolved.currentScenario!.sceneBeats.cause).toMatch(/[.!?]$/);
     expect(resolved.currentScenario!.premiseFactIds).toContain(memory.id);
   });
 });

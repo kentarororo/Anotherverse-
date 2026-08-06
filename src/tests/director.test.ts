@@ -4,215 +4,155 @@ import { generateCampaignDraft } from '../engine/generation/campaign';
 import { createEmptyGameState, type CanonicalGameState } from '../engine/model/state';
 import { applyGameCommand } from '../engine/simulation/apply-command';
 
-function campaign(seed = 'director-seed') {
+function campaign(seed = 'director-seed', leadCharacterId?: string) {
   return applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
     type: 'START_CAMPAIGN',
     seed,
     selectedDraftIndex: 0,
+    leadCharacterId,
   });
 }
 
 function choose(state: CanonicalGameState, choiceIndex = 0) {
   const choice = state.currentScenario!.choices[choiceIndex]!;
-  return applyGameCommand(
+  const planned =
     state.pendingPlan.situationChoiceId === choice.id
       ? state
-      : applyGameCommand(state, { type: 'CHOOSE_SITUATION', choiceId: choice.id }),
-    { type: 'COMMIT_TURN' },
-  );
+      : applyGameCommand(state, { type: 'CHOOSE_SITUATION', choiceId: choice.id });
+  return applyGameCommand(planned, { type: 'COMMIT_TURN' });
 }
 
-function sequence(seed: string) {
+function sequence(seed: string, choiceIndex = 0) {
   let state = campaign(seed);
   const scenarios = [];
-  for (let turn = 1; turn <= 20; turn += 1) {
+  for (let turn = 1; turn <= 6; turn += 1) {
     scenarios.push(state.currentScenario!);
-    state = choose(state);
+    state = choose(state, choiceIndex);
   }
   return { state, scenarios };
 }
 
-describe('world quest director', () => {
-  it('starts with only the chosen lead and generates balanced companions when they enter the story', () => {
+describe('compiled campaign director', () => {
+  it('starts with the chosen lead and introduces two balanced companions in chapters two and three', () => {
     const seed = 'chosen-lead-opening';
-    const draft = generateCampaignDraft(seed);
-    const chosenLead = draft.characters[2]!;
-    let state = applyGameCommand(createEmptyGameState(CONTENT_MANIFEST_HASH), {
-      type: 'START_CAMPAIGN',
-      seed,
-      selectedDraftIndex: 0,
-      leadCharacterId: chosenLead.id,
-    });
+    const chosenLead = generateCampaignDraft(seed).characters[2]!;
+    let state = campaign(seed, chosenLead.id);
 
-    expect(state.leadCharacterId).toBe(chosenLead.id);
     expect(state.recruitedCharacterIds).toEqual([chosenLead.id]);
     expect(state.generatedDefinitions.characters).toEqual([chosenLead]);
-    expect(state.currentScenario!.category).toBe('operation');
     expect(state.currentScenario!.castIds).toEqual([chosenLead.id]);
     expect(state.currentScenario!.sceneBeats.hook).toContain(chosenLead.name);
 
     state = choose(state);
     const firstCompanion = state.generatedDefinitions.characters[1]!;
-    expect(state.aftermathReports[0]!.characterIdsRecruited).toEqual([]);
-    expect(state.recruitedCharacterIds).toEqual([chosenLead.id]);
-    expect(state.currentScenario!.category).toBe('personal');
+    expect(state.recruitedCharacterIds).toEqual([chosenLead.id, firstCompanion.id]);
+    expect(state.currentScenario!.quest.chapter).toBe(2);
     expect(state.currentScenario!.castIds).toEqual([chosenLead.id, firstCompanion.id]);
-    expect(state.selectionCandidateIds).not.toContain(firstCompanion.id);
+    expect(state.currentScenario!.sceneBeats.hook).toContain(firstCompanion.name);
 
     state = choose(state);
     const secondCompanion = state.generatedDefinitions.characters[2]!;
-    expect(state.aftermathReports[1]!.characterIdsRecruited).toEqual([firstCompanion.id]);
     expect(state.recruitedCharacterIds).toEqual([
       chosenLead.id,
       firstCompanion.id,
       secondCompanion.id,
     ]);
-    expect(state.selectionCandidateIds).not.toContain(secondCompanion.id);
-    expect(new Set(state.generatedDefinitions.characters.map((hero) => hero.role)).size).toBe(3);
-    expect(state.currentScenario!.category).toBe('operation');
     expect(state.currentScenario!.quest.chapter).toBe(3);
     expect(state.currentScenario!.castIds).toHaveLength(3);
     expect(state.currentScenario!.sceneBeats.hook).toContain(secondCompanion.name);
+    expect(new Set(state.generatedDefinitions.characters.map((hero) => hero.role)).size).toBe(3);
+    expect(state.selectionCandidateIds).not.toContain(firstCompanion.id);
+    expect(state.selectionCandidateIds).not.toContain(secondCompanion.id);
   });
 
-  it('plays one readable four-act quest across twenty unique chapters', () => {
-    let state = campaign('twenty-turn-quest-seed');
+  it('realises one coherent three-act quest across six unique chapters', () => {
+    let state = campaign('six-chapter-quest-seed');
     const titles = new Set<string>();
-    const sentences = new Set<string>();
     const questId = state.currentScenario!.quest.id;
 
-    for (let turn = 1; turn <= 20; turn += 1) {
+    for (let turn = 1; turn <= 6; turn += 1) {
       const scenario = state.currentScenario!;
       titles.add(scenario.title);
-      expect(scenario.quest.id).toBe(questId);
-      expect(scenario.quest.chapter).toBe(turn);
-      expect(scenario.quest.act).toBe(Math.min(4, Math.ceil(turn / 5)));
-      expect(scenario.quest.objective).not.toMatch(/\{[^}]+\}/);
+      expect(scenario.quest).toMatchObject({ id: questId, chapter: turn, totalChapters: 6 });
+      expect(scenario.quest.act).toBe(Math.ceil(turn / 2));
+      expect(scenario.choices).toHaveLength(2);
       expect(scenario.premiseFactIds).toHaveLength(2);
+      expect(scenario.premise).not.toMatch(/\{[^}]+\}|live campaign facts|Soul Ledger/i);
       expect(Object.values(scenario.sceneBeats).every((beat) => beat.length > 20)).toBe(true);
-      expect(scenario.premise).not.toMatch(
-        /Soul Ledger entry left|Turn \d+ (?:operation|personal|discovery|rival|social) decision|becomes a fact|live campaign facts|\+\-/i,
-      );
-      expect(
-        [
-          scenario.premise,
-          scenario.quest.objective,
-          ...scenario.choices.flatMap((choice) => [
-            choice.label,
-            choice.description,
-            choice.consequence,
-          ]),
-        ].join(' '),
-      ).not.toMatch(/\bCalling\b|\bMythic Path\b|\bPath bearer/i);
-      for (const sentence of scenario.premise.split(/(?<=[.!?])\s+/)) {
-        expect(sentences.has(sentence)).toBe(false);
-        sentences.add(sentence);
-      }
 
       const selected = scenario.choices[0]!;
       const next = choose(state);
       const written = next.worldFacts.find((fact) => fact.id === `fact-scenario-result-${turn}`)!;
-      const possibleResults =
-        selected.outcomeConsequences === undefined
-          ? [selected.consequence]
-          : Object.values(selected.outcomeConsequences);
-      expect(possibleResults).toContain(written.value);
-      if (turn < 20) expect(next.currentScenario!.sceneBeats.cause).toBe(written.value);
+      expect(written.relation).toBe(`chose-${selected.id}`);
+      if (turn < 6) {
+        const rawResult =
+          String(written.value)
+            .match(/^.*?[.!?](?:\s|$)/)?.[0]
+            ?.trim() ?? String(written.value);
+        expect(next.currentScenario!.sceneBeats.cause).not.toContain(rawResult);
+        expect(next.currentScenario!.sceneBeats.cause).toMatch(/[.!?]$/);
+      }
       state = next;
     }
 
-    expect(titles.size).toBe(20);
-    expect(state.storyThreads.some((thread) => thread.stage > 0)).toBe(true);
-    expect(state.scenarioFingerprints).toHaveLength(20);
+    expect(titles.size).toBe(6);
+    expect(state.currentScenario).toBeNull();
+    expect(state.scenarioFingerprints).toHaveLength(6);
   });
 
-  it('turns six opposite choices into different authored causes and truthful results', () => {
-    for (const targetTurn of [4, 5, 7, 8, 9, 10, 19]) {
-      let before = campaign(`branch-cause-${targetTurn}`);
-      while (before.turn < targetTurn) before = choose(before);
-      const scenario = before.currentScenario!;
-      expect(scenario.choices).toHaveLength(2);
+  it('turns a bold choice into an extra reinforcement three chapters later', () => {
+    const seed = Array.from({ length: 100 }, (_, index) => `delayed-callback-${index}`).find(
+      (candidate) => generateCampaignDraft(candidate).plan.scenes[4].encounter !== null,
+    )!;
+    let cautious = campaign(seed);
+    let bold = campaign(seed);
+    cautious = choose(cautious, 0);
+    bold = choose(bold, 0);
+    cautious = choose(cautious, 0);
+    bold = choose(bold, 1);
+    cautious = choose(cautious, 0);
+    bold = choose(bold, 0);
+    cautious = choose(cautious, 0);
+    bold = choose(bold, 0);
 
-      const afterA = choose(before, 0);
-      const afterB = choose(before, 1);
-      expect(afterA.currentScenario!.sceneBeats.cause).toBe(scenario.choices[0]!.consequence);
-      expect(afterB.currentScenario!.sceneBeats.cause).toBe(scenario.choices[1]!.consequence);
-      expect(afterA.currentScenario!.sceneBeats.cause).not.toBe(
-        afterB.currentScenario!.sceneBeats.cause,
-      );
-      expect({
-        title: afterA.currentScenario!.title,
-        decision: afterA.currentScenario!.sceneBeats.decision,
-      }).not.toEqual({
-        title: afterB.currentScenario!.title,
-        decision: afterB.currentScenario!.sceneBeats.decision,
-      });
-      expect(afterA.aftermathReports.at(-1)!.summary).toBe(scenario.choices[0]!.consequence);
-      expect(afterB.aftermathReports.at(-1)!.summary).toBe(scenario.choices[1]!.consequence);
-      expect({
-        renown: afterA.reputation,
-        supplies: afterA.supplies,
-        danger: afterA.threat,
-      }).not.toEqual({
-        renown: afterB.reputation,
-        supplies: afterB.supplies,
-        danger: afterB.threat,
-      });
+    expect(cautious.turn).toBe(5);
+    expect(bold.turn).toBe(5);
+    expect(bold.currentScenario!.sceneBeats.cause).toMatch(/first two allies|first alliance/i);
+    expect(bold.currentScenario!.threatIds.length).toBe(
+      cautious.currentScenario!.threatIds.length + 1,
+    );
+  });
+
+  it('varies worlds, arcs, prose, and structures across fresh seeds', () => {
+    const runs = ['semantic-run-a', 'semantic-run-b', 'semantic-run-c', 'semantic-run-d'].map(
+      (seed) => ({ draft: generateCampaignDraft(seed), scenarios: sequence(seed).scenarios }),
+    );
+    expect(new Set(runs.map((run) => run.draft.plan.world.id)).size).toBeGreaterThan(1);
+    expect(new Set(runs.map((run) => run.draft.plan.structuralFingerprint)).size).toBeGreaterThan(
+      1,
+    );
+    expect(
+      Array.from({ length: 6 }, (_, index) => index).filter(
+        (index) => new Set(runs.map((run) => run.scenarios[index]!.premise)).size > 1,
+      ).length,
+    ).toBeGreaterThanOrEqual(4);
+  });
+
+  it('always schedules four to six battles including the opening, midpoint, and finale', () => {
+    for (const seed of Array.from({ length: 30 }, (_, index) => `battle-spine-${index}`)) {
+      const scenes = sequence(seed).scenarios;
+      const battleTurns = scenes
+        .filter((scenario) => scenario.category === 'operation')
+        .map((scenario) => scenario.quest.chapter);
+      expect(battleTurns.length).toBeGreaterThanOrEqual(4);
+      expect(battleTurns.length).toBeLessThanOrEqual(6);
+      expect(battleTurns).toEqual(expect.arrayContaining([1, 3, 6]));
     }
   });
 
-  it('varies whole authored scenes across three fresh campaign seeds', () => {
-    const runs = ['semantic-run-a', 'semantic-run-b', 'semantic-run-c'].map(
-      (seed) => sequence(seed).scenarios,
-    );
-    const variedPremiseTurns = Array.from({ length: 20 }, (_, index) => index).filter(
-      (index) => new Set(runs.map((run) => run[index]!.premise)).size > 1,
-    );
-    const variedDilemmaTurns = Array.from({ length: 20 }, (_, index) => index).filter(
-      (index) =>
-        new Set(runs.map((run) => run[index]!.choices.map((choice) => choice.label).join('|')))
-          .size > 1,
-    );
-    expect(variedPremiseTurns.length).toBeGreaterThanOrEqual(10);
-    expect(variedDilemmaTurns.length).toBeGreaterThanOrEqual(8);
-  });
-
-  it('uses different adventures, dilemmas, and endings for the two worlds', () => {
-    const samples = Array.from({ length: 30 }, (_, index) => `world-quest-${index}`).map(
-      (seed) => ({
-        seed,
-        cityId: campaign(seed).campaignBible!.city.id,
-      }),
-    );
-    const fallenSeed = samples.find((sample) => sample.cityId.includes('fallen-heavens'))!.seed;
-    const tideSeed = samples.find((sample) => sample.cityId.includes('underworld-tide'))!.seed;
-    const fallen = sequence(fallenSeed).scenarios;
-    const tide = sequence(tideSeed).scenarios;
-
-    expect(fallen[0]!.quest.title).not.toBe(tide[0]!.quest.title);
-    expect(
-      fallen.filter((scenario, index) => scenario.premise !== tide[index]!.premise).length,
-    ).toBeGreaterThanOrEqual(18);
-    expect(
-      fallen.filter(
-        (scenario, index) =>
-          scenario.choices.map((choice) => choice.label).join('|') !==
-          tide[index]!.choices.map((choice) => choice.label).join('|'),
-      ).length,
-    ).toBeGreaterThanOrEqual(14);
-  });
-
-  it('recruits two companions before battles at the opening and each later act break', () => {
-    const operationTurns = sequence('operation-spine-seed')
-      .scenarios.filter((scenario) => scenario.category === 'operation')
-      .map((scenario) => scenario.quest.chapter);
-    expect(operationTurns).toEqual([1, 3, 6, 11, 20]);
-  });
-
-  it('replays the same quest byte-for-byte from the same seed and commands', () => {
+  it('replays the same campaign byte-for-byte from the same seed and commands', () => {
     const first = sequence('quest-replay-seed');
     const second = sequence('quest-replay-seed');
-    expect(first.scenarios).toEqual(second.scenarios);
-    expect(first.state).toEqual(second.state);
+    expect(first).toEqual(second);
   });
 });

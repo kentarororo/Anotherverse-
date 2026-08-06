@@ -49,7 +49,7 @@ export const ScenarioBlueprintSchema = z.object({
     actTitle: z.string().min(1),
     objective: z.string().min(1),
     chapter: z.number().int().min(1).max(20),
-    totalChapters: z.literal(20),
+    totalChapters: z.number().int().min(1).max(20),
   }),
   premiseFactIds: z.array(z.string().min(1)).min(2),
   castIds: z.array(z.string().min(1)).min(1),

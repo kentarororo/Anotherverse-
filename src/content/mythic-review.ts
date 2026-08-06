@@ -368,7 +368,7 @@ const HEROES: readonly HeroTemplate[] = [
     pathName: 'Moonfang',
     pronouns: { subject: 'she', object: 'her', possessive: 'her' },
     biography:
-      'Mira learned to hunt monsters for the bounty on their teeth. Every coin paid for medicine that kept her younger sister alive one more week. On her final unranked hunt, the wounded moon-wolf she cornered offered its fang instead of its life. Mira took the bargain and awakened Moonfang, a Path that grows stronger whenever she chooses the dangerous target everyone else avoids.',
+      'Mira learned to hunt monsters for the bounty on their teeth. Every coin paid for medicine that kept her younger sister alive one more week. On her final unranked hunt, the wounded moon-wolf she cornered offered its fang instead of its life. Mira took the bargain and awakened Moonfang, an Awakening that grows stronger whenever she chooses the dangerous target everyone else avoids.',
     definingChoice: 'Mira accepted the moon-wolf’s fang instead of killing it for the bounty.',
     desire: "Reach Gold rank before her sister's borrowed time runs out.",
     bond: 'Her younger sister, who keeps every monster tooth Mira sends home.',
@@ -452,7 +452,7 @@ const HEROES: readonly HeroTemplate[] = [
     pathName: 'Fatekeeper',
     pronouns: { subject: 'she', object: 'her', possessive: 'her' },
     biography:
-      'Sena could see the red threads joining people long before she knew they were real. She became a village healer and spent years pretending each impossible recovery was luck. Then she saw her own thread end inside a Gate that had not opened yet. Sena entered the hunter trials to find that Gate first and discovered Fatekeeper, a Path that can knot a life back together without deciding what that life must become.',
+      'Sena could see the red threads joining people long before she knew they were real. She became a village healer and spent years pretending each impossible recovery was luck. Then she saw her own thread end inside a Gate that had not opened yet. Sena entered the hunter trials to find that Gate first and discovered Fatekeeper, an Awakening that can knot a life back together without deciding what that life must become.',
     definingChoice: 'Sena entered the hunter trials to meet the death she had already seen.',
     desire: 'Reach the place where her future ends and prove that prophecy is only a warning.',
     bond: 'The patients who trusted her even when she called every miracle luck.',
@@ -494,7 +494,7 @@ const HEROES: readonly HeroTemplate[] = [
     pathName: 'Phoenix Psalm',
     pronouns: { subject: 'he', object: 'him', possessive: 'his' },
     biography:
-      'Tarin was raised to sing the dawn hymn that kept his mountain temple warm. The hymn failed during the longest winter, and the elders chose three novices to feed the sacred flame. Tarin broke the altar instead. The phoenix sleeping beneath it chose him for that refusal, granting a Path whose fire heals only those who still have something they are willing to live for.',
+      'Tarin was raised to sing the dawn hymn that kept his mountain temple warm. The hymn failed during the longest winter, and the elders chose three novices to feed the sacred flame. Tarin broke the altar instead. The phoenix sleeping beneath it chose him for that refusal, granting an Awakening whose fire heals only those who still have something they are willing to live for.',
     definingChoice: 'Tarin broke the altar rather than feed three novices to its flame.',
     desire: 'Turn a sacrificial faith into one that asks people to survive together.',
     bond: 'The three novices whose names were drawn for the sacred flame.',

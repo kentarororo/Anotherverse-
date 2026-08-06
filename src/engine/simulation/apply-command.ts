@@ -20,6 +20,8 @@ import { StanceIdSchema, TeamPriorityIdSchema } from '../model/combat';
 import { simulateBattle } from '../combat/simulate';
 import { createGeneratedCampaignState, generateCampaignCompanion } from '../generation/campaign';
 import { selectNextScenario } from '../director/scenario-director';
+import type { CampaignScenePlan } from '../model/campaign-plan';
+import type { EquipmentDefinition, MaterialDefinition } from '../model/progression';
 import { resolveMaterialFusion } from '../progression/crafting';
 import { drawInteger } from '../rng/streams';
 
@@ -53,6 +55,19 @@ function encounterForSelection(
   scenario: NonNullable<CanonicalGameState['currentScenario']>,
   choice: NonNullable<CanonicalGameState['currentScenario']>['choices'][number],
 ) {
+  const planned = state.campaignPlan?.scenes[state.turn - 1];
+  if (planned?.encounter !== null && planned?.encounter !== undefined) {
+    return {
+      id: planned.encounter.id,
+      title: scenario.title,
+      brief: planned.encounter.stakes,
+      enemyIds: scenario.threatIds,
+      signature: planned.encounter.enemies
+        .map((enemy) => `${enemy.title}: ${enemy.behavior}`)
+        .join(' / '),
+      rewardPreview: `${planned.reward.category}: ${planned.reward.title}`,
+    };
+  }
   if (choice.encounterId !== undefined) {
     return { ...encounterForId(choice.encounterId), title: scenario.title };
   }
@@ -110,7 +125,19 @@ function generateOpeningCompanion(state: CanonicalGameState): CanonicalGameState
   const additions = createMilestoneOneDefinitions([character]);
   const member = createMilestoneOnePartyState([character]);
   const originFactId = `fact-origin-${character.id}`;
-  const joinsAtBattleStart = state.turn === 3;
+  const introductionFactId = `fact-introduced-${character.id}`;
+  const joinsAtBattleStart = state.turn === 2 || state.turn === 3;
+  const introductionFact = {
+    id: introductionFactId,
+    kind: 'character-introduction',
+    subjectId: character.id,
+    relation: 'met-party',
+    value: `${character.name} met the company on the road ahead.`,
+    createdTurn: state.turn,
+    sourceEventId: `opening-arrival-${state.turn}`,
+    tags: ['character', 'introduction', character.role],
+    active: true,
+  };
   const arrivalFact = {
     id: `fact-recruited-${character.id}`,
     kind: 'party-recruitment',
@@ -155,6 +182,7 @@ function generateOpeningCompanion(state: CanonicalGameState): CanonicalGameState
         tags: ['character', character.role],
         active: true,
       },
+      introductionFact,
       ...(joinsAtBattleStart ? [arrivalFact] : []),
     ],
     storyThreads: [
@@ -164,7 +192,7 @@ function generateOpeningCompanion(state: CanonicalGameState): CanonicalGameState
         arcId: 'mythic-awakening-arc',
         stage: 0,
         castIds: [character.id],
-        factIds: [originFactId],
+        factIds: [originFactId, introductionFactId],
         urgency: 35,
         status: 'open',
         nextEligibleTurn: state.turn,
@@ -206,6 +234,49 @@ function addMaterials(
   const next = { ...inventory };
   for (const materialId of materialIds) next[materialId] = (next[materialId] ?? 0) + 1;
   return next;
+}
+
+function rewardSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function plannedRewardForTurn(state: CanonicalGameState): CampaignScenePlan['reward'] | null {
+  return state.campaignPlan?.scenes[state.turn - 1]?.reward ?? null;
+}
+
+function campaignMaterial(
+  state: CanonicalGameState,
+  title: string,
+  tags: readonly string[],
+): MaterialDefinition {
+  const sourceEnemyId = state.currentEncounter?.enemyIds[0] ?? 'campaign-discovery';
+  const guardBiased = tags.some((tag) => /spirit|memory|shrine|duty|oath/i.test(tag));
+  return {
+    id: `campaign-material-${rewardSlug(title)}`,
+    name: title,
+    description: `${title} is a rare substance shaped by this realm's laws. It can be fused at the Forge.`,
+    sourceEnemyId,
+    forgeName: title.replace(/\s+(Iron|Ash|Glass|Hide|Crystal|Steel|Root|Thread)$/i, ''),
+    weights: guardBiased
+      ? { power: 2, guard: 5, weapon: 2, support: 5, charger: 2, hexer: 5 }
+      : { power: 5, guard: 2, weapon: 5, support: 2, charger: 5, hexer: 2 },
+  };
+}
+
+function campaignRelic(title: string, tags: readonly string[]): EquipmentDefinition {
+  const support = tags.some((tag) => /spirit|memory|shrine|duty|oath/i.test(tag));
+  return {
+    id: `campaign-relic-${rewardSlug(title)}`,
+    name: title,
+    slot: support ? 'support' : 'weapon',
+    description: `${title} answers to the laws of this realm. ${support ? '+3 Guard against Hexers.' : '+3 Power against Chargers.'}`,
+    powerBonus: support ? 0 : 3,
+    guardBonus: support ? 3 : 0,
+    counterTag: support ? 'hexer' : 'charger',
+  };
 }
 
 function requiredMaterialCounts(materialIds: readonly string[]) {
@@ -252,6 +323,7 @@ export function applyGameCommand(
       selectionCandidateIds: characters.map((character) => character.id),
       recruitedCharacterIds: [lead.id],
       campaignBible: generated.draft.bible,
+      campaignPlan: generated.draft.plan,
       rngStreams: generated.draft.rngStreams,
       generatedDefinitions: leadDefinitions,
       partyState: createMilestoneOnePartyState([lead]),
@@ -261,7 +333,7 @@ export function applyGameCommand(
           id: 'fact-campaign-city',
           kind: 'campaign',
           subjectId: generated.draft.bible.city.id,
-          relation: 'is-squad-city',
+          relation: 'is-campaign-realm',
           value: generated.draft.bible.city.name,
           createdTurn: 0,
           sourceEventId: 'campaign-generation',
@@ -608,9 +680,7 @@ export function applyGameCommand(
             ? choice.outcomeConsequences.victory
             : choice.outcomeConsequences.defeat;
     const reputationDelta =
-      combatResult !== null
-        ? (combatResult?.aftermath.reputationDelta ?? 0)
-        : choice.effects.renownDelta;
+      (combatResult?.aftermath.reputationDelta ?? 0) + choice.effects.renownDelta;
     if (state.supplies + choice.effects.provisionsDelta < 0) {
       throw new Error('This response requires more Rations than the squad has.');
     }
@@ -621,8 +691,30 @@ export function applyGameCommand(
     const activeCharacterIds = new Set(state.recruitedCharacterIds);
     const experience = combatResult === null ? 8 : 25;
     const victory = combatResult?.report.outcome === 'victory';
-    const materialIdsGranted = materialRewardsForVictory(state, victory);
-    const coinsDelta = victory ? 10 + state.turn * 2 : Math.max(0, reputationDelta);
+    const plannedReward = plannedRewardForTurn(state);
+    const earnedPlannedReward = combatResult === null || victory;
+    const materialDefinition =
+      earnedPlannedReward && plannedReward?.category === 'material'
+        ? campaignMaterial(state, plannedReward.title, plannedReward.tags)
+        : null;
+    const relicDefinition =
+      earnedPlannedReward && plannedReward?.category === 'relic'
+        ? campaignRelic(plannedReward.title, plannedReward.tags)
+        : null;
+    const skillId =
+      earnedPlannedReward && plannedReward?.category === 'skill'
+        ? `campaign-skill-${rewardSlug(plannedReward.title)}`
+        : null;
+    const materialIdsGranted = [
+      ...materialRewardsForVictory(state, victory),
+      ...(materialDefinition === null
+        ? []
+        : Array.from({ length: plannedReward?.amount ?? 1 }, () => materialDefinition.id)),
+    ];
+    const itemIdsGranted = relicDefinition === null ? [] : [relicDefinition.id];
+    const coinsDelta =
+      (victory ? 10 + state.turn * 2 : Math.max(0, reputationDelta)) +
+      (earnedPlannedReward && plannedReward?.category === 'currency' ? plannedReward.amount : 0);
     const relicDustDelta = victory ? 1 : 0;
     const baseAftermath = combatResult?.aftermath ?? {
       id: `aftermath-turn-${state.turn}`,
@@ -672,10 +764,19 @@ export function applyGameCommand(
             : member,
         ]),
       );
-    const partyState = progressedPartyState;
+    const partyState =
+      skillId === null || state.leadCharacterId === null
+        ? progressedPartyState
+        : {
+            ...progressedPartyState,
+            [state.leadCharacterId]: {
+              ...progressedPartyState[state.leadCharacterId]!,
+              trainingPoints: progressedPartyState[state.leadCharacterId]!.trainingPoints + 1,
+            },
+          };
     const aftermath = {
       ...baseAftermath,
-      itemIdsGranted: [],
+      itemIdsGranted,
       materialIdsGranted,
       characterIdsRecruited: recruitedCharacterId === null ? [] : [recruitedCharacterId],
       factIdsWritten: recruitmentFactId === null ? [factId] : [recruitmentFactId, factId],
@@ -685,10 +786,14 @@ export function applyGameCommand(
       readinessByCharacter: Object.fromEntries(
         Object.values(partyState).map((member) => [member.characterId, member.readiness]),
       ),
-      suppliesDelta: baseAftermath.suppliesDelta,
+      suppliesDelta:
+        baseAftermath.suppliesDelta + (combatResult === null ? 0 : choice.effects.provisionsDelta),
       coinsDelta,
       relicDustDelta,
       reputationDelta,
+      dangerDelta:
+        baseAftermath.dangerDelta + (combatResult === null ? 0 : choice.effects.dangerDelta),
+      bondDelta: baseAftermath.bondDelta + (combatResult === null ? 0 : choice.effects.bondDelta),
       summary:
         combatResult === null
           ? baseAftermath.summary
@@ -757,6 +862,33 @@ export function applyGameCommand(
       coins: state.coins + coinsDelta,
       relicDust: state.relicDust + relicDustDelta,
       materials: addMaterials(state.materials, materialIdsGranted),
+      inventoryIds: [...state.inventoryIds, ...itemIdsGranted],
+      generatedDefinitions: {
+        ...state.generatedDefinitions,
+        items:
+          relicDefinition === null
+            ? state.generatedDefinitions.items
+            : { ...state.generatedDefinitions.items, [relicDefinition.id]: relicDefinition },
+        materials:
+          materialDefinition === null
+            ? state.generatedDefinitions.materials
+            : {
+                ...state.generatedDefinitions.materials,
+                [materialDefinition.id]: materialDefinition,
+              },
+        techniques:
+          skillId === null || plannedReward === null
+            ? state.generatedDefinitions.techniques
+            : {
+                ...state.generatedDefinitions.techniques,
+                [skillId]: {
+                  id: skillId,
+                  name: plannedReward.title,
+                  storyDescription: `${plannedReward.title} was earned by completing the final trial of ${state.campaignPlan?.arc.title ?? 'the campaign'}.`,
+                  unlockCondition: 'Spend 1 training point after completing the campaign.',
+                },
+              },
+      },
       partyState,
       rngStreams: combatResult?.streams ?? state.rngStreams,
       battleReports:
@@ -809,6 +941,9 @@ export function applyGameCommand(
       },
     });
     const rosterReadyBase = generateOpeningCompanion(resolvedBase);
+    if (state.turn >= 6) {
+      return CanonicalGameStateSchema.parse(appendCommand(rosterReadyBase, command));
+    }
     const next = selectNextScenario(
       rosterReadyBase,
       rosterReadyBase.turn,

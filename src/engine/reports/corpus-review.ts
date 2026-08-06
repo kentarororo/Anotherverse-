@@ -8,6 +8,11 @@ export const CORPUS_REVIEW_SEEDS = [
   'read-aloud-halcyon',
   'read-aloud-cinder',
   'read-aloud-crosscheck',
+  'read-aloud-oracle',
+  'read-aloud-tempest',
+  'read-aloud-pilgrim',
+  'read-aloud-huntress',
+  'read-aloud-reckoning',
 ] as const;
 
 export interface CorpusReviewEntry {
@@ -56,7 +61,7 @@ function factContext(state: ReturnType<typeof createEmptyGameState>, factId: str
     );
     return `${hero?.name ?? fact.subjectId} origin: ${value}`;
   }
-  if (fact.relation === 'is-squad-city') return `Licensed city: ${value}`;
+  if (fact.relation === 'is-campaign-realm') return `Campaign realm: ${value}`;
   if (fact.relation === 'pursues-motive') {
     const faction = state.campaignBible?.activeFactions.find(
       (candidate) => candidate.id === fact.subjectId,
@@ -79,7 +84,7 @@ export function buildCorpusReviewEntries(): CorpusReviewEntry[] {
       selectedDraftIndex: 0,
     });
 
-    for (let turn = 1; turn <= 20; turn += 1) {
+    for (let turn = 1; turn <= 6; turn += 1) {
       const scenario = state.currentScenario;
       if (scenario === null)
         throw new Error(`Review seed ${seed} has no scenario at Turn ${turn}.`);

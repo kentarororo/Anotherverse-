@@ -26,7 +26,7 @@ describe('production content manifest', () => {
 
   it('enumerates Milestone 4 content through the production manifest', () => {
     const packs = Object.values(contentManifest.packs);
-    expect(packs).toHaveLength(9);
+    expect(packs).toHaveLength(10);
     expect(contentManifest.milestone).toBe('M4');
     expect(contentManifest.packs.characters.moduleIds).toContain('lyra-vale');
     expect(contentManifest.packs.characters.moduleIds).toContain('tarin-sol');
@@ -43,6 +43,9 @@ describe('production content manifest', () => {
     expect(contentManifest.packs.story.moduleIds).toContain('mythic-opening-turns-1-3');
     expect(contentManifest.packs.story.moduleIds).toContain('causal-scene-beats');
     expect(contentManifest.packs.story.moduleIds).toContain('quest-fourth-god');
+    expect(contentManifest.packs.campaign.moduleIds.length).toBeGreaterThanOrEqual(8);
+    expect(contentManifest.packs.procedural.moduleIds.length).toBeGreaterThanOrEqual(40);
+    expect(contentManifest.packs.procedural.moduleIds).toContain('arc:rank-trial');
     expect(
       temporaryEnemies.every(
         (enemy) =>

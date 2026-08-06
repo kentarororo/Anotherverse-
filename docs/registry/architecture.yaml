@@ -1,0 +1,52 @@
+schemaVersion: 1
+lastUpdated: 2026-08-06
+runtimeReference: docs/engine-reference/web/VERSION.md
+architectureDocument: docs/architecture/architecture.md
+controlManifest: docs/architecture/control-manifest.md
+requirementRegistry: docs/architecture/tr-registry.yaml
+
+decisions:
+  - id: design-adr-0001
+    title: Mythology x Manhwa Canon and Six-Turn Slice
+    path: design/adr/0001-mythic-manhwa-vertical-slice.md
+    status: accepted
+    domain: product-design
+  - id: architecture-adr-0001
+    title: Deterministic Typed Campaign Compiler
+    path: docs/architecture/adr-0001-campaign-compiler.md
+    status: accepted
+    domain: core-generation
+
+modules:
+  - id: seed-streams
+    layer: foundation
+    owner: engine/rng
+    requirements: [TR-content-002]
+  - id: corpus-catalog
+    layer: foundation
+    owner: content-and-narrative-authoring
+    requirements: [TR-content-001]
+  - id: campaign-compiler
+    layer: core
+    owner: engine/generation
+    requirements:
+      [
+        TR-content-003,
+        TR-content-004,
+        TR-content-005,
+        TR-content-008,
+        TR-content-009,
+        TR-content-012,
+      ]
+  - id: campaign-validator
+    layer: core
+    owner: engine/generation
+    requirements: [TR-content-006, TR-content-007, TR-content-009]
+  - id: campaign-runtime
+    layer: feature
+    owner: app-and-engine/simulation
+    requirements: [TR-content-010]
+  - id: campaign-review
+    layer: presentation
+    owner: engine/reports-and-ui
+    requirements: [TR-content-011]

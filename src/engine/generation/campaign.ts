@@ -11,13 +11,14 @@ import {
   type MythicRole,
 } from '../../content/mythic-review';
 import { PATH_CLASSES } from '../../content/path-classes';
-import { QUEST_ARCS, questWorldId } from '../../content/quest-arcs';
 import type { CharacterBlueprint } from '../model/character';
 import { CharacterBlueprintSchema } from '../model/character';
+import { CampaignPlanSchema, type CampaignPlan } from '../model/campaign-plan';
 import type { CampaignBible } from '../model/world';
 import { CampaignBibleSchema } from '../model/world';
 import type { RngStreamsState } from '../rng/streams';
 import { createRngStreams, drawInteger } from '../rng/streams';
+import { compileCampaignPlan } from './campaign-compiler';
 
 interface CharacterOrigin {
   name: string;
@@ -164,16 +165,25 @@ export interface CampaignDraft {
   questTitle: string;
   questObjective: string;
   questActs: string[];
+  plan: CampaignPlan;
   characters: CharacterBlueprint[];
   semanticFingerprint: string;
   rngStreams: RngStreamsState;
 }
 
+function mythicDraftForPlan(seed: string, plan: CampaignPlan) {
+  const worldId = plan.world.domain === 'underworld' ? 'underworld-tide' : 'fallen-heavens';
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    const draft = generateMythicReviewDraft(`${seed}:world:${attempt}`);
+    if (draft.world.id === worldId) return draft;
+  }
+  throw new Error(`Unable to bind campaign ${seed} to the selected ${worldId} world.`);
+}
+
 export function generateCampaignDraft(seed: string): CampaignDraft {
-  const mythic = generateMythicReviewDraft(seed);
+  const plan = compileCampaignPlan(seed);
+  const mythic = mythicDraftForPlan(seed, plan);
   let rngStreams = createRngStreams(seed);
-  const factionDraw = drawInteger(rngStreams, 'world', 0, 3);
-  rngStreams = factionDraw.streams;
   const regionDraw = drawInteger(rngStreams, 'world', 0, 7);
   rngStreams = regionDraw.streams;
   const [openingLaw, openingDisruption] = mythic.world.opening;
@@ -199,27 +209,12 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
           'the Salt-Grave Frontier',
           'the Last Tide Province',
         ];
-  const campaignRealmName = `${mythic.world.name}, ${regionNames[regionDraw.value]}`;
-  const faction = [
-    {
-      name: 'The Veiled Court',
-      motive: 'Claim the newly awakened heroes before they learn which fallen power chose them.',
-    },
-    {
-      name: 'The Ashen Synod',
-      motive: 'Burn every relic that remembers how mortals once defeated the gods.',
-    },
-    {
-      name: 'The Ivory Throne',
-      motive:
-        'Bind every Mythic Awakening to the crown before an unranked hunter can challenge its rule.',
-    },
-    {
-      name: 'The Drowned Choir',
-      motive:
-        'Gather three awakened legends whose joined oath can open the sealed road below death.',
-    },
-  ][factionDraw.value]!;
+  const campaignRealmName = `${plan.world.title}, ${regionNames[regionDraw.value]}`;
+  const lexicon = plan.world.lexicon;
+  const faction = {
+    name: plan.antagonist.title,
+    motive: plan.antagonist.hiddenAim,
+  };
   const bible = CampaignBibleSchema.parse({
     seed,
     city: {
@@ -229,27 +224,26 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     },
     civicOrder: {
       id: `oathkeepers-${mythic.world.id}`,
-      name: 'The Oathkeepers',
-      mandate: 'Protect ordinary people when gods, kings, and guilds make survival a privilege.',
-      tags: ['oaths', 'public-trust'],
+      name: `${lexicon[0].replace(/\b\w/g, (letter) => letter.toUpperCase())} Wardens`,
+      mandate: plan.world.mortalOrder,
+      tags: [plan.world.domain, 'public-trust'],
     },
     guildModel: {
       id: `hunter-guilds-${mythic.world.id}`,
-      name: 'The Ranked Hunter Guilds',
-      mandate: 'Train delvers, record victories, and keep the roads to living dungeons open.',
-      tags: ['hunters', 'ranked-trials'],
+      name: 'The Ascendant Companies',
+      mandate: 'Train heroes, record their deeds, and keep the roads through mythic realms open.',
+      tags: ['heroes', 'ascension'],
     },
     rankSystem: { id: `path-ranks-${mythic.world.id}`, tiers: [...mythic.world.rankNames] },
-    breachLaw: { id: `myth-law-${mythic.world.id}`, summary: mythic.world.mythLaw },
+    breachLaw: { id: `myth-law-${mythic.world.id}`, summary: plan.world.divineLaw },
     powerLaw: {
       id: `progression-law-${mythic.world.id}`,
-      summary: mythic.world.progressionLaw,
+      summary: plan.world.awakeningLaw,
     },
     threatEcology: {
       id: `dungeon-ecology-${mythic.world.id}`,
-      summary:
-        'Monsters inherit fragments of the dead or forgotten powers whose realms they inhabit. Their visible habits reveal the counter needed to defeat them.',
-      tags: ['monsters', 'legends', 'counterplay'],
+      summary: `Monsters take shape when the law of ${lexicon[0]} is broken. ${plan.world.taboo}`,
+      tags: ['monsters', plan.world.domain, 'counterplay'],
     },
     activeFactions: [
       {
@@ -267,11 +261,11 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     },
     sceneVocabulary: {
       crisisSite: 'dungeon threshold',
-      hiddenRoute: 'forgotten stair',
-      publicVenue: 'guild hall',
-      publicSignal: 'omen bell',
+      hiddenRoute: lexicon[2],
+      publicVenue: `${lexicon[0]} hall`,
+      publicSignal: lexicon[3],
       recordMedium: 'Book of Deeds',
-      privateRefuge: 'wayside shrine',
+      privateRefuge: `${lexicon[1]} shrine`,
     },
     toneProfileId: 'mythic-progression-fantasy',
   });
@@ -287,23 +281,22 @@ export function generateCampaignDraft(seed: string): CampaignDraft {
     usedOrigins.add(originIndex);
     return createCharacter(hero, originPool[originIndex]!);
   });
-  const quest = QUEST_ARCS[questWorldId(bible.city.id)];
-
   return {
     seed,
     bible,
     premise: `${campaignRealmName}: ${openingLaw}\n\n${openingDisruption}`,
     campaignQuestion: `What awakened this hunter, and what price will the realm demand as their legend grows?`,
-    questTitle: quest.title,
-    questObjective: quest.acts[0].objective.replace('{faction}', faction.name),
-    questActs: quest.acts.map((act) => act.title),
+    questTitle: plan.arc.title,
+    questObjective: plan.scenes[0].title,
+    questActs: plan.scenes.map((scene) => scene.title),
+    plan,
     characters,
     // Describe the generated content rather than the input seed. A seed suffix made duplicate
     // drafts appear semantically unique even when every player-facing choice was identical.
     semanticFingerprint: [
+      plan.structuralFingerprint,
       mythic.fingerprint,
       `realm:${campaignRealmName}`,
-      `faction:${faction.name}`,
       `origins:${characters.map((hero) => hero.origin).join('|')}`,
       `relics:${mythic.relics.map((relic) => `${relic.id}:${relic.name}`).join('|')}`,
     ].join('|'),
@@ -349,7 +342,8 @@ export const CampaignDraftSchema = z.object({
   campaignQuestion: z.string().min(1),
   questTitle: z.string().min(1),
   questObjective: z.string().min(1),
-  questActs: z.array(z.string().min(1)).length(4),
+  questActs: z.array(z.string().min(1)).length(6),
+  plan: CampaignPlanSchema,
   characters: z.array(CharacterBlueprintSchema).length(3),
   semanticFingerprint: z.string().min(1),
 });

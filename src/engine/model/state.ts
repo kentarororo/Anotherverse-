@@ -4,6 +4,7 @@ import { GameCommandSchema, PositionSchema } from './commands';
 import { RngStreamsStateSchema } from '../rng/streams';
 import { AftermathReportSchema, BattleReportSchema } from '../reports/combat';
 import { CampaignBibleSchema, StoryThreadSchema, WorldFactSchema } from './world';
+import { CampaignPlanSchema } from './campaign-plan';
 import { CombatantDefinitionSchema, EncounterStateSchema, PartyMemberStateSchema } from './combat';
 import { DirectorCandidateDebugSchema, ScenarioBlueprintSchema } from './scenario';
 import {
@@ -15,9 +16,9 @@ import {
   RelationshipStateSchema,
 } from './progression';
 
-// Schema 14 separates creation candidates from the canonical campaign roster. Older snapshots
-// already contain the two unchosen candidates and cannot safely reconstruct earned companions.
-export const GAME_SCHEMA_VERSION = 14 as const;
+// Schema 15 embeds the compiled six-chapter campaign plan. Older snapshots cannot safely
+// reconstruct its causal facts, rewards, or encounter schedule.
+export const GAME_SCHEMA_VERSION = 15 as const;
 
 export const CommandRecordSchema = z.object({
   index: z.number().int().nonnegative(),
@@ -57,6 +58,7 @@ export const CanonicalGameStateSchema = z.object({
   relicDust: z.number().int().nonnegative(),
   materials: z.record(z.string(), z.number().int().nonnegative()),
   campaignBible: CampaignBibleSchema.nullable(),
+  campaignPlan: CampaignPlanSchema.nullable(),
   generatedDefinitions: GeneratedDefinitionsSchema,
   partyState: z.record(z.string(), PartyMemberStateSchema),
   currentEncounter: EncounterStateSchema.nullable(),
@@ -97,6 +99,7 @@ export function createEmptyGameState(contentManifestHash: string): CanonicalGame
     relicDust: 0,
     materials: {},
     campaignBible: null,
+    campaignPlan: null,
     generatedDefinitions: {
       characters: [],
       combatants: {},

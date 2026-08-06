@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { PATH_CLASS_IDS } from './path-classes';
 import { QUEST_ARCS, QUEST_CHAPTER_VARIANTS } from './quest-arcs';
+import {
+  ANTAGONIST_AGENDAS,
+  ARC_SKELETONS,
+  ENCOUNTER_SUITES,
+  REWARD_STYLES,
+  WORLD_THESES,
+} from './procedural-corpus';
 
 export const ContentPackReferenceSchema = z.object({
   id: z.string().min(1),
@@ -21,6 +28,7 @@ export const ContentManifestSchema = z.object({
     materials: ContentPackReferenceSchema,
     combatLanguage: ContentPackReferenceSchema,
     story: ContentPackReferenceSchema,
+    procedural: ContentPackReferenceSchema,
   }),
 });
 
@@ -30,7 +38,10 @@ export const contentManifest = ContentManifestSchema.parse({
   schemaVersion: 1,
   milestone: 'M4',
   packs: {
-    campaign: pack('campaign-mythic-v4', ['fallen-heavens', 'underworld-tide']),
+    campaign: pack(
+      'campaign-compiler-v1',
+      WORLD_THESES.map((world) => world.id),
+    ),
     characters: pack('characters-mythic-v4', [
       ...PATH_CLASS_IDS,
       'lyra-vale',
@@ -106,6 +117,13 @@ export const contentManifest = ContentManifestSchema.parse({
       'truthful-choice-effects',
       'authored-scene-variants',
       ...Object.values(QUEST_ARCS).map((arc) => arc.id),
+    ]),
+    procedural: pack('procedural-corpus-v1', [
+      ...WORLD_THESES.map((world) => `world:${world.id}`),
+      ...ARC_SKELETONS.map((arc) => `arc:${arc.id}`),
+      ...ANTAGONIST_AGENDAS.map((agenda) => `agenda:${agenda.id}`),
+      ...ENCOUNTER_SUITES.map((suite) => `encounters:${suite.id}`),
+      ...REWARD_STYLES.map((style) => `rewards:${style.id}`),
     ]),
   },
 });

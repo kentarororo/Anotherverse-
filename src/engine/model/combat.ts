@@ -45,6 +45,18 @@ export const CombatantDefinitionSchema = z.object({
   side: z.enum(['heroes', 'enemies']),
   role: z.string().min(1),
   policyId: z.enum(['vanguard', 'striker', 'controller', 'support', 'charger', 'hexer']),
+  behaviorId: z
+    .enum([
+      'front-breaker',
+      'rear-hunter',
+      'ritual-charger',
+      'healer',
+      'protector',
+      'swarm',
+      'executioner',
+      'status-controller',
+    ])
+    .optional(),
   stats: CoreStatsSchema,
   maxResource: z.number().int().positive(),
   basicActionId: z.string().min(1),

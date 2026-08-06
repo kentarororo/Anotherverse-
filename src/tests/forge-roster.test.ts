@@ -42,9 +42,9 @@ describe('lead ownership and opening recruitment', () => {
 
       const afterFirst = resolveCurrentTurn(initial);
       const firstCompanion = afterFirst.generatedDefinitions.characters[1]!;
-      expect(afterFirst.recruitedCharacterIds).toEqual([leadId]);
+      expect(afterFirst.recruitedCharacterIds).toEqual([leadId, firstCompanion.id]);
       expect(afterFirst.aftermathReports.at(-1)!.characterIdsRecruited).toEqual([]);
-      expect(Object.keys(afterFirst.pendingPlan.positions)).toHaveLength(1);
+      expect(Object.keys(afterFirst.pendingPlan.positions)).toHaveLength(2);
       expect(initial.selectionCandidateIds).not.toContain(firstCompanion.id);
 
       const afterSecond = resolveCurrentTurn(afterFirst);
@@ -54,9 +54,7 @@ describe('lead ownership and opening recruitment', () => {
         firstCompanion.id,
         secondCompanion.id,
       ]);
-      expect(afterSecond.aftermathReports.at(-1)!.characterIdsRecruited).toEqual([
-        firstCompanion.id,
-      ]);
+      expect(afterSecond.aftermathReports.at(-1)!.characterIdsRecruited).toEqual([]);
       expect(Object.keys(afterSecond.pendingPlan.positions)).toHaveLength(3);
       expect(afterSecond.currentEncounter).not.toBeNull();
       expect(initial.selectionCandidateIds).not.toContain(secondCompanion.id);
@@ -66,10 +64,10 @@ describe('lead ownership and opening recruitment', () => {
     },
   );
 
-  it('rejects management commands for a hero who has not joined', () => {
-    const state = resolveCurrentTurn(startWithLead('locked-companion', 'support'));
-    const locked = state.generatedDefinitions.characters.find(
-      (hero) => !state.recruitedCharacterIds.includes(hero.id),
+  it('rejects management commands for an unchosen creation candidate', () => {
+    const state = startWithLead('locked-companion', 'support');
+    const locked = generateCampaignDraft('locked-companion').characters.find(
+      (hero) => hero.id !== state.leadCharacterId,
     )!;
     expect(() =>
       applyGameCommand(state, {
@@ -176,12 +174,20 @@ describe('monster materials and deterministic Forge fusion', () => {
     const aftermath = resolved.aftermathReports.at(-1)!;
 
     expect(resolved.battleReports.at(-1)!.outcome).toBe('victory');
-    expect(aftermath.materialIdsGranted).toHaveLength(enemyIds.length);
+    expect(aftermath.materialIdsGranted.length).toBeGreaterThanOrEqual(enemyIds.length);
     expect(aftermath.coinsDelta).toBeGreaterThan(0);
     expect(aftermath.relicDustDelta).toBe(1);
     for (const materialId of aftermath.materialIdsGranted) {
       expect(resolved.generatedDefinitions.materials[materialId]).toBeDefined();
       expect(resolved.materials[materialId]).toBeGreaterThan(0);
+    }
+    for (const enemyId of enemyIds) {
+      expect(
+        aftermath.materialIdsGranted.some(
+          (materialId) =>
+            resolved.generatedDefinitions.materials[materialId]!.sourceEnemyId === enemyId,
+        ),
+      ).toBe(true);
     }
   });
 });

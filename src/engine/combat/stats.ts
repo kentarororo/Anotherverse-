@@ -9,17 +9,18 @@ export function maximumHp(stats: CoreStats): number {
 export function scaledEnemyStats(stats: CoreStats, turn: number, openingDuel = false): CoreStats {
   if (openingDuel) {
     return {
-      vitality: Math.max(1, stats.vitality - 5),
-      power: Math.max(1, stats.power - 4),
-      guard: Math.max(0, stats.guard - 3),
+      vitality: Math.max(1, stats.vitality - 4),
+      power: Math.max(1, stats.power - 3),
+      guard: Math.max(0, stats.guard - 2),
       speed: stats.speed,
       focus: Math.max(1, stats.focus - 1),
     };
   }
   const tier = Math.floor((turn - 1) / 5);
+  const actPressure = turn >= 4 ? 2 : 0;
   return {
-    vitality: stats.vitality + 3 + tier * 2,
-    power: stats.power + 2 + tier * 2,
+    vitality: stats.vitality + 3 + tier * 2 + Math.floor(actPressure / 2),
+    power: stats.power + 4 + tier * 2 + actPressure,
     guard: stats.guard + 2 + Math.floor(tier / 2),
     speed: stats.speed + tier,
     focus: stats.focus + tier,

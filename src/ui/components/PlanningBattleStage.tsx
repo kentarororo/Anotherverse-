@@ -63,7 +63,7 @@ export function PlanningBattleStage({
       </div>
 
       <div className="plan-marker">
-        <span>Squad order</span>
+        <span>Party order</span>
         <strong>{titleCase(priorityId ?? 'unassigned')}</strong>
       </div>
 

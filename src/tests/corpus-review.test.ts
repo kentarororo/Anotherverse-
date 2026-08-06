@@ -7,11 +7,11 @@ import {
 } from '../engine/reports/corpus-review';
 
 describe('fixed human corpus review pack', () => {
-  it('contains 100 deterministic, resolved, context-backed paragraphs', () => {
+  it('contains 60 deterministic, resolved, context-backed chapters', () => {
     const first = buildCorpusReviewEntries();
     const second = buildCorpusReviewEntries();
     expect(first).toEqual(second);
-    expect(first).toHaveLength(100);
+    expect(first).toHaveLength(60);
     expect(new Set(first.map((entry) => entry.seed))).toEqual(new Set(CORPUS_REVIEW_SEEDS));
     expect(first.every((entry) => entry.premiseFactIds.length >= 2)).toBe(true);
     expect(
@@ -23,7 +23,7 @@ describe('fixed human corpus review pack', () => {
     expect(first.every((entry) => entry.sentenceCount >= 4 && entry.sentenceCount <= 8)).toBe(true);
     // Whole quest scenes intentionally recur when two review seeds select the same authored world.
     // Cross-world semantic variety and within-quest uniqueness are asserted by director.test.ts.
-    expect(new Set(first.map((entry) => entry.paragraph)).size).toBeGreaterThanOrEqual(80);
+    expect(new Set(first.map((entry) => entry.paragraph)).size).toBeGreaterThanOrEqual(45);
     expect(
       first.every(
         (entry) =>
@@ -44,8 +44,8 @@ describe('fixed human corpus review pack', () => {
     ).toBe(true);
     for (const seed of CORPUS_REVIEW_SEEDS) {
       const seedEntries = first.filter((entry) => entry.seed === seed);
-      expect(seedEntries).toHaveLength(20);
-      expect(new Set(seedEntries.map((entry) => entry.semanticFingerprint)).size).toBe(20);
+      expect(seedEntries).toHaveLength(6);
+      expect(new Set(seedEntries.map((entry) => entry.semanticFingerprint)).size).toBe(6);
       expect(
         seedEntries
           .slice(1)

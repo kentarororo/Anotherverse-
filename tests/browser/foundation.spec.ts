@@ -5,7 +5,8 @@ test.use({ viewport: { width: 1365, height: 768 } });
 
 async function recruitOpeningTrio(page: Page) {
   for (const nextTurn of [2, 3]) {
-    if (nextTurn === 3) await page.getByRole('radio').first().click();
+    const choices = page.getByRole('radio');
+    if ((await choices.count()) > 0) await choices.first().click();
     await page.getByRole('button', { name: 'Take Action' }).click();
     await expect(page.getByRole('heading', { name: 'Aftermath' })).toBeVisible();
     await page.getByRole('button', { name: `Continue to Turn ${nextTurn}` }).click();
@@ -43,8 +44,8 @@ test('renders authored campaign and character stories with exact rules kept visi
     .click();
   const drawer = page.getByRole('dialog', { name: 'character details' });
   await expect(drawer.getByRole('heading', { name: 'Class features' })).toBeVisible();
-  await expect(drawer.getByText('Wants')).toBeVisible();
-  await expect(drawer.getByText('Fatal flaw')).toBeVisible();
+  await expect(drawer.getByText('Wants', { exact: true })).toBeVisible();
+  await expect(drawer.getByText('Fatal flaw', { exact: true })).toBeVisible();
   await expect(drawer.locator('.technique-mechanics').first()).toContainText('Cost');
   await expect(drawer.locator('.technique-mechanics').first()).toContainText('Cooldown');
   const development = drawer.locator('.development-unlock');
@@ -138,7 +139,7 @@ test('keeps the command hierarchy and sticky action at mobile width with scaled 
   await expect(page.getByRole('heading', { name: 'Your Heroes' })).toBeVisible();
   await expect(page.locator('.operation-content h2')).toBeVisible();
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
-  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(6);
+  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
   const commit = page.getByRole('button', { name: 'Take Action' });
   await commit.scrollIntoViewIfNeeded();
   await expect(commit).toBeVisible();
@@ -256,7 +257,7 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByLabel('Story situation')).toBeVisible();
   await expect(page.getByLabel('Story situation').locator('dt')).toHaveCount(3);
   await expect(page.getByLabel('Planned battle formation')).toBeVisible();
-  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(6);
+  await expect(page.locator('.planning-battle-stage [data-art-slot^="unit:"]')).toHaveCount(5);
   await expect(page.getByLabel(`${strikerName} position`)).toHaveValue('centre');
   await page.getByLabel(`${strikerName} position`).selectOption('front');
   await expect(page.getByLabel(`${vanguardName} position`)).toHaveValue('centre');
@@ -272,8 +273,8 @@ test('completes a planned battle, reviews aftermath, and resumes the next turn',
   await expect(page.getByRole('button', { name: 'Continue to Turn 4' })).toBeVisible();
   await expect(page.getByText('Chapter 3 complete')).toBeVisible();
   await expect(page.getByLabel('Battle playback', { exact: true })).toBeVisible();
-  await expect(page.locator('.combat-unit')).toHaveCount(6);
-  await expect(page.locator('.battle-playback-stage [data-art-slot^="unit:"]')).toHaveCount(6);
+  await expect(page.locator('.combat-unit')).toHaveCount(5);
+  await expect(page.locator('.battle-playback-stage [data-art-slot^="unit:"]')).toHaveCount(5);
   await expect(page.locator('.battle-playback-stage [data-art-slot^="vfx:"]')).toHaveCount(1);
   await expect(page.locator('.combat-unit.is-actor')).toHaveCount(1);
   await expect(page.locator('.combat-unit.is-target')).toHaveCount(1);
