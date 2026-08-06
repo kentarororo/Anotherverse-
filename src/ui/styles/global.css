@@ -2958,6 +2958,176 @@ select {
   }
 }
 
+/* Vertical-slice readability gate: game-critical copy never relies on micro text. */
+.command-screen .eyebrow,
+.command-screen .campaign-metrics dt,
+.command-screen .header-link,
+.command-screen .badge,
+.command-screen .hero-card-heading span,
+.command-screen .hero-card > p,
+.command-screen .hero-controls label,
+.command-screen .hero-controls label > small,
+.command-screen .hero-detail-button,
+.command-screen .turn-state-label,
+.command-screen .storybook-brief dt,
+.command-screen .storybook-brief dd,
+.command-screen .threat-intents strong,
+.command-screen .threat-intents span,
+.command-screen .priority-effect span,
+.command-screen .action-preview > span,
+.command-screen .action-preview small,
+.command-screen .forecast-list > div > span,
+.command-screen .causal-aftermath article > span,
+.command-screen .causal-aftermath article > small,
+.command-screen .aftermath-list span,
+.command-screen .aftermath-battle-review small,
+.command-screen .choice span,
+.command-screen .choice-effects,
+.command-screen .playback-count {
+  font-size: 0.75rem;
+}
+
+.command-screen button,
+.command-screen select,
+.command-screen .hero-card-heading strong,
+.command-screen .hero-card-heading b,
+.command-screen .quest-objective strong,
+.command-screen .priority-effect strong,
+.command-screen .action-preview strong,
+.command-screen .forecast-list strong,
+.command-screen .aftermath-list strong,
+.command-screen .playback-button {
+  font-size: 0.875rem;
+}
+
+.command-screen .decision-panel {
+  overflow-y: auto;
+}
+
+.reward-preview {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.65rem;
+  align-items: center;
+  margin-top: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(255, 203, 107, 0.36);
+  border-radius: 6px;
+  background: rgba(255, 203, 107, 0.06);
+}
+
+.reward-preview span {
+  color: var(--warning);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.reward-preview strong {
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.aftermath-outcome {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 0.35rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(87, 229, 195, 0.4);
+  border-radius: 8px;
+  background: rgba(87, 229, 195, 0.07);
+}
+
+.aftermath-outcome > span {
+  color: var(--accent) !important;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aftermath-outcome > strong {
+  font-size: 1.15rem !important;
+  text-transform: uppercase;
+}
+
+.aftermath-outcome > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.aftermath-outcome.outcome-defeat,
+.aftermath-outcome.outcome-round-cap {
+  border-color: rgba(255, 107, 118, 0.45);
+  background: rgba(255, 107, 118, 0.07);
+}
+
+.reward-row {
+  margin-top: 0.2rem;
+  padding: 0.7rem !important;
+  border: 1px solid rgba(255, 203, 107, 0.32) !important;
+  border-radius: 6px;
+  background: rgba(255, 203, 107, 0.05);
+}
+
+.reward-row > span {
+  color: var(--warning) !important;
+}
+
+.playback-prompt {
+  display: grid;
+  gap: 0.45rem;
+  margin: auto 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.playback-prompt strong {
+  font-size: 1rem;
+}
+
+.playback-prompt span {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.command-screen .unit-readout > span,
+.command-screen .unit-hp-row b,
+.command-screen .round-label,
+.command-screen .battle-beat > p,
+.command-screen .battle-result > small,
+.command-screen .unit-status-cue {
+  font-size: 0.75rem !important;
+}
+
+.command-screen .unit-readout > strong,
+.command-screen .battle-beat > strong,
+.command-screen .impact-cue,
+.command-screen .battle-result > strong {
+  font-size: 0.875rem;
+}
+
+@media (max-width: 520px) {
+  .command-screen .playback-controls {
+    gap: 0.2rem 0.45rem;
+  }
+
+  .command-screen .playback-button {
+    min-height: 36px;
+    padding: 0.25rem 0.35rem;
+  }
+
+  .command-screen .battle-beat {
+    width: 132px;
+    margin-left: -66px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

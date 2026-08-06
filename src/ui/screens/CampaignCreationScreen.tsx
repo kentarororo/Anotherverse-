@@ -8,6 +8,7 @@ export function CampaignCreationScreen() {
   const regenerateCampaign = useAppStore((state) => state.regenerateCampaign);
   const cancelCampaignDraft = useAppStore((state) => state.cancelCampaignDraft);
   if (draft === null) return null;
+  const selectedLead = draft.characters.find((hero) => hero.id === selectedLeadId);
 
   return (
     <main className="creation-screen">
@@ -119,7 +120,7 @@ export function CampaignCreationScreen() {
               aria-pressed={selectedLeadId === hero.id}
               onClick={() => selectLead(hero.id)}
             >
-              {`Begin as ${hero.name}`}
+              {selectedLeadId === hero.id ? `${hero.name} selected` : `Choose ${hero.name}`}
             </button>
           </article>
         ))}
@@ -138,7 +139,7 @@ export function CampaignCreationScreen() {
           onClick={confirmCampaign}
           disabled={selectedLeadId === null}
         >
-          {selectedLeadId === null ? 'Choose a hero first' : 'Begin Chapter One'}
+          {selectedLead === undefined ? 'Choose a hero first' : `Begin with ${selectedLead.name}`}
         </button>
       </footer>
     </main>

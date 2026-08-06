@@ -13,7 +13,7 @@ test('plays a complete six-chapter campaign with recruitment, rewards, and resum
   await page.getByLabel('Campaign seed').fill('six-turn-browser-seed');
   await page.getByRole('button', { name: 'New Campaign' }).click();
   await page.locator('.hero-choice-button').first().click();
-  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
+  await page.getByRole('button', { name: /Begin with/ }).click();
 
   const encounteredCategories = new Set<string>();
 
@@ -28,6 +28,8 @@ test('plays a complete six-chapter campaign with recruitment, rewards, and resum
     if (category !== 'operation') await page.getByRole('radio').first().click();
 
     await page.getByRole('button', { name: 'Take Action' }).click();
+    const skip = page.getByRole('button', { name: 'Skip to result' });
+    if ((await skip.count()) > 0 && (await skip.isVisible())) await skip.click();
     await expect(page.getByText(`Chapter ${turn} complete`)).toBeVisible();
 
     if (turn === 2) await expect(page.locator('.hero-detail-button')).toHaveCount(2);

@@ -4,7 +4,7 @@ import type { BattleReport, CombatEvent } from '../../engine/reports/combat';
 import { maximumHp } from '../../engine/combat/stats';
 import { PixelArtSlot } from './PixelArtSlot';
 
-export const BEAT_DURATION_MS = 650;
+export const BEAT_DURATION_MS = 900;
 export const MAX_VISIBLE_BATTLE_BEATS = 18;
 
 interface BattlePlaybackStageProps {
@@ -14,6 +14,7 @@ interface BattlePlaybackStageProps {
   enemyIds: string[];
   assetIds?: Record<string, string>;
   arenaId?: string;
+  onPlaybackComplete?: () => void;
 }
 
 function titleCase(value: string) {
@@ -155,8 +156,10 @@ export function BattlePlaybackStage({
   enemyIds,
   assetIds = {},
   arenaId = 'unassigned-arena',
+  onPlaybackComplete,
 }: BattlePlaybackStageProps) {
   const stageRef = useRef<HTMLDivElement>(null);
+  const playbackCompleteRef = useRef(onPlaybackComplete);
   const beats = useMemo(() => selectBattleBeats(report.events), [report.events]);
   const reducedMotion = reducedMotionIsActive();
   const [beatIndex, setBeatIndex] = useState(0);
@@ -169,6 +172,10 @@ export function BattlePlaybackStage({
     setBeatIndex(0);
     setPlayback(reducedMotion ? 'paused' : 'waiting');
   }, [reducedMotion, report.id]);
+
+  useEffect(() => {
+    playbackCompleteRef.current = onPlaybackComplete;
+  }, [onPlaybackComplete]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -215,6 +222,10 @@ export function BattlePlaybackStage({
     );
     return () => globalThis.clearTimeout(timer);
   }, [beatIndex, beats.length, playback, playbackSpeed]);
+
+  useEffect(() => {
+    if (playback === 'result') playbackCompleteRef.current?.();
+  }, [playback]);
 
   const event = playback === 'result' ? null : (beats[beatIndex] ?? null);
   const visibleEventIndex = event?.index ?? null;

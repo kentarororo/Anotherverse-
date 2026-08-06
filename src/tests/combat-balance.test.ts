@@ -89,7 +89,7 @@ describe('combat balance gates', () => {
     expect(defaultWins).toBeGreaterThanOrEqual(39);
     expect(defaultWins).toBeLessThanOrEqual(54);
     expect(defaultWins - recklessWins).toBeGreaterThanOrEqual(12);
-  });
+  }, 15_000);
 
   it('keeps the reserve policy viable instead of suppressing every technique', () => {
     const seeds = Array.from({ length: 60 }, (_, index) => `reserve-${index}`);

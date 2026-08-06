@@ -64,7 +64,7 @@ describe('battle playback presentation mapping', () => {
       }),
     );
     const beats = selectBattleBeats(events);
-    expect(BEAT_DURATION_MS).toBe(650);
+    expect(BEAT_DURATION_MS).toBe(900);
     expect(beats).toHaveLength(18);
     expect(beats.map((beat) => beat.index)).toEqual(
       [...beats].sort((left, right) => left.index - right.index).map((beat) => beat.index),

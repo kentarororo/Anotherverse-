@@ -28,16 +28,17 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
     /telemetry|licen[cs]e|bureau|network|contract squad|Mythic Path/,
   );
   await page
-    .getByRole('button', { name: /Begin as/ })
+    .getByRole('button', { name: /Choose/ })
     .first()
     .click();
-  await page.getByRole('button', { name: 'Begin Chapter One' }).click();
+  await page.getByRole('button', { name: /Begin with/ }).click();
 
   await expect(page.getByRole('heading', { name: 'Your Heroes' })).toBeVisible();
   await expect(page.locator('.trio-panel .badge')).toHaveText('1 / 3');
   await expect(page.getByLabel('Story situation')).toContainText('Current goal:');
   await expect(page.getByLabel('Story situation')).toContainText('Choose');
   await page.getByRole('button', { name: 'Take Action' }).click();
+  await page.getByRole('button', { name: 'Skip to result' }).click();
 
   await expect(page.getByText('Companion joined')).toHaveCount(0);
   await expect(page.locator('.trio-panel .badge')).toHaveText('1 / 3');
@@ -80,6 +81,7 @@ test('chooses a lead, recruits two companions, then explains the first trio batt
   await expect(page.getByText(/Rear-line hits lose up to 2 damage/)).toBeVisible();
   await page.screenshot({ path: 'test-results/playwrite-plan.png', fullPage: true });
   await page.getByRole('button', { name: 'Take Action' }).click();
+  await page.getByRole('button', { name: 'Skip to result' }).click();
 
   const causalReview = page.getByLabel('Why the battle ended this way');
   await expect(causalReview).toBeVisible();

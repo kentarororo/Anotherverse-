@@ -59,11 +59,11 @@ function priorChoiceBridge(fact: WorldFact | undefined): string {
   }
   if (relation.includes('keep-the-promise')) {
     return [
-      'The first witnesses point the party toward safety.',
-      'The person protected by the new alliance reveals the next road.',
-      'The rescued keeper shows the party where the relic was taken.',
-      "The party's kept promise earns passage to the final road.",
-      "Those protected along the way now guard the party's retreat.",
+      'The rescued witnesses point out a safe road.',
+      'The rescued witness names the road ahead.',
+      'The rescued keeper shows where the relic was taken.',
+      'The party kept its promise, so the gatekeeper opens the final road.',
+      'The people saved along the way now guard the retreat.',
     ][turn - 1]!;
   }
   if (relation.includes('seize-the-opening')) {
@@ -112,6 +112,20 @@ function nonCombatStakes(state: CanonicalGameState, turn: number): string {
     return `The relic is changing. ${antagonist} is already moving to claim it.`;
   }
   return `The final road is opening. If the party loses time, ${antagonist} will close it again.`;
+}
+
+function objectiveFor(
+  state: CanonicalGameState,
+  scene: CampaignScenePlan,
+  turn: number,
+  castNames: readonly string[],
+): string {
+  if (turn === 1) return 'Stop the first attack and learn who caused it.';
+  if (turn === 2) return `Help ${castNames[1] ?? 'the lone hunter'} and find the next trail.`;
+  if (turn === 3) return `Reach ${castNames[2] ?? 'the trapped hunter'} and break the enemy line.`;
+  if (turn === 4) return `Claim ${scene.reward.title} before the enemy does.`;
+  if (turn === 5) return 'Break the last guard and open the final road.';
+  return `Defeat ${state.campaignPlan!.antagonist.title}.`;
 }
 
 function actualCast(state: CanonicalGameState, turn: number): string[] {
@@ -173,11 +187,13 @@ function choiceEffects(turn: number, bold: boolean) {
 
 function choicesFor(scene: CampaignScenePlan, turn: number) {
   if (scene.encounter !== null) {
+    const enemyNames = scene.encounter.enemies.map((enemy) => enemy.title).join(' and ');
+    const firstEnemy = scene.encounter.enemies[0].title;
     return [
       {
         id: `hold-the-line-t${turn}`,
-        label: 'Hold the line',
-        description: `Protect the party against ${scene.encounter.enemies.map((enemy) => enemy.title).join(' and ')}.`,
+        label: 'Hold formation',
+        description: `Brace for ${enemyNames} and keep the party together.`,
         consequence: `${scene.outcomeText} The party holds together and protects the road behind them.`,
         outcomeConsequences: {
           victory: `${scene.outcomeText} The party holds together and protects the road behind them.`,
@@ -189,8 +205,8 @@ function choicesFor(scene: CampaignScenePlan, turn: number) {
       },
       {
         id: `hunt-the-weakness-t${turn}`,
-        label: 'Hunt the weakness',
-        description: 'Take the dangerous route and strike the enemy before it can settle.',
+        label: 'Strike first',
+        description: `Rush ${firstEnemy} before the enemy line is ready.`,
         consequence: `${scene.outcomeText} The quick attack exposes the enemy, but it leaves the party owing a debt.`,
         outcomeConsequences: {
           victory: `${scene.outcomeText} The quick attack exposes the enemy, but it leaves the party owing a debt.`,
@@ -253,11 +269,11 @@ export function selectNextScenario(
   const secondCompanion = state.generatedDefinitions.characters[2];
   const hook =
     turn === 1
-      ? `${castNames[0]} reaches the first sign of danger. ${planned.prose}`
+      ? `${planned.prose} ${castNames[0]} steps forward before anyone else.`
       : turn === 2
-        ? `${castNames[0]} meets ${castNames[1]} on the road ahead. ${castNames[1]}'s Mythic Awakening, ${firstCompanion?.callingName ?? 'an unnamed power'}, answers the danger. ${planned.prose}`
+        ? `${castNames[0]} finds ${castNames[1]} facing the danger alone. ${castNames[1]}'s Mythic Awakening, ${firstCompanion?.callingName ?? 'an unnamed power'}, holds it back long enough to speak. ${planned.prose}`
         : turn === 3
-          ? `${castNames[2]} makes a stand as the others arrive. ${castNames[2]}'s Mythic Awakening, ${secondCompanion?.callingName ?? 'an unnamed power'}, changes the battle. ${planned.prose}`
+          ? `${castNames[0]} and ${castNames[1]} find ${castNames[2]} holding the road alone. ${castNames[2]}'s Mythic Awakening, ${secondCompanion?.callingName ?? 'an unnamed power'}, buys them a moment to act. ${planned.prose}`
           : planned.prose;
   const threats = enemyIds(planned, callback);
   const choices = choicesFor(planned, turn);
@@ -291,7 +307,7 @@ export function selectNextScenario(
       title: plan.arc.title,
       act,
       actTitle,
-      objective: planned.title,
+      objective: objectiveFor(state, planned, turn, castNames),
       chapter: turn,
       totalChapters: 6,
     },

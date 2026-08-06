@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { calculateForecast } from '../../engine/combat/forecast';
 import type { Position } from '../../engine/model/commands';
 import { useAppStore } from '../../app/store';
@@ -40,6 +41,7 @@ function encounterIdForEnemies(enemyIds: string[]) {
 }
 
 export function CommandScreen() {
+  const [completedPlaybackReportId, setCompletedPlaybackReportId] = useState<string | null>(null);
   const game = useAppStore((state) => state.game);
   const turnView = useAppStore((state) => state.turnView);
   const returnToTitle = useAppStore((state) => state.returnToTitle);
@@ -55,6 +57,7 @@ export function CommandScreen() {
   const aftermath = game.aftermathReports.at(-1);
   const report = game.battleReports.find((candidate) => candidate.id === aftermath?.battleReportId);
   const showingAftermath = turnView === 'aftermath' && aftermath !== undefined;
+  const aftermathReady = report === undefined || completedPlaybackReportId === report.id;
   const displayedTurn = showingAftermath ? aftermath.turn : game.turn;
   const scenario = game.currentScenario;
   const recruitedHeroes = game.generatedDefinitions.characters.filter((hero) => {
@@ -317,9 +320,15 @@ export function CommandScreen() {
               );
             })}
           </div>
-          <div className="synergy-strip">
-            <span>Party synergy</span>
-            <strong>Break → Exploit → Ward</strong>
+          <div className="synergy-strip" aria-live="polite">
+            <span>{recruitedHeroes.length === 1 ? 'Current tactic' : 'Party tactic'}</span>
+            <strong>
+              {recruitedHeroes.length === 1
+                ? 'Survive → Learn → Grow'
+                : recruitedHeroes.length === 2
+                  ? 'Guard → Strike'
+                  : 'Break → Exploit → Ward'}
+            </strong>
           </div>
         </section>
 
@@ -328,15 +337,23 @@ export function CommandScreen() {
           aria-labelledby="operation-title"
           data-scenario-category={scenario?.category}
         >
-          <div className="turn-state-label">{showingAftermath ? 'Result' : 'Plan'}</div>
+          <div className="turn-state-label">{showingAftermath ? 'Result' : 'Action'}</div>
           <div className="operation-content">
             <p className="eyebrow">
               {scenario?.quest.title ?? 'Main Quest'} · Act {scenario?.quest.act ?? 1} of 3 ·
               Chapter {displayedTurn} of 6
             </p>
-            <h2 id="operation-title">{showingAftermath ? 'Aftermath' : scenario?.title}</h2>
+            <h2 id="operation-title">
+              {showingAftermath
+                ? aftermathReady
+                  ? 'Aftermath'
+                  : 'Battle in progress'
+                : scenario?.title}
+            </h2>
             {showingAftermath ? (
-              <p className="operation-hook">{aftermath.summary}</p>
+              aftermathReady ? (
+                <p className="operation-hook">{aftermath.summary}</p>
+              ) : null
             ) : scenario !== null ? (
               <div className="storybook-brief" aria-label="Story situation">
                 <div className="quest-objective">
@@ -346,7 +363,7 @@ export function CommandScreen() {
                 <p className="operation-hook">{scenario.sceneBeats.hook}</p>
                 <dl>
                   <div>
-                    <dt>Previously</dt>
+                    <dt>{displayedTurn === 1 ? 'Why now' : 'Previously'}</dt>
                     <dd>{scenario.sceneBeats.cause}</dd>
                   </div>
                   <div>
@@ -368,6 +385,7 @@ export function CommandScreen() {
                 enemyIds={battleEnemyIds}
                 assetIds={battleAssetIds}
                 arenaId={resolvedArenaId}
+                onPlaybackComplete={() => setCompletedPlaybackReportId(report.id)}
               />
             ) : hasBattle && game.currentEncounter !== null ? (
               <>
@@ -388,9 +406,10 @@ export function CommandScreen() {
                     </p>
                   ))}
                 </div>
-                <p className="reward-preview">
-                  <strong>Reward:</strong> {game.currentEncounter.rewardPreview}
-                </p>
+                <div className="reward-preview" aria-label="Battle reward">
+                  <span>Win reward</span>
+                  <strong>{game.currentEncounter.rewardPreview}</strong>
+                </div>
               </>
             ) : (
               <div className="battle-stage" aria-label="Enemy forecast">
@@ -409,12 +428,22 @@ export function CommandScreen() {
         <section className="panel decision-panel" aria-labelledby="decision-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">{showingAftermath ? 'Result' : 'Choose your approach'}</p>
+              <p className="eyebrow">
+                {showingAftermath
+                  ? aftermathReady
+                    ? 'Battle result'
+                    : 'Watch the battle'
+                  : hasBattle
+                    ? 'Battle plan'
+                    : 'Your choice'}
+              </p>
               <h2 id="decision-title">
                 {showingAftermath
-                  ? report === undefined
-                    ? 'Resolved'
-                    : titleCase(report.outcome)
+                  ? aftermathReady
+                    ? report === undefined
+                      ? 'Resolved'
+                      : titleCase(report.outcome)
+                    : 'Actions are playing'
                   : hasBattle
                     ? 'Ready the party'
                     : 'Choose a response'}
@@ -422,107 +451,121 @@ export function CommandScreen() {
             </div>
           </div>
           {showingAftermath ? (
-            <div className="aftermath-list">
-              {battleCausality.length > 0 && (
-                <div className="causal-aftermath" aria-label="Why the battle ended this way">
-                  {battleCausality.map((beat) => (
-                    <article key={beat.label}>
-                      <span>{beat.label}</span>
-                      <strong>{beat.title}</strong>
-                      <small>{beat.detail}</small>
-                    </article>
-                  ))}
-                </div>
-              )}
-              {recruitedHeroes.map((hero) => (
-                <div className="aftermath-hero-row" key={hero.id}>
-                  <span>{hero.name}</span>
+            aftermathReady ? (
+              <div className="aftermath-list" aria-live="polite">
+                <section className={`aftermath-outcome outcome-${report?.outcome ?? 'resolved'}`}>
+                  <span>Chapter {aftermath.turn}</span>
                   <strong>
-                    {aftermath.hpByCharacter[hero.id] ?? game.partyState[hero.id]?.hp ?? 0} HP · +
-                    {aftermath.experienceByCharacter[hero.id] ?? 0} XP
+                    {report === undefined ? 'Choice resolved' : titleCase(report.outcome)}
+                  </strong>
+                  <p>{aftermath.summary.split(/(?<=[.!?])\s+/)[0]}</p>
+                </section>
+                {battleCausality.length > 0 && (
+                  <div className="causal-aftermath" aria-label="Why the battle ended this way">
+                    {battleCausality.map((beat) => (
+                      <article key={beat.label}>
+                        <span>{beat.label}</span>
+                        <strong>{beat.title}</strong>
+                        <small>{beat.detail}</small>
+                      </article>
+                    ))}
+                  </div>
+                )}
+                {recruitedHeroes.map((hero) => (
+                  <div className="aftermath-hero-row" key={hero.id}>
+                    <span>{hero.name}</span>
+                    <strong>
+                      {aftermath.hpByCharacter[hero.id] ?? game.partyState[hero.id]?.hp ?? 0} HP · +
+                      {aftermath.experienceByCharacter[hero.id] ?? 0} XP
+                    </strong>
+                  </div>
+                ))}
+                <div className="progression-summary">
+                  <span>Level progress</span>
+                  <strong>
+                    {recruitedHeroes
+                      .map((hero) => {
+                        const member = game.partyState[hero.id];
+                        return `${hero.name} ${member === undefined ? 0 : member.experience % 50}/50`;
+                      })
+                      .join(' / ')}
                   </strong>
                 </div>
-              ))}
-              <div className="progression-summary">
-                <span>Level progress</span>
-                <strong>
-                  {recruitedHeroes
-                    .map((hero) => {
-                      const member = game.partyState[hero.id];
-                      return `${hero.name} ${member === undefined ? 0 : member.experience % 50}/50`;
-                    })
-                    .join(' / ')}
-                </strong>
-              </div>
-              {report !== undefined && (
-                <div className="aftermath-battle-review">
-                  <span>Plan result</span>
-                  <strong>
-                    {totalBattleHpEnd}/{totalBattleHpStart} party HP retained / {report.rounds}{' '}
-                    rounds
-                  </strong>
-                  <small>
-                    {titleCase(game.pendingPlan.teamPriorityId ?? 'unassigned')} /{' '}
-                    {formationSummary}
-                  </small>
-                </div>
-              )}
-              <div>
-                <span>Rations</span>
-                <strong>{signed(aftermath.suppliesDelta)}</strong>
-              </div>
-              <div>
-                <span>Renown</span>
-                <strong>{signed(aftermath.reputationDelta)}</strong>
-              </div>
-              <div>
-                <span>Danger</span>
-                <strong>{signed(aftermath.dangerDelta)}</strong>
-              </div>
-              <div>
-                <span>Coin</span>
-                <strong>{signed(aftermath.coinsDelta)}</strong>
-              </div>
-              <div>
-                <span>Dust</span>
-                <strong>{signed(aftermath.relicDustDelta)}</strong>
-              </div>
-              {aftermath.bondDelta !== 0 && (
+                {report !== undefined && (
+                  <div className="aftermath-battle-review">
+                    <span>Plan result</span>
+                    <strong>
+                      {totalBattleHpEnd}/{totalBattleHpStart} party HP retained / {report.rounds}{' '}
+                      rounds
+                    </strong>
+                    <small>
+                      {titleCase(game.pendingPlan.teamPriorityId ?? 'unassigned')} /{' '}
+                      {formationSummary}
+                    </small>
+                  </div>
+                )}
                 <div>
-                  <span>Bond</span>
-                  <strong>{signed(aftermath.bondDelta)}</strong>
+                  <span>Rations</span>
+                  <strong>{signed(aftermath.suppliesDelta)}</strong>
                 </div>
-              )}
-              <div>
-                <span>Chapter {aftermath.turn} complete</span>
-                <strong>{aftermath.summary.split(/(?<=[.!?])\s+/)[0]}</strong>
+                <div>
+                  <span>Renown</span>
+                  <strong>{signed(aftermath.reputationDelta)}</strong>
+                </div>
+                <div>
+                  <span>Danger</span>
+                  <strong>{signed(aftermath.dangerDelta)}</strong>
+                </div>
+                <div>
+                  <span>Coin</span>
+                  <strong>{signed(aftermath.coinsDelta)}</strong>
+                </div>
+                <div>
+                  <span>Dust</span>
+                  <strong>{signed(aftermath.relicDustDelta)}</strong>
+                </div>
+                {aftermath.bondDelta !== 0 && (
+                  <div>
+                    <span>Bond</span>
+                    <strong>{signed(aftermath.bondDelta)}</strong>
+                  </div>
+                )}
+                <div>
+                  <span>Chapter {aftermath.turn} complete</span>
+                  <strong>{aftermath.summary.split(/(?<=[.!?])\s+/)[0]}</strong>
+                </div>
+                {aftermath.itemIdsGranted.map((itemId) => (
+                  <div key={itemId} className="reward-row">
+                    <span>Equipment recovered</span>
+                    <strong>{game.generatedDefinitions.items[itemId]?.name}</strong>
+                  </div>
+                ))}
+                {aftermath.materialIdsGranted.map((materialId, index) => (
+                  <div key={`${materialId}-${index}`} className="reward-row">
+                    <span>Monster material</span>
+                    <strong>
+                      {game.generatedDefinitions.materials[materialId]?.name ?? materialId}
+                    </strong>
+                  </div>
+                ))}
+                {aftermath.characterIdsRecruited.map((characterId) => (
+                  <div key={characterId} className="recruitment-result">
+                    <span>Companion joined</span>
+                    <strong>
+                      {
+                        game.generatedDefinitions.characters.find((hero) => hero.id === characterId)
+                          ?.name
+                      }
+                    </strong>
+                  </div>
+                ))}
               </div>
-              {aftermath.itemIdsGranted.map((itemId) => (
-                <div key={itemId}>
-                  <span>Equipment recovered</span>
-                  <strong>{game.generatedDefinitions.items[itemId]?.name}</strong>
-                </div>
-              ))}
-              {aftermath.materialIdsGranted.map((materialId, index) => (
-                <div key={`${materialId}-${index}`}>
-                  <span>Monster material</span>
-                  <strong>
-                    {game.generatedDefinitions.materials[materialId]?.name ?? materialId}
-                  </strong>
-                </div>
-              ))}
-              {aftermath.characterIdsRecruited.map((characterId) => (
-                <div key={characterId} className="recruitment-result">
-                  <span>Companion joined</span>
-                  <strong>
-                    {
-                      game.generatedDefinitions.characters.find((hero) => hero.id === characterId)
-                        ?.name
-                    }
-                  </strong>
-                </div>
-              ))}
-            </div>
+            ) : (
+              <div className="playback-prompt" role="status">
+                <strong>The battle is resolving.</strong>
+                <span>Watch the key actions, or use Skip to result on the battlefield.</span>
+              </div>
+            )
           ) : (
             <>
               {hasBattle ? (
@@ -644,14 +687,17 @@ export function CommandScreen() {
                 : commitTurn
             }
             disabled={
-              !showingAftermath &&
-              (game.pendingPlan.situationChoiceId === null || !selectedChoiceAffordable)
+              (showingAftermath && !aftermathReady) ||
+              (!showingAftermath &&
+                (game.pendingPlan.situationChoiceId === null || !selectedChoiceAffordable))
             }
           >
             {showingAftermath
-              ? aftermath.turn >= 6
-                ? 'Finish Campaign'
-                : `Continue to Turn ${game.turn}`
+              ? !aftermathReady
+                ? 'Battle in progress'
+                : aftermath.turn >= 6
+                  ? 'Finish Campaign'
+                  : `Continue to Turn ${game.turn}`
               : 'Take Action'}
           </button>
         </section>

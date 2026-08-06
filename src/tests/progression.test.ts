@@ -63,7 +63,47 @@ describe('progression and management', () => {
     expect(Object.values(state.materials).reduce((sum, count) => sum + count, 0)).toBe(
       grantedMaterials.length,
     );
-    expect(state.inventoryIds.length).toBeLessThanOrEqual(1);
+    // One Turn 3 trophy plus the campaign's authored relic is the maximum direct-drop
+    // cadence; further equipment comes from spending monster materials at the Forge.
+    expect(state.inventoryIds.length).toBeLessThanOrEqual(2);
+  });
+
+  it('turns the Turn 3 victory into an encounter-themed equipment decision', () => {
+    const attempts = Array.from({ length: 40 }, (_, index) => {
+      const before = battleStart(`turn-three-trophy-${index}`);
+      const after = applyGameCommand(before, { type: 'COMMIT_TURN' });
+      return { before, after };
+    });
+    const victory = attempts.find(({ after }) => after.battleReports.at(-1)?.outcome === 'victory');
+    expect(victory).toBeDefined();
+
+    const trophyId = victory!.after.aftermathReports.at(-1)!.itemIdsGranted[0];
+    expect(trophyId).toBeDefined();
+    expect(victory!.after.inventoryIds).toContain(trophyId);
+    expect(victory!.after.generatedDefinitions.items[trophyId!]).toBeDefined();
+
+    const replayBefore = battleStart(victory!.before.campaignSeed!);
+    const replay = applyGameCommand(replayBefore, { type: 'COMMIT_TURN' });
+    expect(replay.aftermathReports.at(-1)!.itemIdsGranted).toEqual(
+      victory!.after.aftermathReports.at(-1)!.itemIdsGranted,
+    );
+
+    const leadId = victory!.after.leadCharacterId!;
+    const equipped = applyGameCommand(victory!.after, {
+      type: 'EQUIP_ITEM',
+      characterId: leadId,
+      itemId: trophyId!,
+    });
+    const hero = victory!.after.generatedDefinitions.characters.find(
+      (candidate) => candidate.id === leadId,
+    )!;
+    const baselineStats = effectiveHeroStats(hero.stats, victory!.after.partyState[leadId]!, []);
+    const equippedStats = effectiveHeroStats(hero.stats, equipped.partyState[leadId]!, [
+      equipped.generatedDefinitions.items[trophyId!]!,
+    ]);
+    expect(equippedStats.power + equippedStats.guard).toBeGreaterThan(
+      baselineStats.power + baselineStats.guard,
+    );
   });
 
   it('records relationships and Bestiary intelligence after resolution', () => {

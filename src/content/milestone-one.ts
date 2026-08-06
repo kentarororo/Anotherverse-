@@ -788,6 +788,24 @@ export const rewardPoolByEncounterId: Readonly<Record<string, readonly string[]>
   'secret-waking-guardian': ['crownchain-blade', 'mirror-shard-charm'],
 };
 
+/**
+ * The signature trophy carried by each enemy family. Turn 3 awards one of these
+ * after a victory so the player has a concrete equipment decision before the
+ * second half of the slice. Additional equipment still comes from the Forge.
+ */
+export const equipmentIdByEnemyId: Readonly<Record<string, string>> = {
+  'rift-hound': 'houndglass-edge',
+  'glass-weaver': 'weaver-ward',
+  'storm-jackal': 'stormhook-sabre',
+  'signal-leech': 'echo-shell',
+  'ironback-mauler': 'ironback-plate',
+  'veil-scribe': 'true-name-knife',
+  'survey-beast': 'crownchain-blade',
+  'mirror-oracle': 'mirror-shard-charm',
+  'drowned-lancer': 'tidebone-spear',
+  'bell-wraith': 'funeral-bell',
+};
+
 export function createMilestoneOneDefinitions(characters = temporaryCharacters) {
   const heroes: CombatantDefinition[] = characters.map((character) => ({
     id: character.id,

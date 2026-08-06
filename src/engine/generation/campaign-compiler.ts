@@ -291,11 +291,7 @@ function worldNameInSentence(title: string): string {
   return title.replace(/^The\s+/, 'the ');
 }
 
-function stakesForTurn(
-  antagonist: AntagonistAgenda,
-  worldTitle: string,
-  turn: number,
-): string {
+function stakesForTurn(antagonist: AntagonistAgenda, worldTitle: string, turn: number): string {
   if (turn === 1) {
     return `${antagonist.title} is behind the attack. ${antagonist.escalation}`;
   }
@@ -563,7 +559,10 @@ export function validateCampaignPlan(plan: CampaignPlan): CampaignPlanValidation
   }
 
   const worldVocabulary = [plan.world.title, ...plan.world.lexicon];
-  const actProse = plan.scenes.map((scene) => scene.prose).join(' ').toLowerCase();
+  const actProse = plan.scenes
+    .map((scene) => scene.prose)
+    .join(' ')
+    .toLowerCase();
   if (!worldVocabulary.some((term) => actProse.includes(term.toLowerCase()))) {
     errors.push('Campaign prose never establishes the selected world.');
   }

@@ -10,6 +10,7 @@ import {
   createMilestoneOnePartyState,
   createDefaultPositions,
   createDefaultStances,
+  equipmentIdByEnemyId,
   encounterForId,
   encounterForOperationTemplate,
   materialIdByEnemyId,
@@ -225,6 +226,25 @@ function materialRewardsForVictory(state: CanonicalGameState, victory: boolean):
     const materialId = materialIdByEnemyId[enemyId];
     return materialId === undefined ? [] : [materialId];
   });
+}
+
+function equipmentTrophyForVictory(state: CanonicalGameState, victory: boolean): string | null {
+  if (!victory || state.turn !== 3 || state.currentEncounter === null) return null;
+  const ownedItemIds = new Set([
+    ...state.inventoryIds,
+    ...Object.values(state.partyState).flatMap((member) =>
+      Object.values(member.equipment).flatMap((itemId) => (itemId === null ? [] : [itemId])),
+    ),
+  ]);
+  const enemiesByThreat = [...new Set(state.currentEncounter.enemyIds)]
+    .map((enemyId) => state.generatedDefinitions.enemies[enemyId])
+    .filter((enemy) => enemy !== undefined)
+    .sort((left, right) => right.threat - left.threat || left.id.localeCompare(right.id));
+  for (const enemy of enemiesByThreat) {
+    const itemId = equipmentIdByEnemyId[enemy.id];
+    if (itemId !== undefined && !ownedItemIds.has(itemId)) return itemId;
+  }
+  return null;
 }
 
 function addMaterials(
@@ -701,6 +721,7 @@ export function applyGameCommand(
       earnedPlannedReward && plannedReward?.category === 'relic'
         ? campaignRelic(plannedReward.title, plannedReward.tags)
         : null;
+    const equipmentTrophyId = equipmentTrophyForVictory(state, victory);
     const skillId =
       earnedPlannedReward && plannedReward?.category === 'skill'
         ? `campaign-skill-${rewardSlug(plannedReward.title)}`
@@ -711,7 +732,12 @@ export function applyGameCommand(
         ? []
         : Array.from({ length: plannedReward?.amount ?? 1 }, () => materialDefinition.id)),
     ];
-    const itemIdsGranted = relicDefinition === null ? [] : [relicDefinition.id];
+    const itemIdsGranted = [
+      ...(equipmentTrophyId === null ? [] : [equipmentTrophyId]),
+      ...(relicDefinition === null || relicDefinition.id === equipmentTrophyId
+        ? []
+        : [relicDefinition.id]),
+    ];
     const coinsDelta =
       (victory ? 10 + state.turn * 2 : Math.max(0, reputationDelta)) +
       (earnedPlannedReward && plannedReward?.category === 'currency' ? plannedReward.amount : 0);
